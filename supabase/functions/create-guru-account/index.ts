@@ -11,10 +11,8 @@
 // Auth:
 //   Header "Authorization: Bearer <access_token>" dari admin. Caller harus
 //   punya baris di cloud_guru_teachers dengan role di {admin,kepala,operator}.
-//
-// Deno runtime (Supabase Edge Functions).
 
-// deno-lint-ignore-file no-explicit-any
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 type Role = "guru" | "admin" | "kepala" | "operator";
@@ -54,7 +52,6 @@ function randomPin(len = 4): string {
   return out;
 }
 
-// deno-lint-ignore no-explicit-any
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -69,7 +66,6 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // --- Verifikasi caller ------------------------------------------------
   const auth = req.headers.get("Authorization") || "";
   const bearer = auth.replace(/^Bearer\s+/i, "");
   if (!bearer) return json({ error: "unauthorized" }, 401);
@@ -87,7 +83,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: "nama_dan_sekolah_wajib" }, 400);
   }
 
-  // Caller harus admin/kepala/operator di sekolah yang sama (atau owner akun).
   const { data: callerRow } = await admin
     .from("cloud_guru_teachers")
     .select("role, sekolah_id")
@@ -95,7 +90,7 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   const isAdmin = callerRow && ["admin", "kepala", "operator"].includes(callerRow.role);
-  const isOwnerFirstSetup = !callerRow; // belum pernah provision apa pun → anggap owner akun ini
+  const isOwnerFirstSetup = !callerRow;
   if (!isAdmin && !isOwnerFirstSetup) {
     return json({ error: "forbidden_not_admin" }, 403);
   }
@@ -103,10 +98,8 @@ Deno.serve(async (req: Request) => {
     return json({ error: "forbidden_wrong_school" }, 403);
   }
 
-  // --- Normalisasi kode & PIN ------------------------------------------
   let kode = (body.kode_login || body.nip || "").trim();
   if (!kode) {
-    // generate sampai unik
     for (let i = 0; i < 50; i++) {
       const candidate = randomKode();
       const { data: dup } = await admin
@@ -134,7 +127,6 @@ Deno.serve(async (req: Request) => {
   const email = `${kode}@guru.local`;
   const role: Role = body.role || "guru";
 
-  // --- Provision auth.users --------------------------------------------
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email,
     password: pin,
@@ -153,7 +145,6 @@ Deno.serve(async (req: Request) => {
   }
   const guruUserId = created.user.id;
 
-  // --- Insert row cloud_guru_teachers -----------------------------------
   const now = Date.now();
   const { data: inserted, error: insErr } = await admin
     .from("cloud_guru_teachers")
@@ -179,7 +170,6 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (insErr) {
-    // rollback: hapus akun auth agar tidak orphan
     await admin.auth.admin.deleteUser(guruUserId).catch(() => {});
     return json({ error: "insert_row_failed", detail: insErr.message }, 500);
   }

@@ -8,8 +8,8 @@
 //
 // Return: { ok, new_pin }
 
-// deno-lint-ignore-file no-explicit-any
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +30,15 @@ function randomPin(len = 4): string {
   return out;
 }
 
+async function bumpVersion(admin: SupabaseClient, userId: string): Promise<number> {
+  const { data } = await admin
+    .from("cloud_guru_teachers")
+    .select("version")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return ((data?.version as number | undefined) ?? 0) + 1;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -42,7 +51,6 @@ Deno.serve(async (req: Request) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // --- Verifikasi caller ------------------------------------------------
   const auth = req.headers.get("Authorization") || "";
   const bearer = auth.replace(/^Bearer\s+/i, "");
   if (!bearer) return json({ error: "unauthorized" }, 401);
@@ -54,7 +62,6 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
   if (!body?.user_id) return json({ error: "user_id_wajib" }, 400);
 
-  // Caller harus admin/kepala/operator di sekolah target.
   const { data: callerRow } = await admin
     .from("cloud_guru_teachers")
     .select("role, sekolah_id")
@@ -82,20 +89,11 @@ Deno.serve(async (req: Request) => {
   });
   if (upErr) return json({ error: "update_password_failed", detail: upErr.message }, 500);
 
-  // Tandai row sudah di-"touch" supaya guru lihat ada perubahan di sync berikutnya.
+  const newVersion = await bumpVersion(admin, body.user_id);
   await admin
     .from("cloud_guru_teachers")
-    .update({ diubah_pada: Date.now(), version: (await bumpVersion(admin, body.user_id)) })
+    .update({ diubah_pada: Date.now(), version: newVersion })
     .eq("user_id", body.user_id);
 
   return json({ ok: true, new_pin: pin });
 });
-
-async function bumpVersion(admin: any, userId: string): Promise<number> {
-  const { data } = await admin
-    .from("cloud_guru_teachers")
-    .select("version")
-    .eq("user_id", userId)
-    .maybeSingle();
-  return (data?.version ?? 0) + 1;
-}
