@@ -4,7 +4,7 @@ import { useToast } from "@/components/shared/Toast";
 import { setupService, type SetupData } from "@/services/setup.service";
 import { Jenjang, Semester } from "@/types/enums";
 import { APP_BRAND } from "@/lib/constants";
-import { School as SchoolIcon, User, Calendar, MapPin, Clock, Check, Target } from "lucide-react";
+import { School as SchoolIcon, User, Calendar, MapPin, Clock, Check, Target, SkipForward, Sparkles } from "lucide-react";
 
 const WIZARD_TOTAL = 4;
 
@@ -75,9 +75,41 @@ export function WizardSetup() {
       await setupService.executeSetup(data);
       await refreshSchool();
       await refreshTeachers();
-      toast("Setup selesai!");
+      toast("Setup selesai!", "success");
     } catch {
-      toast("Gagal setup");
+      toast("Gagal setup", "error");
+    }
+  };
+
+  // "Coba Dulu" — isi otomatis dengan data demo lokal (Dexie), tanpa
+  // meminta sekolah/admin dulu. Admin bisa kembali ke Pengaturan nanti.
+  const [cobaLoading, setCobaLoading] = useState(false);
+  const cobaDulu = async () => {
+    setCobaLoading(true);
+    const data: SetupData = {
+      sekolah: "Sekolah Coba (Demo)",
+      jenjang: Jenjang.SD,
+      namaGuru: "Admin Demo",
+      email: "demo@guru.local",
+      tahunAjaran: "2026/2027",
+      semester: Semester.GANJIL,
+      lat: undefined,
+      lng: undefined,
+      radiusMeter: 100,
+      jamMasukStandar: "07:00",
+      jamPulangStandar: "13:00",
+      toleransiTerlambatMenit: 15,
+    };
+    try {
+      localStorage.setItem("bgy_demo_mode", "1");
+      await setupService.executeSetup(data);
+      await refreshSchool();
+      await refreshTeachers();
+      toast("Mode coba aktif — data disimpan lokal", "success");
+    } catch {
+      toast("Gagal mulai mode coba", "error");
+    } finally {
+      setCobaLoading(false);
     }
   };
 
@@ -85,12 +117,36 @@ export function WizardSetup() {
     <div className="flex-1 flex flex-col items-center px-4 py-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-5">
-          <div className="text-[1.2rem] font-extrabold text-[var(--text)]">{APP_BRAND}</div>
-          <div className="text-[0.78rem] text-[var(--text-light)]">Setup awal — {step}/{WIZARD_TOTAL}</div>
+          <div className="text-[1.2rem] font-extrabold text-[var(--text)]">
+            <span className="italic">Presensi Yuk</span> <span className="text-[var(--text-light)] font-bold">| Guru</span>
+          </div>
+          <div className="text-[0.72rem] text-[var(--text-light)] mt-[2px]">{APP_BRAND}</div>
+          <div className="text-[0.78rem] text-[var(--text-light)] mt-2">Setup awal — {step}/{WIZARD_TOTAL}</div>
           <div className="mt-3 bg-[var(--border)] rounded-full h-2 overflow-hidden">
             <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#0d9488,#0f766e)" }} />
           </div>
         </div>
+
+        {step === 1 && (
+          <div className="mb-3 rounded-2xl border border-[var(--border)] p-3 bg-[var(--brand-soft)] flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/70 text-[var(--brand-strong)] flex items-center justify-center flex-shrink-0">
+              <Sparkles size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[0.82rem] font-extrabold text-[var(--brand-strong)]">Belum siap setup?</div>
+              <div className="text-[0.68rem] text-[var(--text-light)] leading-snug">
+                Masuk mode coba dengan 1 ketukan — data demo tersimpan di perangkat.
+              </div>
+            </div>
+            <button
+              onClick={cobaDulu}
+              disabled={cobaLoading}
+              className="h-9 px-3 rounded-xl bg-white text-[var(--brand-strong)] border border-[var(--brand)] text-[0.78rem] font-bold flex items-center gap-1 active:scale-95 disabled:opacity-50"
+            >
+              <SkipForward size={13} /> {cobaLoading ? "..." : "Coba Dulu"}
+            </button>
+          </div>
+        )}
 
         <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-5 mb-4">
           {step === 1 && (

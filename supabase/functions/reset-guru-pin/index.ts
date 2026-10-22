@@ -1,0 +1,101 @@
+// Edge Function: reset-guru-pin
+//
+// Reset PIN seorang guru. Dipanggil oleh admin (Ops / Kepala Sekolah) dari
+// halaman Daftar Guru.
+//
+// Input (JSON): { user_id: string, new_pin?: string }
+//   Jika new_pin kosong → generate 4 digit random.
+//
+// Return: { ok, new_pin }
+
+// deno-lint-ignore-file no-explicit-any
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS },
+  });
+}
+
+function randomPin(len = 4): string {
+  let out = "";
+  for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10).toString();
+  return out;
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_ROLE) return json({ error: "env_missing" }, 500);
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // --- Verifikasi caller ------------------------------------------------
+  const auth = req.headers.get("Authorization") || "";
+  const bearer = auth.replace(/^Bearer\s+/i, "");
+  if (!bearer) return json({ error: "unauthorized" }, 401);
+  const { data: userRes, error: userErr } = await admin.auth.getUser(bearer);
+  if (userErr || !userRes?.user) return json({ error: "invalid_token" }, 401);
+  const callerId = userRes.user.id;
+
+  let body: { user_id?: string; new_pin?: string };
+  try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
+  if (!body?.user_id) return json({ error: "user_id_wajib" }, 400);
+
+  // Caller harus admin/kepala/operator di sekolah target.
+  const { data: callerRow } = await admin
+    .from("cloud_guru_teachers")
+    .select("role, sekolah_id")
+    .eq("user_id", callerId)
+    .maybeSingle();
+  if (!callerRow || !["admin", "kepala", "operator"].includes(callerRow.role)) {
+    return json({ error: "forbidden_not_admin" }, 403);
+  }
+
+  const { data: targetRow } = await admin
+    .from("cloud_guru_teachers")
+    .select("sekolah_id")
+    .eq("user_id", body.user_id)
+    .maybeSingle();
+  if (!targetRow) return json({ error: "guru_tidak_ditemukan" }, 404);
+  if (targetRow.sekolah_id !== callerRow.sekolah_id) {
+    return json({ error: "forbidden_wrong_school" }, 403);
+  }
+
+  const pin = (body.new_pin || "").trim() || randomPin(4);
+  if (!/^\d{4,6}$/.test(pin)) return json({ error: "pin_harus_4_6_digit" }, 400);
+
+  const { error: upErr } = await admin.auth.admin.updateUserById(body.user_id, {
+    password: pin,
+  });
+  if (upErr) return json({ error: "update_password_failed", detail: upErr.message }, 500);
+
+  // Tandai row sudah di-"touch" supaya guru lihat ada perubahan di sync berikutnya.
+  await admin
+    .from("cloud_guru_teachers")
+    .update({ diubah_pada: Date.now(), version: (await bumpVersion(admin, body.user_id)) })
+    .eq("user_id", body.user_id);
+
+  return json({ ok: true, new_pin: pin });
+});
+
+async function bumpVersion(admin: any, userId: string): Promise<number> {
+  const { data } = await admin
+    .from("cloud_guru_teachers")
+    .select("version")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return (data?.version ?? 0) + 1;
+}

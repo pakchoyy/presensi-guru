@@ -30,6 +30,8 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Login guru lewat kode (NIP/NUPTK/G-XXXX) + PIN. Memakai synthetic email `${kode}@guru.local`. */
+  loginGuru: (kode: string, pin: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -263,6 +265,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setDeviceLimitError(null);
   };
 
+  const loginGuru = async (kode: string, pin: string) => {
+    const k = kode.trim();
+    if (!k) throw new Error("Nomor / Kode wajib diisi");
+    if (!/^\d{4,6}$/.test(pin.trim())) throw new Error("PIN harus 4-6 digit");
+    const syntheticEmail = `${k.toLowerCase()}@guru.local`;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: syntheticEmail,
+      password: pin.trim(),
+    });
+    if (error) {
+      if (error.message.includes("Invalid login")) {
+        throw new Error("Kode atau PIN salah");
+      }
+      throw new Error(error.message);
+    }
+    if (!data.user) throw new Error("Gagal login");
+    await trackDevice(data.user.id);
+  };
+
   const register = async (email: string, password: string, name: string) => {
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
@@ -295,6 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     token,
     loading,
     login,
+    loginGuru,
     register,
     logout,
     isAuthenticated: !!user,
