@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --grad: linear-gradient(135deg, #1e40af, #1e3a8a, #172554);
+  --bg: #f0f4f8;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-light: #64748b;
+  --border: #e2e8f0;
+  --input-bg: #f8fafc;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.13);
+  --radius: 12px;
+  --hadir: #16a34a;
+  --hadir-bg: #dcfce7;
+  --sakit: #b45309;
+  --sakit-bg: #fef3c7;
+  --izin: #1d4ed8;
+  --izin-bg: #dbeafe;
+  --alpha: #dc2626;
+  --alpha-bg: #fee2e2;
+  --terlambat: #f59e0b;
+  --terlambat-bg: #fef3c7;
+}
+
+.dark {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #f1f5f9;
+  --text-light: #94a3b8;
+  --border: #334155;
+  --input-bg: #0f172a;
+  --hadir: #4ade80;
+  --hadir-bg: #14532d;
+  --sakit: #fbbf24;
+  --sakit-bg: #78350f;
+  --izin: #60a5fa;
+  --izin-bg: #1e3a8a;
+  --alpha: #f87171;
+  --alpha-bg: #7f1d1d;
+  --terlambat: #fbbf24;
+  --terlambat-bg: #78350f;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  max-width: 420px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+@media (min-width: 1024px) {
+  #root {
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ══ TICKER MARQUEE (adopsi dari indexkatrol.html) ══ */
+.ticker-wrap {
+  width: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  color: #1e293b;
+  padding: 8px 0;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.ticker-badge {
+  background: #1e293b;
+  color: #ffffff;
+  padding: 3px 10px;
+  font-weight: 800;
+  border-radius: 6px;
+  margin-left: 12px;
+  margin-right: 12px;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  animation: ticker-pulse 2s infinite;
+}
+@keyframes ticker-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+.ticker-track {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.ticker-content {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: ticker-scroll 40s linear infinite;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1e293b;
+}
+.ticker-content:hover {
+  animation-play-state: paused;
+  text-decoration: underline;
+}
+@keyframes ticker-scroll {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+.ticker-msg {
+  display: inline-block;
+  margin-right: 28px;
+  font-weight: 600;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+@keyframes slide-down {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+@keyframes scale-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-scale-pop {
+  animation: scale-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

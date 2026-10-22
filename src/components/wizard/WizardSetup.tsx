@@ -1,0 +1,166 @@
+import { useState, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { useToast } from "@/components/shared/Toast";
+import { setupService, type SetupData } from "@/services/setup.service";
+import { Jenjang, Semester } from "@/types/enums";
+import { APP_BRAND } from "@/lib/constants";
+import { School as SchoolIcon, User, Calendar, MapPin, Clock, Check, Target } from "lucide-react";
+
+const WIZARD_TOTAL = 4;
+
+export function WizardSetup() {
+  const { refreshTeachers, refreshSchool } = useApp();
+  const { toast } = useToast();
+
+  const [step, setStep] = useState(1);
+  const [progress, setProgress] = useState((1 / WIZARD_TOTAL) * 100);
+
+  const [sekolah, setSekolah] = useState("");
+  const [jenjang, setJenjang] = useState<Jenjang>(Jenjang.SD);
+  const [namaGuru, setNamaGuru] = useState("");
+  const [email, setEmail] = useState("");
+  const [tahunAjaran, setTahunAjaran] = useState("2026/2027");
+  const [semester, setSemester] = useState<Semester>(Semester.GANJIL);
+
+  const [lat, setLat] = useState<number | undefined>();
+  const [lng, setLng] = useState<number | undefined>();
+  const [radiusMeter, setRadiusMeter] = useState(100);
+  const [jamMasuk, setJamMasuk] = useState("07:00");
+  const [jamPulang, setJamPulang] = useState("13:00");
+  const [toleransi, setToleransi] = useState(15);
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  useEffect(() => {
+    setProgress((step / WIZARD_TOTAL) * 100);
+  }, [step]);
+
+  const ambilLokasi = () => {
+    if (!navigator.geolocation) { toast("Browser tidak mendukung GPS"); return; }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+        setGpsLoading(false);
+        toast("Lokasi tersimpan");
+      },
+      () => { setGpsLoading(false); toast("Gagal ambil lokasi"); },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
+
+  const next = () => {
+    if (step === 1 && !sekolah.trim()) { toast("Nama sekolah wajib"); return; }
+    if (step === 2) {
+      if (!namaGuru.trim()) { toast("Nama admin wajib"); return; }
+      if (!email.trim()) { toast("Email wajib"); return; }
+    }
+    if (step < WIZARD_TOTAL) setStep((s) => s + 1);
+    else selesaikan();
+  };
+  const back = () => { if (step > 1) setStep((s) => s - 1); };
+
+  const selesaikan = async () => {
+    const data: SetupData = {
+      sekolah, jenjang,
+      namaGuru, email,
+      tahunAjaran, semester,
+      lat, lng,
+      radiusMeter,
+      jamMasukStandar: jamMasuk,
+      jamPulangStandar: jamPulang,
+      toleransiTerlambatMenit: toleransi,
+    };
+    try {
+      await setupService.executeSetup(data);
+      await refreshSchool();
+      await refreshTeachers();
+      toast("Setup selesai!");
+    } catch {
+      toast("Gagal setup");
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col items-center px-4 py-6">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-5">
+          <div className="text-[1.2rem] font-extrabold text-[var(--text)]">{APP_BRAND}</div>
+          <div className="text-[0.78rem] text-[var(--text-light)]">Setup awal — {step}/{WIZARD_TOTAL}</div>
+          <div className="mt-3 bg-[var(--border)] rounded-full h-2 overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#1e40af,#1e3a8a)" }} />
+          </div>
+        </div>
+
+        <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-5 mb-4">
+          {step === 1 && (
+            <>
+              <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><SchoolIcon size={18} /> Data Sekolah</div>
+              <input placeholder="Nama sekolah" value={sekolah} onChange={(e) => setSekolah(e.target.value)} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] mb-3 text-[0.9rem]" />
+              <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Jenjang</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[Jenjang.SD, Jenjang.SMP, Jenjang.SMA].map((j) => (
+                  <button key={j} onClick={() => setJenjang(j)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${jenjang === j ? "border-[#1e40af] bg-[rgba(30,64,175,0.1)] text-[#1e40af]" : "border-[var(--border)]"}`}>{j}</button>
+                ))}
+              </div>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><User size={18} /> Data Admin</div>
+              <input placeholder="Nama admin / kepsek" value={namaGuru} onChange={(e) => setNamaGuru(e.target.value)} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] mb-3 text-[0.9rem]" />
+              <input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-[0.9rem]" />
+            </>
+          )}
+          {step === 3 && (
+            <>
+              <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><Calendar size={18} /> Tahun Ajaran</div>
+              <input placeholder="2026/2027" value={tahunAjaran} onChange={(e) => setTahunAjaran(e.target.value)} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] mb-3 text-[0.9rem]" />
+              <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Semester Aktif</div>
+              <div className="grid grid-cols-2 gap-2">
+                {[Semester.GANJIL, Semester.GENAP].map((s) => (
+                  <button key={s} onClick={() => setSemester(s)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${semester === s ? "border-[#1e40af] bg-[rgba(30,64,175,0.1)] text-[#1e40af]" : "border-[var(--border)]"}`}>{s}</button>
+                ))}
+              </div>
+            </>
+          )}
+          {step === 4 && (
+            <>
+              <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><MapPin size={18} /> Lokasi & Jam Sekolah</div>
+              <button onClick={ambilLokasi} disabled={gpsLoading} className="w-full py-2 rounded-lg bg-[rgba(30,64,175,0.1)] text-[#1e40af] font-bold text-[0.85rem] mb-3 flex items-center justify-center gap-2">
+                <Target size={16} /> {gpsLoading ? "Mengambil GPS..." : "Ambil Lokasi Sekolah Sekarang"}
+              </button>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <input placeholder="Lat" type="number" step="any" value={lat ?? ""} onChange={(e) => setLat(e.target.value ? parseFloat(e.target.value) : undefined)} className="px-2 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-[0.8rem]" />
+                <input placeholder="Lng" type="number" step="any" value={lng ?? ""} onChange={(e) => setLng(e.target.value ? parseFloat(e.target.value) : undefined)} className="px-2 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-[0.8rem]" />
+              </div>
+              <div className="text-[0.78rem] mb-1 flex justify-between"><span>Radius geofence</span><b>{radiusMeter}m</b></div>
+              <input type="range" min={50} max={500} step={10} value={radiusMeter} onChange={(e) => setRadiusMeter(+e.target.value)} className="w-full mb-3" />
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <div className="text-[0.72rem] text-[var(--text-light)] mb-1 flex items-center gap-1"><Clock size={12} /> Jam Masuk</div>
+                  <input type="time" value={jamMasuk} onChange={(e) => setJamMasuk(e.target.value)} className="w-full px-2 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-[0.85rem]" />
+                </div>
+                <div>
+                  <div className="text-[0.72rem] text-[var(--text-light)] mb-1 flex items-center gap-1"><Clock size={12} /> Jam Pulang</div>
+                  <input type="time" value={jamPulang} onChange={(e) => setJamPulang(e.target.value)} className="w-full px-2 py-2 border border-[var(--border)] rounded-lg bg-[var(--input-bg)] text-[0.85rem]" />
+                </div>
+              </div>
+              <div className="text-[0.78rem] mb-1 flex justify-between"><span>Toleransi terlambat</span><b>{toleransi} menit</b></div>
+              <input type="range" min={0} max={60} step={5} value={toleransi} onChange={(e) => setToleransi(+e.target.value)} className="w-full" />
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {step > 1 && (
+            <button onClick={back} className="flex-1 py-3 rounded-xl border border-[var(--border)] font-bold text-[0.85rem]">Kembali</button>
+          )}
+          <button onClick={next} className="flex-1 py-3 rounded-xl text-white font-bold text-[0.85rem] flex items-center justify-center gap-2" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a)" }}>
+            {step === WIZARD_TOTAL ? (<><Check size={16} /> Selesai Setup</>) : "Lanjut"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+
+.vercel
+
+# ekspor data (berisi data siswa & email guru) jangan di-commit
+backup/

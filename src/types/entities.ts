@@ -1,0 +1,101 @@
+import { AttendanceStatus, ClockInStatus, Tier, Jenjang, Semester, CalendarEntryType, CalendarSource } from "./enums";
+
+export interface School {
+  id: number;
+  nama: string;
+  jenjang: Jenjang;
+  logoUrl?: string;
+  alamat?: string;
+  // Lokasi sekolah untuk geofencing presensi guru
+  lat?: number;
+  lng?: number;
+  radiusMeter?: number;       // default 100
+  jamMasukStandar?: string;   // "HH:MM" — default "07:00"
+  jamPulangStandar?: string;  // "HH:MM" — default "13:00"
+  toleransiTerlambatMenit?: number; // default 15
+  dibuatPada: number;
+  diubahPada: number;
+}
+
+export interface Teacher {
+  id: number;
+  nama: string;
+  email: string;
+  sekolahId: number;
+  tier: Tier;
+  // Guru-specific fields
+  absenToken?: string;
+  role?: "admin" | "guru";
+  jabatan?: string;
+  nip?: string;
+  statusAktif?: boolean;
+  hariAktifMode?: string;
+  hariAktifCustom?: string;
+  dibuatPada: number;
+  diubahPada: number;
+}
+
+export interface AcademicYear {
+  id: number;
+  label: string;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  semesterAktif: Semester;
+  guruId: number;
+}
+
+export interface TeacherAttendance {
+  id: number;                 // deterministik: hash("ta:guruId:tanggal")
+  guruId: number;
+  tanggal: string;            // YYYY-MM-DD
+  jamMasuk?: string;          // HH:MM:SS
+  jamPulang?: string;
+  selfieMasukUrl?: string;
+  selfiePulangUrl?: string;
+  lokasiMasukLat?: number;
+  lokasiMasukLng?: number;
+  lokasiPulangLat?: number;
+  lokasiPulangLng?: number;
+  jarakMasukMeter?: number;
+  jarakPulangMeter?: number;
+  statusMasuk?: ClockInStatus;
+  statusPulang?: ClockInStatus;
+  statusHari?: AttendanceStatus;    // H/S/I/A/T — manual input admin bila perlu
+  catatan?: string;
+  diubahPada: number;
+}
+
+export interface AcademicCalendarEntry {
+  id: number;
+  tahunAjaranId: number;
+  tanggal: string;
+  jenis: CalendarEntryType;
+  keterangan?: string;
+  sumber: CalendarSource;
+}
+
+export interface License {
+  id: number;
+  guruId: number;
+  emailAktivasi: string;
+  kodeLisensi: string;
+  product?: "siswa" | "guru";   // untuk filter per-produk
+  tanggalAktivasi: number;
+  tanggalBerakhir: number;
+  statusLisensi: "Aktif" | "Kedaluwarsa" | "Dibatalkan";
+}
+
+export interface BackupMeta {
+  id: number;
+  guruId: number;
+  jenis: "Lokal" | "Cloud";
+  dibuatPada: number;
+  ukuranData?: number;
+}
+
+export interface Tombstone {
+  id: number;
+  entityType: string; // "teachers" | "teacherAttendance" | "schools" | ...
+  localId: number;
+  deletedAt: number;
+}

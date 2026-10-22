@@ -1,0 +1,22 @@
+{
+  "name": "Bantu Guru Yuk | Presensi Guru",
+  "short_name": "Presensi Guru",
+  "description": "Aplikasi absen guru dengan GPS & selfie — simpel untuk sekolah",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e40af",
+  "background_color": "#f0f4f8",
+  "icons": [
+    {
+      "src": "/guru-presguru.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/guru-presguru.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

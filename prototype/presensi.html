@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bantu Guru Yuk | Presensi Siswa</title>
+<meta name="theme-color" content="#0ea5a0">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --grad:linear-gradient(135deg,#0ea5a0,#0d7a8a,#2d6a7f);
+  --blue:#0ea5a0;--blue-dark:#0d7a8a;
+  --bg:#f0f4f8;--card-bg:#ffffff;--text:#1e293b;
+  --text-light:#64748b;--border:#e2e8f0;--input-bg:#f8fafc;
+  --shadow:0 2px 12px rgba(0,0,0,.08);--shadow-lg:0 8px 32px rgba(0,0,0,.13);
+  --radius:12px;
+  /* status colors - dipertajam supaya kontras lebih jelas di layar low-end */
+  --hadir:#16a34a;--hadir-bg:#dcfce7;--hadir-bg-dark:#14532d;
+  --sakit:#b45309;--sakit-bg:#fef3c7;--sakit-bg-dark:#78350f;
+  --izin:#1d4ed8;--izin-bg:#dbeafe;--izin-bg-dark:#1e3a8a;
+  --alpha:#dc2626;--alpha-bg:#fee2e2;--alpha-bg-dark:#7f1d1d;
+}
+body.dark{
+  --bg:#0f172a;--card-bg:#1e293b;--text:#f1f5f9;
+  --text-light:#94a3b8;--border:#334155;--input-bg:#0f172a;
+  --sakit:#fbbf24;--hadir:#4ade80;--izin:#60a5fa;--alpha:#f87171;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);min-height:100vh;color:var(--text);transition:background .3s,color .3s;display:flex;flex-direction:column;overflow-x:hidden;}
+.app{max-width:420px;margin:0 auto;width:100%;min-height:100vh;display:flex;flex-direction:column;position:relative;background:var(--bg);}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:300;background:var(--grad);padding:0 16px;box-shadow:0 2px 10px rgba(0,0,0,.18);}
+body.dark header{background:linear-gradient(135deg,#0d4a47,#1a3a4a);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:56px;}
+.header-brand{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.header-logo{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.header-title{font-size:.92rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.header-sub{font-size:.66rem;color:rgba(255,255,255,.75);font-weight:600;}
+.hdr-btn{height:32px;width:34px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hdr-btn:active{background:rgba(255,255,255,.25);}
+.header-right{display:flex;gap:6px;}
+
+/* RINGKASAN STICKY */
+.ringkasan-bar{position:sticky;top:56px;z-index:200;background:var(--card-bg);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:10px;justify-content:space-between;overflow-x:auto;}
+.rk-item{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;white-space:nowrap;}
+.rk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.rk-item b{font-size:11px;font-weight:600;}
+
+/* PAGES */
+.page{display:none;flex:1;padding:14px 14px 90px;}
+.page.active{display:block;}
+
+/* CARD */
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;border:1px solid var(--border);margin-bottom:12px;}
+.card-title{font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.muted{color:var(--text-light);font-size:.75rem;}
+
+/* KARTU SISWA - presensi */
+.siswa-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;border-left:4px solid var(--hadir);background:var(--input-bg);margin-bottom:8px;cursor:pointer;transition:transform .1s;}
+.siswa-row:active{transform:scale(.98);}
+.siswa-row.S{border-left-color:var(--sakit);}
+.siswa-row.I{border-left-color:var(--izin);}
+.siswa-row.A{border-left-color:var(--alpha);}
+.siswa-avatar{width:34px;height:34px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0;}
+.siswa-info{flex:1;min-width:0;}
+.siswa-nama{font-size:.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.siswa-urut{font-size:.68rem;color:var(--text-light);}
+.status-badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;flex-shrink:0;}
+.status-badge.H{background:var(--hadir-bg);color:var(--hadir);}
+.status-badge.S{background:var(--sakit-bg);color:var(--sakit);}
+.status-badge.I{background:var(--izin-bg);color:var(--izin);}
+.status-badge.A{background:var(--alpha-bg);color:var(--alpha);}
+body.dark .status-badge.H{background:var(--hadir-bg-dark);}
+body.dark .status-badge.S{background:var(--sakit-bg-dark);}
+body.dark .status-badge.I{background:var(--izin-bg-dark);}
+body.dark .status-badge.A{background:var(--alpha-bg-dark);}
+
+/* BOTTOM SHEET STATUS SELECTOR */
+#sheetOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;}
+#sheetOverlay.open{display:block;}
+.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card-bg);border-radius:18px 18px 0 0;padding:18px 16px 24px;z-index:501;box-shadow:var(--shadow-lg);}
+.sheet-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 14px;}
+.sheet-title{font-size:.85rem;font-weight:700;margin-bottom:14px;text-align:center;}
+.sheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sheet-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--input-bg);cursor:pointer;font-weight:700;font-size:.82rem;}
+.sheet-btn.H{color:var(--hadir);} .sheet-btn.S{color:var(--sakit);}
+.sheet-btn.I{color:var(--izin);} .sheet-btn.A{color:var(--alpha);}
+.sheet-btn:active{transform:scale(.96);}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card-bg);border-top:1px solid var(--border);display:flex;z-index:300;padding:6px 4px;box-shadow:0 -2px 12px rgba(0,0,0,.08);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border-radius:10px;cursor:pointer;color:var(--text-light);background:none;border:none;font-family:inherit;}
+.nav-item.active{color:var(--blue);}
+.nav-item span{font-size:10px;font-weight:700;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:10px;border:none;font-weight:700;font-size:.82rem;cursor:pointer;width:100%;}
+.btn-teal{background:var(--grad);color:#fff;}
+.btn-outline{border:1.5px solid var(--border);background:var(--card-bg);color:var(--text);}
+.btn-danger{border:1.5px solid #ef4444;color:#ef4444;background:rgba(239,68,68,.06);}
+.btn-row{display:flex;gap:8px;}
+.btn-row .btn{width:auto;flex:1;}
+
+/* FORM */
+.form-group{margin-bottom:12px;}
+label{display:block;font-size:.68rem;font-weight:700;color:var(--text-light);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+input,select{width:100%;padding:10px 11px;border:1.5px solid var(--border);border-radius:9px;font-size:.85rem;color:var(--text);background:var(--input-bg);outline:none;font-family:inherit;}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(14,165,160,.12);}
+
+/* SUMMARY CARDS REKAP */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.sum-card{background:var(--card-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;}
+.sum-card b{display:block;font-size:1.1rem;}
+.sum-card.H b{color:var(--hadir);} .sum-card.S b{color:var(--sakit);}
+.sum-card.I b{color:var(--izin);} .sum-card.A b{color:var(--alpha);}
+.sum-card span{font-size:10px;color:var(--text-light);font-weight:600;}
+
+table{width:100%;border-collapse:collapse;font-size:.74rem;}
+th,td{padding:7px 5px;text-align:center;border-bottom:1px solid var(--border);}
+th{font-size:10px;color:var(--text-light);text-transform:uppercase;}
+td:first-child,th:first-child{text-align:left;font-weight:600;}
+.table-scroll{overflow-x:auto;}
+
+/* WIZARD */
+.progress-wrap{padding:10px 16px 0;}
+.progress-track{height:6px;background:var(--border);border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--grad);border-radius:99px;transition:width .3s;}
+.progress-label{font-size:11px;color:var(--text-light);margin-top:6px;font-weight:600;text-align:center;}
+.wizard-step{display:none;}
+.wizard-step.active{display:block;}
+.wizard-icon{width:56px;height:56px;border-radius:16px;background:var(--grad);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;}
+.wizard-title{font-size:1.05rem;font-weight:800;text-align:center;margin-bottom:4px;}
+.wizard-sub{font-size:.78rem;color:var(--text-light);text-align:center;margin-bottom:20px;}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.choice-btn{padding:14px 6px;border-radius:10px;border:1.5px solid var(--border);background:var(--input-bg);font-weight:700;font-size:.85rem;cursor:pointer;}
+.choice-btn.active{border-color:var(--blue);background:rgba(14,165,160,.1);color:var(--blue);}
+
+/* MODAL */
+#modalOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:flex-end;justify-content:center;}
+#modalOverlay.open{display:flex;}
+.modal{background:var(--card-bg);border-radius:16px 16px 0 0;width:100%;max-width:420px;padding:18px 16px 22px;}
+
+/* TOAST */
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:10px 18px;border-radius:10px;font-size:.78rem;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:700;max-width:88%;text-align:center;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.empty-state{text-align:center;padding:30px 10px;color:var(--text-light);font-size:.8rem;}
+.search-bar{position:relative;margin-bottom:12px;}
+.search-bar input{padding-left:36px;}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-light);}
+.fab{position:fixed;right:calc(50% - 210px + 16px);bottom:96px;width:54px;height:54px;border-radius:50%;background:var(--grad);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(14,165,160,.4);z-index:280;cursor:pointer;}
+@media(max-width:420px){.fab{right:16px;}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===================== HEADER ===================== -->
+  <header id="mainHeader">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="header-logo"><i data-lucide="clipboard-check" style="width:18px;height:18px;color:#fff"></i></div>
+        <div>
+          <div class="header-title" id="headerJudul">Presensi Siswa</div>
+          <div class="header-sub" id="headerSub">Kelas 4B • Senin, 30 Jun</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="hdr-btn" onclick="toggleDark()" title="Dark mode">
+          <i data-lucide="moon" style="width:16px;height:16px" id="darkIcon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- RINGKASAN STICKY (hanya muncul di halaman presensi) -->
+  <div class="ringkasan-bar" id="ringkasanBar">
+    <div class="rk-item"><span class="rk-dot" style="background:var(--hadir)"></span>Hadir <b id="cntH">0</b></div>
+    <div class="rk-item"><span class="rk-dot" style="background:var(--sakit)"></span>Sakit <b id="cntS">0</b></div>
+    <div class="rk-item"><span class="rk-dot" style="background:var(--izin)"></span>Izin <b id="cntI">0</b></div>
+    <div class="rk-item"><span class="rk-dot" style="background:var(--alpha)"></span>Alpha <b id="cntA">0</b></div>
+  </div>
+
+  <!-- ===================== PAGE: WIZARD SETUP ===================== -->
+  <div class="page" id="pageWizard">
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="wizProgress" style="width:20%"></div></div>
+      <div class="progress-label" id="wizProgressLabel">Langkah 1 dari 5</div>
+    </div>
+
+    <div style="padding-top:20px">
+      <!-- Step 1 -->
+      <div class="wizard-step active" data-step="1">
+        <div class="wizard-icon"><i data-lucide="school" style="width:26px;height:26px"></i></div>
+        <div class="wizard-title">Nama & Jenjang Sekolah</div>
+        <div class="wizard-sub">Yuk kenalan dulu sama sekolahmu</div>
+        <div class="form-group"><label>Nama Sekolah</label><input type="text" id="wzSekolah" placeholder="Contoh: SDN Sukamaju 01"></div>
+        <div class="form-group"><label>Jenjang</label>
+          <div class="choice-grid">
+            <button class="choice-btn active" data-jenjang="SD" onclick="pilihJenjang(this)">SD</button>
+            <button class="choice-btn" data-jenjang="SMP" onclick="pilihJenjang(this)">SMP</button>
+            <button class="choice-btn" data-jenjang="SMA" onclick="pilihJenjang(this)">SMA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="wizard-step" data-step="2">
+        <div class="wizard-icon"><i data-lucide="user" style="width:26px;height:26px"></i></div>
+        <div class="wizard-title">Data Guru</div>
+        <div class="wizard-sub">Email dipakai untuk aktivasi PRO nanti</div>
+        <div class="form-group"><label>Nama Guru</label><input type="text" id="wzNama" placeholder="Contoh: Sari Wulandari, S.Pd"></div>
+        <div class="form-group"><label>Email</label><input type="text" id="wzEmail" placeholder="nama@email.com"></div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="wizard-step" data-step="3">
+        <div class="wizard-icon"><i data-lucide="calendar" style="width:26px;height:26px"></i></div>
+        <div class="wizard-title">Tahun Ajaran</div>
+        <div class="wizard-sub">Sudah kami deteksi otomatis, bisa diubah</div>
+        <div class="form-group"><label>Tahun Ajaran</label><input type="text" id="wzTahun" value="2026/2027"></div>
+        <div class="form-group"><label>Semester Aktif</label>
+          <div class="choice-grid" style="grid-template-columns:1fr 1fr">
+            <button class="choice-btn active" data-sem="Ganjil" onclick="pilihSemester(this)">Ganjil</button>
+            <button class="choice-btn" data-sem="Genap" onclick="pilihSemester(this)">Genap</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="wizard-step" data-step="4">
+        <div class="wizard-icon"><i data-lucide="users" style="width:26px;height:26px"></i></div>
+        <div class="wizard-title">Kelas Pertama</div>
+        <div class="wizard-sub">Kamu bisa tambah kelas lain nanti (PRO)</div>
+        <div class="form-group"><label>Nama Kelas</label><input type="text" id="wzKelas" placeholder="Contoh: Kelas 4B"></div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="wizard-step" data-step="5">
+        <div class="wizard-icon"><i data-lucide="upload" style="width:26px;height:26px"></i></div>
+        <div class="wizard-title">Daftar Siswa</div>
+        <div class="wizard-sub">Import Excel atau isi manual</div>
+        <div class="btn-row" style="margin-bottom:14px">
+          <button class="btn btn-outline" onclick="toast('📥 Placeholder Import Excel')"><i data-lucide="file-spreadsheet" style="width:15px;height:15px"></i> Import Excel</button>
+        </div>
+        <div class="form-group"><label>Atau tambah manual</label>
+          <div class="btn-row">
+            <input type="text" id="wzSiswaBaru" placeholder="Nama siswa">
+            <button class="btn btn-teal" style="width:auto;flex:none;padding:10px 14px" onclick="wizTambahSiswa()"><i data-lucide="plus" style="width:15px;height:15px"></i></button>
+          </div>
+        </div>
+        <div id="wzDaftarSiswa"></div>
+      </div>
+    </div>
+
+    <div style="position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:420px;background:var(--card-bg);border-top:1px solid var(--border);padding:12px 16px;z-index:290">
+      <div class="btn-row">
+        <button class="btn btn-outline" id="wzBackBtn" onclick="wizBack()" style="display:none">Kembali</button>
+        <button class="btn btn-outline" onclick="wizSkip()">Lewati</button>
+        <button class="btn btn-teal" onclick="wizNext()" id="wzNextBtn">Lanjut</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PAGE: PRESENSI ===================== -->
+  <div class="page" id="pagePresensi">
+    <div class="card" style="padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      <button class="hdr-btn" style="border-color:var(--border);color:var(--text)" onclick="gantiTanggal(-1)"><i data-lucide="chevron-left" style="width:16px;height:16px"></i></button>
+      <div style="text-align:center">
+        <div style="font-weight:700;font-size:.85rem" id="tglPresensi">Senin, 30 Juni 2026</div>
+        <div class="muted">Tap nama siswa untuk ubah status</div>
+      </div>
+      <button class="hdr-btn" style="border-color:var(--border);color:var(--text)" onclick="gantiTanggal(1)"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></button>
+    </div>
+
+    <div id="daftarPresensi"></div>
+  </div>
+
+  <!-- ===================== PAGE: REKAP BULANAN ===================== -->
+  <div class="page" id="pageRekap">
+    <div class="card">
+      <div class="card-title"><i data-lucide="filter" style="width:15px;height:15px"></i> Filter Rekap</div>
+      <div class="form-group"><label>Kelas</label>
+        <select id="rkKelas"><option>Kelas 4B</option></select>
+      </div>
+      <div class="form-group"><label>Bulan</label>
+        <select id="rkBulan" onchange="renderRekap()">
+          <option>Januari 2026</option><option>Februari 2026</option><option>Maret 2026</option>
+          <option>April 2026</option><option>Mei 2026</option><option selected>Juni 2026</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sum-grid">
+      <div class="sum-card H"><b id="rkH">0</b><span>HADIR</span></div>
+      <div class="sum-card S"><b id="rkS">0</b><span>SAKIT</span></div>
+      <div class="sum-card I"><b id="rkI">0</b><span>IZIN</span></div>
+      <div class="sum-card A"><b id="rkA">0</b><span>ALPHA</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i data-lucide="table" style="width:15px;height:15px"></i> Detail per Siswa</div>
+      <div class="table-scroll">
+        <table id="tabelRekap">
+          <thead><tr><th>Nama</th><th>H</th><th>S</th><th>I</th><th>A</th></tr></thead>
+          <tbody id="tabelRekapBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="toast('📄 Placeholder Export PDF')"><i data-lucide="file-text" style="width:15px;height:15px"></i> Export PDF</button>
+      <button class="btn btn-outline" onclick="toast('📊 Placeholder Export Excel')"><i data-lucide="file-spreadsheet" style="width:15px;height:15px"></i> Export Excel</button>
+    </div>
+  </div>
+
+  <!-- ===================== PAGE: MANAJEMEN SISWA ===================== -->
+  <div class="page" id="pageSiswa">
+    <div class="search-bar">
+      <i data-lucide="search" class="search-icon" style="width:16px;height:16px"></i>
+      <input type="text" id="searchSiswa" placeholder="Cari nama siswa..." oninput="renderSiswaList()">
+    </div>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button class="btn btn-outline" onclick="toast('📥 Placeholder Import Excel')"><i data-lucide="file-spreadsheet" style="width:15px;height:15px"></i> Import Excel</button>
+      <button class="btn btn-teal" onclick="bukaModalTambah()"><i data-lucide="user-plus" style="width:15px;height:15px"></i> Tambah</button>
+    </div>
+    <div id="daftarSiswaManajemen"></div>
+  </div>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item active" data-page="presensi" onclick="goPage('presensi')">
+      <i data-lucide="clipboard-check" style="width:19px;height:19px"></i><span>Presensi</span>
+    </button>
+    <button class="nav-item" data-page="rekap" onclick="goPage('rekap')">
+      <i data-lucide="bar-chart-3" style="width:19px;height:19px"></i><span>Rekap</span>
+    </button>
+    <button class="nav-item" data-page="siswa" onclick="goPage('siswa')">
+      <i data-lucide="users" style="width:19px;height:19px"></i><span>Siswa</span>
+    </button>
+    <button class="nav-item" data-page="pengaturan" onclick="toast('⚙️ Pengaturan (placeholder)')">
+      <i data-lucide="settings" style="width:19px;height:19px"></i><span>Pengaturan</span>
+    </button>
+    <button class="nav-item" data-page="backup" onclick="toast('💾 Backup (placeholder)')">
+      <i data-lucide="database" style="width:19px;height:19px"></i><span>Backup</span>
+    </button>
+  </nav>
+
+  <!-- BOTTOM SHEET STATUS -->
+  <div id="sheetOverlay" onclick="tutupSheet()"></div>
+  <div class="sheet" id="statusSheet" style="display:none">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetNamaSiswa">Ubah status — Ahmad Fauzi</div>
+    <div class="sheet-grid">
+      <button class="sheet-btn H" onclick="setStatus('H')"><i data-lucide="check-circle-2" style="width:24px;height:24px"></i>Hadir</button>
+      <button class="sheet-btn S" onclick="setStatus('S')"><i data-lucide="thermometer" style="width:24px;height:24px"></i>Sakit</button>
+      <button class="sheet-btn I" onclick="setStatus('I')"><i data-lucide="file-text" style="width:24px;height:24px"></i>Izin</button>
+      <button class="sheet-btn A" onclick="setStatus('A')"><i data-lucide="x-circle" style="width:24px;height:24px"></i>Alpha</button>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH/HAPUS SISWA -->
+  <div id="modalOverlay" onclick="if(event.target===this)tutupModal()">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+/* ============================================================
+   STATE & PENYIMPANAN (localStorage sebagai pengganti Dexie)
+============================================================ */
+const STORAGE_KEY='bgy_presensi_demo';
+let state = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || {
+  setupSelesai:false,
+  sekolah:'', jenjang:'SD', namaGuru:'', email:'', tahunAjaran:'2026/2027', semester:'Ganjil',
+  kelas:'Kelas 4B',
+  siswa:[
+    {id:1,nama:'Ahmad Fauzi'},{id:2,nama:'Bunga Citra'},{id:3,nama:'Dewi Lestari'},
+    {id:4,nama:'Eko Prasetyo'},{id:5,nama:'Fitria Ramadhani'},{id:6,nama:'Galih Pratama'},
+    {id:7,nama:'Hana Salsabila'},{id:8,nama:'Indra Kusuma'}
+  ],
+  presensiPerTanggal:{}, // { "2026-06-30": {1:"H",2:"S",...} }
+  tanggalAktif: todayStr()
+};
+function simpan(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function todayStr(){ const d=new Date(); return d.toISOString().slice(0,10); }
+
+/* ============================================================
+   INIT
+============================================================ */
+function initIcons(){ if(window.lucide) lucide.createIcons(); }
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  if(localStorage.getItem(STORAGE_KEY+'_dark')==='1'){ document.body.classList.add('dark'); }
+  initIcons();
+  if(!state.setupSelesai){
+    showWizardOnly();
+  } else {
+    goPage('presensi');
+  }
+});
+
+/* ============================================================
+   DARK MODE
+============================================================ */
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const isDark=document.body.classList.contains('dark');
+  localStorage.setItem(STORAGE_KEY+'_dark', isDark?'1':'0');
+  document.getElementById('darkIcon').setAttribute('data-lucide', isDark?'sun':'moon');
+  initIcons();
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============================================================
+   NAVIGASI HALAMAN
+============================================================ */
+function showWizardOnly(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageWizard').classList.add('active');
+  document.getElementById('ringkasanBar').style.display='none';
+  document.getElementById('bottomNav').style.display='none';
+  document.getElementById('headerJudul').textContent='Setup Awal';
+  document.getElementById('headerSub').textContent='Selamat datang di BGY Presensi';
+  renderWizardSiswa();
+}
+
+function goPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('bottomNav').style.display='flex';
+  document.getElementById('ringkasanBar').style.display = name==='presensi' ? 'flex' : 'none';
+
+  if(name==='presensi'){
+    document.getElementById('pagePresensi').classList.add('active');
+    document.getElementById('headerJudul').textContent='Presensi Siswa';
+    document.getElementById('headerSub').textContent=state.kelas+' • '+formatTanggalPendek(state.tanggalAktif);
+    renderPresensi();
+  } else if(name==='rekap'){
+    document.getElementById('pageRekap').classList.add('active');
+    document.getElementById('headerJudul').textContent='Rekap Bulanan';
+    document.getElementById('headerSub').textContent=state.kelas;
+    renderRekap();
+  } else if(name==='siswa'){
+    document.getElementById('pageSiswa').classList.add('active');
+    document.getElementById('headerJudul').textContent='Manajemen Siswa';
+    document.getElementById('headerSub').textContent=state.siswa.length+' siswa terdaftar';
+    renderSiswaList();
+  }
+  document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
+  initIcons();
+}
+
+function formatTanggalPendek(iso){
+  const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'});
+}
+function formatTanggalPanjang(iso){
+  const d=new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+/* ============================================================
+   WIZARD SETUP
+============================================================ */
+let wizStep=1;
+const WIZ_TOTAL=5;
+function pilihJenjang(btn){
+  document.querySelectorAll('[data-jenjang]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); state.jenjang=btn.dataset.jenjang;
+}
+function pilihSemester(btn){
+  document.querySelectorAll('[data-sem]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); state.semester=btn.dataset.sem;
+}
+function wizRenderStep(){
+  document.querySelectorAll('.wizard-step').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`.wizard-step[data-step="${wizStep}"]`).classList.add('active');
+  document.getElementById('wzBackBtn').style.display = wizStep===1 ? 'none' : 'inline-flex';
+  document.getElementById('wzNextBtn').textContent = wizStep===WIZ_TOTAL ? 'Selesai' : 'Lanjut';
+  document.getElementById('wizProgress').style.width = (wizStep/WIZ_TOTAL*100)+'%';
+  document.getElementById('wizProgressLabel').textContent = `Langkah ${wizStep} dari ${WIZ_TOTAL}`;
+}
+function wizSimpanStepData(){
+  if(wizStep===1) state.sekolah=document.getElementById('wzSekolah').value;
+  if(wizStep===2){ state.namaGuru=document.getElementById('wzNama').value; state.email=document.getElementById('wzEmail').value; }
+  if(wizStep===3) state.tahunAjaran=document.getElementById('wzTahun').value;
+  if(wizStep===4) state.kelas=document.getElementById('wzKelas').value || state.kelas;
+}
+function wizNext(){
+  wizSimpanStepData();
+  if(wizStep<WIZ_TOTAL){ wizStep++; wizRenderStep(); }
+  else { selesaikanSetup(); }
+}
+function wizBack(){
+  wizSimpanStepData();
+  if(wizStep>1){ wizStep--; wizRenderStep(); }
+}
+function wizSkip(){
+  // Data bisa diisi nanti — langsung lanjut tanpa validasi ketat
+  if(wizStep<WIZ_TOTAL){ wizStep++; wizRenderStep(); } else { selesaikanSetup(); }
+}
+function wizTambahSiswa(){
+  const input=document.getElementById('wzSiswaBaru');
+  const nama=input.value.trim();
+  if(!nama){ toast('Isi nama siswa dulu ya'); return; }
+  const id=Date.now();
+  state.siswa.push({id,nama});
+  input.value='';
+  renderWizardSiswa();
+}
+function renderWizardSiswa(){
+  const el=document.getElementById('wzDaftarSiswa');
+  if(!state.siswa.length){ el.innerHTML='<div class="empty-state">Belum ada siswa ditambahkan</div>'; return; }
+  el.innerHTML=state.siswa.map(s=>`
+    <div class="siswa-row" style="cursor:default">
+      <div class="siswa-avatar">${inisial(s.nama)}</div>
+      <div class="siswa-info"><div class="siswa-nama">${s.nama}</div></div>
+    </div>`).join('');
+  initIcons();
+}
+function selesaikanSetup(){
+  state.setupSelesai=true;
+  simpan();
+  toast('✅ Setup selesai! Selamat mengajar 🎉');
+  document.getElementById('bottomNav').style.display='flex';
+  goPage('presensi');
+}
+
+/* ============================================================
+   PRESENSI HARIAN
+============================================================ */
+let sheetSiswaId=null;
+
+function pastikanSesiTanggal(tgl){
+  if(!state.presensiPerTanggal[tgl]){
+    const sesi={};
+    state.siswa.forEach(s=> sesi[s.id]='H'); // default Hadir
+    state.presensiPerTanggal[tgl]=sesi;
+  }
+}
+function inisial(nama){
+  return nama.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+function renderPresensi(){
+  document.getElementById('tglPresensi').textContent=formatTanggalPanjang(state.tanggalAktif);
+  pastikanSesiTanggal(state.tanggalAktif);
+  const sesi=state.presensiPerTanggal[state.tanggalAktif];
+  const el=document.getElementById('daftarPresensi');
+  el.innerHTML = state.siswa.map((s,i)=>{
+    const st=sesi[s.id]||'H';
+    return `
+    <div class="siswa-row ${st}" onclick="bukaSheet(${s.id})">
+      <div class="siswa-avatar">${inisial(s.nama)}</div>
+      <div class="siswa-info">
+        <div class="siswa-nama">${s.nama}</div>
+        <div class="siswa-urut">No. ${i+1}</div>
+      </div>
+      <div class="status-badge ${st}">${labelStatus(st)}</div>
+    </div>`;
+  }).join('');
+  updateRingkasan(sesi);
+  initIcons();
+}
+function labelStatus(k){ return {H:'Hadir',S:'Sakit',I:'Izin',A:'Alpha'}[k]; }
+function updateRingkasan(sesi){
+  let c={H:0,S:0,I:0,A:0};
+  Object.values(sesi).forEach(v=>c[v]++);
+  document.getElementById('cntH').textContent=c.H;
+  document.getElementById('cntS').textContent=c.S;
+  document.getElementById('cntI').textContent=c.I;
+  document.getElementById('cntA').textContent=c.A;
+}
+function bukaSheet(siswaId){
+  sheetSiswaId=siswaId;
+  const s=state.siswa.find(x=>x.id===siswaId);
+  document.getElementById('sheetNamaSiswa').textContent='Ubah status — '+s.nama;
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('statusSheet').style.display='block';
+}
+function tutupSheet(){
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('statusSheet').style.display='none';
+}
+function setStatus(kode){
+  pastikanSesiTanggal(state.tanggalAktif);
+  state.presensiPerTanggal[state.tanggalAktif][sheetSiswaId]=kode;
+  simpan();
+  tutupSheet();
+  renderPresensi();
+  toast('✅ Status disimpan — '+labelStatus(kode));
+}
+function gantiTanggal(delta){
+  const d=new Date(state.tanggalAktif+'T00:00:00');
+  d.setDate(d.getDate()+delta);
+  state.tanggalAktif=d.toISOString().slice(0,10);
+  simpan();
+  renderPresensi();
+  document.getElementById('headerSub').textContent=state.kelas+' • '+formatTanggalPendek(state.tanggalAktif);
+}
+
+/* ============================================================
+   REKAP BULANAN
+============================================================ */
+function renderRekap(){
+  // Untuk demo: agregasi seluruh data presensi yang tersimpan (tanpa filter bulan riil,
+  // karena data demo terbatas pada beberapa hari yang sudah diisi pengguna)
+  let totalH=0,totalS=0,totalI=0,totalA=0;
+  const perSiswa={}; state.siswa.forEach(s=> perSiswa[s.id]={H:0,S:0,I:0,A:0});
+  Object.values(state.presensiPerTanggal).forEach(sesi=>{
+    Object.entries(sesi).forEach(([sid,st])=>{
+      if(!perSiswa[sid]) return;
+      perSiswa[sid][st]++;
+      if(st==='H')totalH++; if(st==='S')totalS++; if(st==='I')totalI++; if(st==='A')totalA++;
+    });
+  });
+  document.getElementById('rkH').textContent=totalH;
+  document.getElementById('rkS').textContent=totalS;
+  document.getElementById('rkI').textContent=totalI;
+  document.getElementById('rkA').textContent=totalA;
+
+  const body=document.getElementById('tabelRekapBody');
+  if(!state.siswa.length){ body.innerHTML='<tr><td colspan="5" class="muted" style="padding:14px 0">Belum ada data</td></tr>'; return; }
+  body.innerHTML=state.siswa.map(s=>{
+    const r=perSiswa[s.id];
+    return `<tr><td>${s.nama}</td><td>${r.H}</td><td>${r.S}</td><td>${r.I}</td><td>${r.A}</td></tr>`;
+  }).join('');
+}
+
+/* ============================================================
+   MANAJEMEN SISWA
+============================================================ */
+function renderSiswaList(){
+  const q=(document.getElementById('searchSiswa').value||'').toLowerCase();
+  const list=state.siswa.filter(s=>s.nama.toLowerCase().includes(q));
+  const el=document.getElementById('daftarSiswaManajemen');
+  if(!list.length){ el.innerHTML='<div class="empty-state">Tidak ada siswa ditemukan</div>'; return; }
+  el.innerHTML=list.map(s=>`
+    <div class="siswa-row" style="cursor:default">
+      <div class="siswa-avatar">${inisial(s.nama)}</div>
+      <div class="siswa-info"><div class="siswa-nama">${s.nama}</div></div>
+      <button class="hdr-btn" style="border-color:#ef4444;color:#ef4444" onclick="konfirmasiHapus(${s.id})">
+        <i data-lucide="trash-2" style="width:15px;height:15px"></i>
+      </button>
+    </div>`).join('');
+  initIcons();
+}
+function bukaModalTambah(){
+  document.getElementById('modalContent').innerHTML=`
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Tambah Siswa Baru</div>
+    <div class="form-group"><label>Nama Siswa</label><input type="text" id="modalNamaSiswa" placeholder="Nama lengkap siswa"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="tutupModal()">Batal</button>
+      <button class="btn btn-teal" onclick="simpanSiswaBaru()">Simpan</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function simpanSiswaBaru(){
+  const nama=document.getElementById('modalNamaSiswa').value.trim();
+  if(!nama){ toast('Nama siswa belum diisi'); return; }
+  state.siswa.push({id:Date.now(), nama});
+  simpan(); tutupModal(); renderSiswaList();
+  toast('✅ Siswa berhasil ditambahkan');
+}
+function konfirmasiHapus(id){
+  const s=state.siswa.find(x=>x.id===id);
+  document.getElementById('modalContent').innerHTML=`
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Hapus ${s.nama}?</div>
+    <p class="muted" style="text-align:center;margin-bottom:14px">Riwayat presensi siswa ini akan tetap tersimpan sebagai data historis.</p>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="tutupModal()">Batal</button>
+      <button class="btn btn-danger" style="background:#ef4444;color:#fff;border:none" onclick="hapusSiswa(${id})">Hapus</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function hapusSiswa(id){
+  state.siswa=state.siswa.filter(s=>s.id!==id);
+  simpan(); tutupModal(); renderSiswaList();
+  toast('🗑️ Siswa dihapus');
+}
+function tutupModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+</script>
+</body>
+</html>
