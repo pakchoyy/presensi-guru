@@ -41,23 +41,32 @@ AS $$
    LIMIT 1;
 $$;
 
-REVOKE ALL ON FUNCTION public.guru_user_by_kode(TEXT) FROM public;
-GRANT EXECUTE ON FUNCTION public.guru_user_by_kode(TEXT) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.guru_user_by_kode(TEXT) FROM anon, authenticated, PUBLIC;
+GRANT  EXECUTE ON FUNCTION public.guru_user_by_kode(TEXT) TO service_role;
 
 -- 4) Policy tambahan: admin (role 'admin'|'kepala'|'operator') boleh SELECT
 --    semua baris di sekolah_id yang sama. (Insert/update tetap scoped user_id
 --    karena provisioning dijalankan oleh Edge Function via service_role.)
+--    Dibungkus SECURITY DEFINER helper agar tidak self-reference RLS loop.
+CREATE OR REPLACE FUNCTION public.current_user_school_as_admin()
+RETURNS BIGINT
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT sekolah_id
+    FROM cloud_guru_teachers
+   WHERE user_id = auth.uid()
+     AND role IN ('admin','kepala','operator')
+   LIMIT 1;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.current_user_school_as_admin() FROM anon, PUBLIC;
+GRANT  EXECUTE ON FUNCTION public.current_user_school_as_admin() TO authenticated, service_role;
+
 DROP POLICY IF EXISTS cgt_admin_select_school ON cloud_guru_teachers;
 CREATE POLICY cgt_admin_select_school ON cloud_guru_teachers
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM cloud_guru_teachers me
-       WHERE me.user_id = auth.uid()
-         AND me.role IN ('admin','kepala','operator')
-         AND me.sekolah_id = cloud_guru_teachers.sekolah_id
-    )
-  );
+  USING (sekolah_id = public.current_user_school_as_admin());
 
 -- =========================================================================
 -- CATATAN:
