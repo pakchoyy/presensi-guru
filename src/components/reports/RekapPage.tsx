@@ -1,17 +1,274 @@
-import { BarChart3 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { useToast } from "@/components/shared/Toast";
+import { teacherRepo } from "@/repositories/dexie/teacher.repo";
+import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
+import { exportRekapGuruPDF, exportRekapGuruXLSX, periodeLabel } from "@/services/export.service";
+import type { Teacher, TeacherAttendance } from "@/types/entities";
+import { BarChart3, FileSpreadsheet, FileText, UserCheck } from "lucide-react";
 
-// TODO: Rekap per-guru per-bulan — tabel Jam Masuk / Jam Pulang / Durasi / Status Masuk / Status Hari
-// Reuse pola jsPDF + autotable dari presensi-siswa src/services/export.service.ts
+const MONTHS = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+function daysInMonth(y: number, m: number) {
+  return new Date(y, m, 0).getDate();
+}
+
+function fmtTime(t?: string) {
+  if (!t) return "-";
+  return t.slice(0, 5);
+}
+
+function statusMasukLabel(s?: string) {
+  if (!s) return "-";
+  if (s === "ONTIME") return "Tepat";
+  if (s === "LATE") return "Terlambat";
+  if (s === "FAR") return "Luar Area";
+  return s;
+}
+
+function statusMasukColor(s?: string) {
+  if (s === "ONTIME") return "#16a34a";
+  if (s === "LATE") return "#f59e0b";
+  if (s === "FAR") return "#dc2626";
+  return "var(--text-light)";
+}
+
 export function RekapPage() {
+  const { school, teacher } = useApp();
+  const { toast } = useToast();
+
+  const now = new Date();
+  const [guruList, setGuruList] = useState<Teacher[]>([]);
+  const [selectedGuruId, setSelectedGuruId] = useState<number | null>(null);
+  const [bulan, setBulan] = useState<number>(now.getMonth() + 1);
+  const [tahun, setTahun] = useState<number>(now.getFullYear());
+  const [records, setRecords] = useState<TeacherAttendance[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    teacherRepo.list().then((list) => {
+      const active = list.filter((g) => g.statusAktif !== false);
+      setGuruList(active);
+      if (active.length > 0 && selectedGuruId == null) {
+        setSelectedGuruId(active[0].id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!selectedGuruId) return;
+    setLoading(true);
+    const d1 = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
+    const dLast = daysInMonth(tahun, bulan);
+    const d2 = `${tahun}-${String(bulan).padStart(2, "0")}-${String(dLast).padStart(2, "0")}`;
+    teacherAttendanceRepo
+      .getRange(selectedGuruId, d1, d2)
+      .then((r) => setRecords(r))
+      .finally(() => setLoading(false));
+  }, [selectedGuruId, bulan, tahun]);
+
+  const selectedGuru = useMemo(
+    () => guruList.find((g) => g.id === selectedGuruId) || null,
+    [guruList, selectedGuruId]
+  );
+
+  const stats = useMemo(() => {
+    let totalMasuk = 0, ontime = 0, late = 0, far = 0, sakit = 0, izin = 0, alpha = 0;
+    for (const r of records) {
+      if (r.jamMasuk) {
+        totalMasuk++;
+        if (r.statusMasuk === "LATE") late++;
+        else if (r.statusMasuk === "FAR") far++;
+        else ontime++;
+      }
+      if (r.statusHari === "S") sakit++;
+      else if (r.statusHari === "I") izin++;
+      else if (r.statusHari === "A") alpha++;
+    }
+    return { totalMasuk, ontime, late, far, sakit, izin, alpha };
+  }, [records]);
+
+  const previewRows = useMemo(() => {
+    const dMax = daysInMonth(tahun, bulan);
+    const byDate = new Map(records.map((r) => [r.tanggal, r]));
+    const rows: Array<{ tgl: string; hari: string; rec?: TeacherAttendance }> = [];
+    for (let d = 1; d <= dMax; d++) {
+      const date = `${tahun}-${String(bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dow = new Date(tahun, bulan - 1, d).getDay();
+      rows.push({ tgl: String(d), hari: HARI[dow], rec: byDate.get(date) });
+    }
+    return rows;
+  }, [records, bulan, tahun]);
+
+  const handleExport = async (jenis: "pdf" | "xlsx") => {
+    if (!selectedGuru) { toast("Pilih guru dulu"); return; }
+    setExporting(true);
+    try {
+      const ctx = {
+        school,
+        teacher,
+        guru: selectedGuru,
+        bulan,
+        tahun,
+        records,
+        periode: periodeLabel(bulan, tahun),
+      };
+      if (jenis === "pdf") await exportRekapGuruPDF(ctx);
+      else await exportRekapGuruXLSX(ctx);
+      toast(`✅ ${jenis.toUpperCase()} berhasil di-download`);
+    } catch (e) {
+      console.error(e);
+      toast("❌ Gagal export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-6 text-center">
-        <BarChart3 className="mx-auto text-[var(--text-light)] mb-2" size={32} />
-        <div className="font-bold text-[var(--text)]">Rekap Guru</div>
-        <div className="text-[0.78rem] text-[var(--text-light)] mt-1">
-          Rekap bulanan per guru — segera hadir
+      {/* Filter card */}
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+        <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">
+          <BarChart3 size={15} /> Rekap Presensi Guru
+        </div>
+
+        <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+          <UserCheck size={11} className="inline mr-1" /> Guru
+        </label>
+        <select
+          value={selectedGuruId ?? ""}
+          onChange={(e) => setSelectedGuruId(Number(e.target.value) || null)}
+          className="w-full px-[10px] py-[9px] mb-3 border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+        >
+          {guruList.length === 0 && <option value="">— Belum ada guru —</option>}
+          {guruList.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.nama}{g.jabatan ? ` (${g.jabatan})` : ""}
+            </option>
+          ))}
+        </select>
+
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mb-1 uppercase">Bulan</label>
+            <select
+              value={bulan}
+              onChange={(e) => setBulan(Number(e.target.value))}
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            >
+              {MONTHS.map((m, i) => (
+                <option key={i} value={i + 1}>{m}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mb-1 uppercase">Tahun</label>
+            <input
+              type="number"
+              value={tahun}
+              onChange={(e) => setTahun(Number(e.target.value))}
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleExport("pdf")}
+            disabled={exporting || !selectedGuru}
+            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            <FileText size={14} /> Export PDF
+          </button>
+          <button
+            onClick={() => handleExport("xlsx")}
+            disabled={exporting || !selectedGuru}
+            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#16a34a] text-[#16a34a] font-bold text-[0.8rem] bg-transparent disabled:opacity-50 active:scale-95 transition-transform"
+          >
+            <FileSpreadsheet size={14} /> Export Excel
+          </button>
         </div>
       </div>
+
+      {/* Stats */}
+      {selectedGuru && (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+          <div className="text-[0.75rem] font-bold text-[var(--text-light)] mb-2">
+            Ringkasan {periodeLabel(bulan, tahun)}
+          </div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <StatBox label="Masuk" value={stats.totalMasuk} color="#1e40af" />
+            <StatBox label="Tepat" value={stats.ontime} color="#16a34a" />
+            <StatBox label="Terlambat" value={stats.late} color="#f59e0b" />
+            <StatBox label="Luar Area" value={stats.far} color="#dc2626" />
+            <StatBox label="Sakit" value={stats.sakit} color="#ea580c" />
+            <StatBox label="Izin" value={stats.izin} color="#2563eb" />
+            <StatBox label="Alpha" value={stats.alpha} color="#991b1b" />
+            <StatBox label="Hari" value={previewRows.length} color="var(--text-light)" />
+          </div>
+        </div>
+      )}
+
+      {/* Preview tabel */}
+      {selectedGuru && (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
+          <div className="text-[0.75rem] font-bold text-[var(--text-light)] mb-2">
+            Preview — {loading ? "memuat..." : `${records.length} record`}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[0.72rem]">
+              <thead>
+                <tr className="text-left text-[var(--text-light)] border-b border-[var(--border)]">
+                  <th className="py-1 pr-2">Tgl</th>
+                  <th className="py-1 pr-2">Hari</th>
+                  <th className="py-1 pr-2">Masuk</th>
+                  <th className="py-1 pr-2">Pulang</th>
+                  <th className="py-1 pr-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {previewRows.map((r, i) => (
+                  <tr key={i} className="border-b border-[var(--border)]/50">
+                    <td className="py-1 pr-2 font-bold text-[var(--text)]">{r.tgl}</td>
+                    <td className="py-1 pr-2 text-[var(--text-light)]">{r.hari}</td>
+                    <td className="py-1 pr-2">{fmtTime(r.rec?.jamMasuk)}</td>
+                    <td className="py-1 pr-2">{fmtTime(r.rec?.jamPulang)}</td>
+                    <td className="py-1 pr-2 font-bold" style={{ color: statusMasukColor(r.rec?.statusMasuk) }}>
+                      {statusMasukLabel(r.rec?.statusMasuk)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {guruList.length === 0 && (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-6 text-center">
+          <UserCheck className="mx-auto text-[var(--text-light)] mb-2" size={32} />
+          <div className="font-bold text-[var(--text)]">Belum ada guru</div>
+          <div className="text-[0.78rem] text-[var(--text-light)] mt-1">
+            Tambah guru dulu di menu Guru untuk melihat rekap presensi
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="rounded-lg bg-[var(--input-bg)] py-2 px-1">
+      <div className="text-[1.2rem] font-extrabold" style={{ color }}>{value}</div>
+      <div className="text-[0.6rem] text-[var(--text-light)] uppercase tracking-wide">{label}</div>
     </div>
   );
 }

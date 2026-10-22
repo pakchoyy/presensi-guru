@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { licenseService } from "@/services/license.service";
@@ -36,9 +36,11 @@ import {
   RefreshCw,
   Smartphone,
   X,
-  QrCode,
-  Video,
+  MapPin,
+  Target,
+  Save,
 } from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import { schoolRepo } from "@/repositories/dexie/school.repo";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { academicYearRepo } from "@/repositories/dexie/academic-year.repo";
@@ -84,9 +86,29 @@ export function PengaturanPage() {
   const [hariAktif, setHariAktif] = useState<string>(getHariAktif());
   const [customDays, setCustomDays] = useState<string>(localStorage.getItem("bgy_hari_aktif_custom") || "1,2,3,4,5,6");
   const [autoHadir, setAutoHadir] = useState(getAutoHadir());
-  const [qrMode, setQrMode] = useState(localStorage.getItem("bgy_qr_mode") === "1");
-  const [pjjMode, setPjjMode] = useState(localStorage.getItem("bgy_pjj_mode") === "1");
-  const [qrPicker, setQrPicker] = useState(localStorage.getItem("bgy_qr_picker") === "1");
+
+  // Lokasi & Jam Sekolah (geofencing untuk presensi guru)
+  const [editLat, setEditLat] = useState<string>(school?.lat?.toString() ?? "");
+  const [editLng, setEditLng] = useState<string>(school?.lng?.toString() ?? "");
+  const [editRadius, setEditRadius] = useState<number>(school?.radiusMeter ?? 100);
+  const [editJamMasuk, setEditJamMasuk] = useState<string>(school?.jamMasukStandar ?? "07:00");
+  const [editJamPulang, setEditJamPulang] = useState<string>(school?.jamPulangStandar ?? "13:00");
+  const [editToleransi, setEditToleransi] = useState<number>(school?.toleransiTerlambatMenit ?? 15);
+  const [savingLokasi, setSavingLokasi] = useState(false);
+  const { loading: gettingGps, request: requestGps, error: gpsError } = useGeolocation();
+  const schoolHydrated = useRef(false);
+
+  // Hydrate ketika school pertama kali ter-load
+  useEffect(() => {
+    if (!school || schoolHydrated.current) return;
+    schoolHydrated.current = true;
+    setEditLat(school.lat?.toString() ?? "");
+    setEditLng(school.lng?.toString() ?? "");
+    setEditRadius(school.radiusMeter ?? 100);
+    setEditJamMasuk(school.jamMasukStandar ?? "07:00");
+    setEditJamPulang(school.jamPulangStandar ?? "13:00");
+    setEditToleransi(school.toleransiTerlambatMenit ?? 15);
+  }, [school]);
 
   const [editSekolah, setEditSekolah] = useState(false);
   const [editNamaSekolah, setEditNamaSekolah] = useState(school?.nama || "");
@@ -741,127 +763,131 @@ export function PengaturanPage() {
         </div>
       )}
 
-      {/* Mode Presensi (QR + PJJ + Auto Hadir) */}
+      {/* Lokasi & Jam Sekolah (geofencing presensi guru) */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">
-          <UserCheck size={15} /> Mode Presensi
+          <MapPin size={15} className="text-[#1e40af]" /> Lokasi &amp; Jam Sekolah
         </div>
 
-        {/* Mode QR */}
-        <div className="flex items-center justify-between py-[6px]">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            <QrCode size={14} className="text-[#1e40af] mt-[2px] flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="text-[0.78rem] font-semibold text-[var(--text)]">Mode QR</div>
-              <div className="text-[0.68rem] text-[var(--text-light)]">Scan kartu QR siswa dari navbar</div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              const newVal = !qrMode;
-              setQrMode(newVal);
-              localStorage.setItem("bgy_qr_mode", newVal ? "1" : "0");
-              if (newVal) {
-                localStorage.removeItem("bgy_qr_hint_seen");
-                if (pjjMode) {
-                  setPjjMode(false);
-                  localStorage.setItem("bgy_pjj_mode", "0");
-                }
-                if (autoHadir) {
-                  setAutoHadir(false);
-                  localStorage.setItem("bgy_auto_hadir", "0");
-                }
-              }
-              window.dispatchEvent(new Event("storage"));
-              toast(newVal ? "✅ Mode QR: ON — Auto Hadir dimatikan, bisa dinyalakan lagi" : "Mode QR: OFF");
-            }}
-            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${
-              qrMode ? "bg-[#1e40af]" : "bg-[var(--border)]"
-            }`}
-          >
-            <span
-              className={`absolute top-[2px] left-[2px] w-5 h-5 rounded-full bg-white transition-transform shadow ${
-                qrMode ? "translate-x-5" : "translate-x-0"
-              }`}
+        <div className="text-[0.68rem] text-[var(--text-light)] mb-3 leading-relaxed">
+          Set koordinat sekolah untuk <b>geofencing</b> saat guru clock-in/out.
+          Guru akan dianggap <b>FAR</b> (di luar radius) kalau absen lebih dari radius di bawah dari lokasi ini.
+        </div>
+
+        {/* Lat / Lng */}
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Latitude</label>
+            <input
+              type="text"
+              value={editLat}
+              onChange={(e) => setEditLat(e.target.value)}
+              placeholder="-7.2504"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
             />
-          </button>
+          </div>
+          <div>
+            <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Longitude</label>
+            <input
+              type="text"
+              value={editLng}
+              onChange={(e) => setEditLng(e.target.value)}
+              placeholder="112.7688"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            />
+          </div>
         </div>
 
-        {/* Sub-opsi QR: Pilih Status Saat Scan */}
-        {qrMode && (
-          <div className="flex items-center justify-between py-[6px] pl-6 border-l-[2px] border-[#1e40af]/30 ml-[6px]">
-            <div className="flex-1 min-w-0 pr-2">
-              <div className="text-[0.74rem] font-semibold text-[var(--text)]">Pilih Status Saat Scan</div>
-              <div className="text-[0.65rem] text-[var(--text-light)]">OFF: auto Hadir • ON: muncul Hadir/Sakit/Izin/Alpha/Terlambat</div>
-            </div>
-            <button
-              onClick={() => {
-                const newVal = !qrPicker;
-                setQrPicker(newVal);
-                localStorage.setItem("bgy_qr_picker", newVal ? "1" : "0");
-                window.dispatchEvent(new Event("storage"));
-                toast(newVal ? "✅ Pilih Status: ON" : "Pilih Status: OFF (auto Hadir)");
-              }}
-              className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${
-                qrPicker ? "bg-[#1e40af]" : "bg-[var(--border)]"
-              }`}
-            >
-              <span
-                className={`absolute top-[2px] left-[2px] w-5 h-5 rounded-full bg-white transition-transform shadow ${
-                  qrPicker ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
+        <button
+          onClick={async () => {
+            const c = await requestGps();
+            if (c) {
+              setEditLat(c.lat.toFixed(6));
+              setEditLng(c.lng.toFixed(6));
+              toast(`📍 Lokasi: ${c.lat.toFixed(5)}, ${c.lng.toFixed(5)} (±${Math.round(c.accuracy)}m)`);
+            }
+          }}
+          disabled={gettingGps}
+          className="w-full flex items-center justify-center gap-[6px] py-[9px] mb-2 rounded-[10px] border-[1.5px] border-[#1e40af] text-[#1e40af] font-bold text-[0.78rem] bg-transparent active:scale-95 disabled:opacity-50"
+        >
+          <Target size={14} /> {gettingGps ? "Mengambil lokasi..." : "Ambil Lokasi Saat Ini (GPS)"}
+        </button>
+
+        {gpsError && (
+          <div className="text-[0.65rem] text-[#dc2626] mb-2">⚠️ {gpsError}</div>
         )}
 
-        <div className="h-px bg-[var(--border)] my-1" />
-
-        {/* Mode PJJ */}
-        <div className="flex items-center justify-between py-[6px]">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            <Video size={14} className="text-[#8b5cf6] mt-[2px] flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="text-[0.78rem] font-semibold text-[var(--text)]">Mode PJJ</div>
-              <div className="text-[0.68rem] text-[var(--text-light)]">Siswa absen sendiri lewat link (kelas online)</div>
-            </div>
+        {/* Radius */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[0.65rem] font-bold text-[var(--text-light)] uppercase">Radius Geofence</label>
+            <span className="text-[0.78rem] font-bold text-[#1e40af]">{editRadius} m</span>
           </div>
-          <button
-            onClick={() => {
-              const newVal = !pjjMode;
-              setPjjMode(newVal);
-              localStorage.setItem("bgy_pjj_mode", newVal ? "1" : "0");
-              if (newVal) {
-                localStorage.removeItem("bgy_pjj_hint_seen");
-                if (qrMode) {
-                  setQrMode(false);
-                  localStorage.setItem("bgy_qr_mode", "0");
-                }
-              }
-              window.dispatchEvent(new Event("storage"));
-              toast(newVal ? "✅ Mode PJJ: ON — kirim link ke siswa" : "Mode PJJ: OFF");
-            }}
-            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${
-              pjjMode ? "bg-[#8b5cf6]" : "bg-[var(--border)]"
-            }`}
-          >
-            <span
-              className={`absolute top-[2px] left-[2px] w-5 h-5 rounded-full bg-white transition-transform shadow ${
-                pjjMode ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
+          <input
+            type="range"
+            min={50}
+            max={500}
+            step={10}
+            value={editRadius}
+            onChange={(e) => setEditRadius(Number(e.target.value))}
+            className="w-full accent-[#1e40af]"
+          />
+          <div className="flex justify-between text-[0.6rem] text-[var(--text-light)]">
+            <span>50m</span><span>250m</span><span>500m</span>
+          </div>
         </div>
 
-        <div className="h-px bg-[var(--border)] my-1" />
+        {/* Jam Masuk / Pulang */}
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+              <Clock size={11} className="inline mr-1" /> Jam Masuk Standar
+            </label>
+            <input
+              type="time"
+              value={editJamMasuk}
+              onChange={(e) => setEditJamMasuk(e.target.value)}
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            />
+          </div>
+          <div>
+            <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+              <Clock size={11} className="inline mr-1" /> Jam Pulang Standar
+            </label>
+            <input
+              type="time"
+              value={editJamPulang}
+              onChange={(e) => setEditJamPulang(e.target.value)}
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            />
+          </div>
+        </div>
 
-        {/* Isi Hadir Otomatis */}
-        <div className="flex items-center justify-between py-[6px]">
+        {/* Toleransi */}
+        <div className="mb-3">
+          <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+            Toleransi Terlambat (menit)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={60}
+            value={editToleransi}
+            onChange={(e) => setEditToleransi(Number(e.target.value))}
+            className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+          />
+          <div className="text-[0.6rem] text-[var(--text-light)] mt-1">
+            Guru yang absen setelah jam masuk + toleransi akan ditandai <b>Terlambat</b>
+          </div>
+        </div>
+
+        {/* Isi Hadir Otomatis — tetap pertahankan untuk fallback */}
+        <div className="flex items-center justify-between py-[6px] border-t border-[var(--border)] pt-3">
           <div className="flex items-start gap-2 flex-1 min-w-0">
             <Check size={14} className="text-[#16a34a] mt-[2px] flex-shrink-0" />
             <div className="min-w-0">
               <div className="text-[0.78rem] font-semibold text-[var(--text)]">Isi Hadir Otomatis</div>
-              <div className="text-[0.68rem] text-[var(--text-light)]">Semua siswa auto "Hadir", edit yang tidak hadir</div>
+              <div className="text-[0.65rem] text-[var(--text-light)]">Default status hari = Hadir untuk guru yang clock-in</div>
             </div>
           </div>
           <button
@@ -883,16 +909,41 @@ export function PengaturanPage() {
           </button>
         </div>
 
-        {qrMode && (
-          <div className="text-[0.65rem] text-[var(--text-light)] mt-2 pt-2 border-t border-[var(--border)]">
-            💡 Cetak kartu QR di menu Siswa, lalu scan dari navbar bawah
-          </div>
-        )}
-        {pjjMode && (
-          <div className="text-[0.65rem] text-[var(--text-light)] mt-2 pt-2 border-t border-[var(--border)]">
-            💡 Aktifkan "Absen Mandiri" per kelas di menu Siswa, lalu bagikan link ke siswa
-          </div>
-        )}
+        {/* Save */}
+        <button
+          onClick={async () => {
+            if (!school) { toast("Sekolah belum siap"); return; }
+            const lat = parseFloat(editLat);
+            const lng = parseFloat(editLng);
+            if (isNaN(lat) || isNaN(lng)) { toast("Lat/Lng tidak valid"); return; }
+            if (!/^\d{2}:\d{2}$/.test(editJamMasuk) || !/^\d{2}:\d{2}$/.test(editJamPulang)) {
+              toast("Format jam tidak valid"); return;
+            }
+            setSavingLokasi(true);
+            try {
+              await schoolRepo.save({
+                ...school,
+                lat,
+                lng,
+                radiusMeter: editRadius,
+                jamMasukStandar: editJamMasuk,
+                jamPulangStandar: editJamPulang,
+                toleransiTerlambatMenit: editToleransi,
+                diubahPada: Date.now(),
+              });
+              toast("✅ Lokasi & jam sekolah disimpan");
+            } catch {
+              toast("❌ Gagal menyimpan");
+            } finally {
+              setSavingLokasi(false);
+            }
+          }}
+          disabled={savingLokasi}
+          className="w-full flex items-center justify-center gap-[6px] py-[10px] mt-3 rounded-[10px] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95"
+          style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+        >
+          <Save size={14} /> {savingLokasi ? "Menyimpan..." : "Simpan Lokasi & Jam"}
+        </button>
       </div>
 
       {/* Cloud Sync — Simplified (PRO only) */}
