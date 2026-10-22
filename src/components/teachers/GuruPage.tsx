@@ -16,7 +16,9 @@ import { db } from "@/repositories/dexie/db";
 import type { Teacher } from "@/types/entities";
 import { generateId, timestamp, inisial } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Tier } from "@/types/enums";
+import { guruCloudService } from "@/services/guru-cloud.service";
 
 function randomPin(len: 4 | 6 = 4): string {
   let out = "";
@@ -31,11 +33,13 @@ function randomKode(): string {
 
 export function GuruPage() {
   const { school, teacher, refreshTeachers } = useApp();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [guruList, setGuruList] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
+  const [cloudUserIdMap, setCloudUserIdMap] = useState<Record<number, string>>({});
 
   // form state
   const [fNama, setFNama] = useState("");
@@ -122,15 +126,44 @@ export function GuruPage() {
       await db.teachers.put(updated);
       toast(`Guru ${updated.nama} diperbarui`, "success");
     } else {
+      const localId = generateId();
+      // CLOUD-FIRST: kalau admin login + online, provision via Edge Function
+      // supaya guru bisa login mandiri lewat NIP+PIN. Fallback Dexie saat
+      // offline / mode coba.
+      let cloudUserId: string | undefined;
+      let kodeFinal = kode;
+      let pinFinal = pin;
+      if (isAuthenticated && navigator.onLine) {
+        try {
+          const res = await guruCloudService.createAccount({
+            nama: fNama.trim(),
+            sekolah_id: school.id,
+            kode_login: kode,
+            pin,
+            nip: fNip.trim() || undefined,
+            jabatan: fJabatan.trim() || undefined,
+            role: fRole,
+            local_id: localId,
+          });
+          cloudUserId = res.user_id;
+          kodeFinal = res.kode_login;
+          pinFinal = res.pin;
+          toast("Akun guru dibuat di cloud", "success");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          toast(`Cloud gagal (${msg}) — simpan lokal saja`, "info");
+        }
+      }
+
       const g: Teacher = {
-        id: generateId(),
+        id: localId,
         nama: fNama.trim(),
-        email: "",
+        email: cloudUserId ? `${kodeFinal}@guru.local` : "",
         sekolahId: school.id,
         tier: Tier.FREE,
         nip: fNip.trim() || undefined,
-        kodeLogin: kode,
-        pin,
+        kodeLogin: kodeFinal,
+        pin: pinFinal,
         jabatan: fJabatan.trim() || undefined,
         role: fRole,
         absenToken: crypto.randomUUID(),
@@ -139,8 +172,11 @@ export function GuruPage() {
         diubahPada: now,
       };
       await db.teachers.put(g);
+      if (cloudUserId) {
+        setCloudUserIdMap((m) => ({ ...m, [g.id]: cloudUserId! }));
+      }
       toast(`${g.nama} ditambahkan`, "success");
-      setShareDialog({ nama: g.nama, kode, pin, nip: g.nip });
+      setShareDialog({ nama: g.nama, kode: kodeFinal, pin: pinFinal, nip: g.nip });
     }
 
     resetForm();
@@ -169,7 +205,19 @@ export function GuruPage() {
   };
 
   const handleResetPin = async (g: Teacher) => {
-    const pin = randomPin(4);
+    let pin = randomPin(4);
+    // Reset di cloud dulu kalau online + ada user_id cloud yang dikenal.
+    const cloudUserId = cloudUserIdMap[g.id];
+    if (isAuthenticated && navigator.onLine && cloudUserId) {
+      try {
+        const res = await guruCloudService.resetPin(cloudUserId, pin);
+        pin = res.new_pin;
+        toast("PIN cloud di-reset", "success");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        toast(`Cloud reset gagal (${msg}) — reset lokal saja`, "info");
+      }
+    }
     await db.teachers.update(g.id, { pin, diubahPada: timestamp() });
     toast(`PIN baru untuk ${g.nama}: ${pin}`, "success");
     setShareDialog({ nama: g.nama, kode: g.kodeLogin || g.nip || String(g.id), pin, nip: g.nip });
@@ -355,7 +403,14 @@ export function GuruPage() {
 
       {teacher && (
         <div className="text-[0.68rem] text-[var(--text-light)] mt-4 text-center">
-          Admin aktif: <b>{teacher.nama}</b> — bagikan kode & PIN ke setiap guru lewat WhatsApp.
+          Admin aktif: <b>{teacher.nama}</b> ·{" "}
+          {isAuthenticated ? (
+            <span className="text-[var(--brand)] font-bold">Cloud ON</span>
+          ) : (
+            <span className="text-[var(--text-light)]">Cloud OFF (lokal)</span>
+          )}
+          <br />
+          Bagikan kode & PIN ke setiap guru lewat WhatsApp.
         </div>
       )}
 
