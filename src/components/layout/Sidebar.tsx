@@ -10,6 +10,8 @@ import {
   Settings,
   Database,
   ArrowUpCircle,
+  ClipboardCheck,
+  History,
   School,
   GraduationCap,
   type LucideIcon,
@@ -23,8 +25,10 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { page: PageName.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
+  { page: PageName.PRESENSI, label: "Presensi", icon: ClipboardCheck },
+  { page: PageName.LOG_PRESENSI, label: "Log Presensi", icon: History },
   { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
-  { page: PageName.GURU, label: "Guru", icon: Users },
+  { page: PageName.GURU, label: "Daftar Guru", icon: Users },
   { page: PageName.KALENDER, label: "Kalender", icon: Calendar },
   { page: PageName.UPGRADE, label: "Upgrade PRO", icon: ArrowUpCircle },
   { page: PageName.PETUNJUK, label: "Petunjuk", icon: BookOpen },
@@ -71,7 +75,7 @@ export function Sidebar() {
               onClick={() => setActivePage(item.page)}
               className={`w-full flex items-center gap-3 px-3 py-[8px] rounded-lg text-left text-[0.8rem] font-semibold transition-colors mb-[2px] ${
                 isActive
-                  ? "bg-[rgba(30,64,175,0.1)] text-[#0d9488]"
+                  ? "bg-[var(--brand-soft)] text-[var(--brand-strong)]"
                   : "text-[var(--text)] hover:bg-[var(--input-bg)]"
               }`}
             >
@@ -84,14 +88,14 @@ export function Sidebar() {
 
       <div className="px-3 py-3 border-t border-[var(--border)]">
         {isPRO ? (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgba(30,64,175,0.1)]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--brand-soft)]">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[0.6rem] font-bold"
               style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}
             >
               PRO
             </div>
-            <span className="text-[0.72rem] font-semibold text-[#0d9488]">Akun PRO</span>
+            <span className="text-[0.72rem] font-semibold text-[var(--brand-strong)]">Akun PRO</span>
           </div>
         ) : (
           <button

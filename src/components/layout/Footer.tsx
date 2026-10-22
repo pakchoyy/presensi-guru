@@ -6,7 +6,7 @@ export function Footer() {
         background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)",
       }}
     >
-      <div className="text-[0.72rem] font-semibold mb-[2px]">Presensi Siswa</div>
+      <div className="text-[0.72rem] font-semibold mb-[2px]">Presensi Yuk | Guru</div>
       <div className="text-[0.62rem] text-white/60">
         &copy; 2026 Bantu Guru Yuk by{" "}
         <a

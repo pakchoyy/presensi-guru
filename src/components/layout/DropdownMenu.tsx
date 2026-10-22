@@ -133,7 +133,7 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           onClick={handleInstall}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
-          <Download size={16} /> Install BGY Presensi
+          <Download size={16} /> Install Presensi Yuk
         </button>
         <button
           onClick={() => {

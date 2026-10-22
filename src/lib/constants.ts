@@ -24,7 +24,7 @@ export const STATUS_COLOR: Record<AttendanceStatus, string> = {
 export const STORAGE_KEY = "bgy_presensi";
 export const STORAGE_DARK_KEY = "bgy_presensi_dark";
 
-export const APP_NAME = "Presensi Siswa";
+export const APP_NAME = "Presensi Yuk | Guru";
 export const APP_BRAND = "Bantu Guru Yuk";
 
 export const WIZARD_TOTAL_STEPS = 6;

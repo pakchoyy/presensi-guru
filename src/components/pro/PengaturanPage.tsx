@@ -332,7 +332,7 @@ export function PengaturanPage() {
 
   const handleWA = () => {
     const msg = encodeURIComponent(
-      "Halo Pak Choyy, saya mau beli lisensi PRO Presensi Siswa\nEmail: " + (teacher?.email || "")
+      "Halo Pak Choyy, saya mau beli lisensi PRO Presensi Yuk | Guru\nEmail: " + (teacher?.email || "")
     );
     window.open(`https://wa.me/6289530713597?text=${msg}`, "_blank");
   };

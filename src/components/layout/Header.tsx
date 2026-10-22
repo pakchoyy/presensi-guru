@@ -44,16 +44,19 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-[300] px-3 relative overflow-hidden"
+      className="sticky top-0 z-[300] px-3 relative"
       style={{
         background: "var(--grad)",
         boxShadow: "0 4px 18px rgba(13,148,136,.25)",
       }}
     >
-      {/* Ornamen lingkaran dekoratif */}
-      <span className="header-orb" style={{ width: 110, height: 110, top: -40, right: -30 }} />
-      <span className="header-orb" style={{ width: 70, height: 70, bottom: -24, left: 60, background: "rgba(255,255,255,.08)" }} />
-      <span className="header-orb" style={{ width: 42, height: 42, top: 8, left: "40%", background: "rgba(255,255,255,.07)" }} />
+      {/* Ornamen lingkaran dekoratif — di layer terpisah yang di-clip,
+          supaya DropdownMenu (child header) tidak ikut ke-clip. */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <span className="header-orb" style={{ width: 110, height: 110, top: -40, right: -30 }} />
+        <span className="header-orb" style={{ width: 70, height: 70, bottom: -24, left: 60, background: "rgba(255,255,255,.08)" }} />
+        <span className="header-orb" style={{ width: 42, height: 42, top: 8, left: "40%", background: "rgba(255,255,255,.07)" }} />
+      </div>
 
       <div className="flex items-center justify-between h-[58px] relative">
         <div className="flex items-center gap-[8px] flex-1 min-w-0">

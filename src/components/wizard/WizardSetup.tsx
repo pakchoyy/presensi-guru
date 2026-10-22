@@ -156,7 +156,7 @@ export function WizardSetup() {
               <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Jenjang</div>
               <div className="grid grid-cols-3 gap-2">
                 {[Jenjang.SD, Jenjang.SMP, Jenjang.SMA].map((j) => (
-                  <button key={j} onClick={() => setJenjang(j)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${jenjang === j ? "border-[#0d9488] bg-[rgba(30,64,175,0.1)] text-[#0d9488]" : "border-[var(--border)]"}`}>{j}</button>
+                  <button key={j} onClick={() => setJenjang(j)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${jenjang === j ? "border-[#0d9488] bg-[var(--brand-soft)] text-[#0d9488]" : "border-[var(--border)]"}`}>{j}</button>
                 ))}
               </div>
             </>
@@ -175,7 +175,7 @@ export function WizardSetup() {
               <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Semester Aktif</div>
               <div className="grid grid-cols-2 gap-2">
                 {[Semester.GANJIL, Semester.GENAP].map((s) => (
-                  <button key={s} onClick={() => setSemester(s)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${semester === s ? "border-[#0d9488] bg-[rgba(30,64,175,0.1)] text-[#0d9488]" : "border-[var(--border)]"}`}>{s}</button>
+                  <button key={s} onClick={() => setSemester(s)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${semester === s ? "border-[#0d9488] bg-[var(--brand-soft)] text-[#0d9488]" : "border-[var(--border)]"}`}>{s}</button>
                 ))}
               </div>
             </>
@@ -183,7 +183,7 @@ export function WizardSetup() {
           {step === 4 && (
             <>
               <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><MapPin size={18} /> Lokasi & Jam Sekolah</div>
-              <button onClick={ambilLokasi} disabled={gpsLoading} className="w-full py-2 rounded-lg bg-[rgba(30,64,175,0.1)] text-[#0d9488] font-bold text-[0.85rem] mb-3 flex items-center justify-center gap-2">
+              <button onClick={ambilLokasi} disabled={gpsLoading} className="w-full py-2 rounded-lg bg-[var(--brand-soft)] text-[#0d9488] font-bold text-[0.85rem] mb-3 flex items-center justify-center gap-2">
                 <Target size={16} /> {gpsLoading ? "Mengambil GPS..." : "Ambil Lokasi Sekolah Sekarang"}
               </button>
               <div className="grid grid-cols-2 gap-2 mb-3">

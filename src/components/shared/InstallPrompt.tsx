@@ -94,7 +94,7 @@ export function InstallPrompt() {
           {/* Content */}
           <div className="text-center mb-5">
             <h3 className="text-[1.1rem] font-extrabold text-[var(--text)] mb-2">
-              Install Presensi Siswa
+              Install Presensi Yuk | Guru
             </h3>
             <p className="text-[0.8rem] text-[var(--text-light)] leading-relaxed">
               Install aplikasi di HP untuk akses lebih cepat dan bisa dipakai offline
