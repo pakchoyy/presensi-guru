@@ -145,7 +145,7 @@ export function RekapPage() {
         <select
           value={selectedGuruId ?? ""}
           onChange={(e) => setSelectedGuruId(Number(e.target.value) || null)}
-          className="w-full px-[10px] py-[9px] mb-3 border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+          className="w-full px-[10px] py-[9px] mb-3 border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
         >
           {guruList.length === 0 && <option value="">— Belum ada guru —</option>}
           {guruList.map((g) => (
@@ -161,7 +161,7 @@ export function RekapPage() {
             <select
               value={bulan}
               onChange={(e) => setBulan(Number(e.target.value))}
-              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             >
               {MONTHS.map((m, i) => (
                 <option key={i} value={i + 1}>{m}</option>
@@ -174,7 +174,7 @@ export function RekapPage() {
               type="number"
               value={tahun}
               onChange={(e) => setTahun(Number(e.target.value))}
-              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
         </div>
@@ -183,7 +183,7 @@ export function RekapPage() {
           <button
             onClick={() => handleExport("pdf")}
             disabled={exporting || !selectedGuru}
-            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
           >
             <FileText size={14} /> Export PDF
           </button>
@@ -204,7 +204,7 @@ export function RekapPage() {
             Ringkasan {periodeLabel(bulan, tahun)}
           </div>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <StatBox label="Masuk" value={stats.totalMasuk} color="#1e40af" />
+            <StatBox label="Masuk" value={stats.totalMasuk} color="#0d9488" />
             <StatBox label="Tepat" value={stats.ontime} color="#16a34a" />
             <StatBox label="Terlambat" value={stats.late} color="#f59e0b" />
             <StatBox label="Luar Area" value={stats.far} color="#dc2626" />

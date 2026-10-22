@@ -56,6 +56,8 @@ export enum PageName {
   PENGATURAN = "pengaturan",
   BACKUP = "backup",
   CLOUD_SETTINGS = "cloud-settings",
+  PRESENSI = "presensi",
+  LOG_PRESENSI = "log-presensi",
 }
 
 export enum WizStep {

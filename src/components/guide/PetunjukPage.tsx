@@ -44,14 +44,14 @@ export function PetunjukPage() {
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
         <div className="text-[0.85rem] font-bold flex items-center gap-[8px] mb-4">
-          <BookOpen size={18} className="text-[#1e40af]" /> Petunjuk Penggunaan
+          <BookOpen size={18} className="text-[#0d9488]" /> Petunjuk Penggunaan
         </div>
 
         <div
           className="text-[0.8rem] text-[var(--text)] leading-[1.9] mb-4 p-[10px] rounded-lg"
           style={{
             background: "rgba(14,165,160,.08)",
-            borderLeft: "4px solid #1e40af",
+            borderLeft: "4px solid #0d9488",
           }}
         >
           <b>Bantu Guru Yuk | Presensi Siswa</b> dirancang sesederhana mungkin. Guru bisa mengisi presensi <b>kurang dari 30 detik per kelas</b>, bisa online maupun offline.
@@ -63,13 +63,13 @@ export function PetunjukPage() {
               key={g.num}
               className="flex gap-3 items-start p-[10px] border border-[var(--border)] rounded-[9px] bg-[var(--input-bg)]"
             >
-              <div className="text-[1.2rem] flex-shrink-0 font-bold text-[#1e40af]">
+              <div className="text-[1.2rem] flex-shrink-0 font-bold text-[#0d9488]">
                 {g.num}️⃣
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-[6px] mb-1">
-                  <g.icon size={15} className="text-[#1e40af]" />
-                  <b className="text-[0.82rem] text-[#1e40af]">{g.title}</b>
+                  <g.icon size={15} className="text-[#0d9488]" />
+                  <b className="text-[0.82rem] text-[#0d9488]">{g.title}</b>
                 </div>
                 <div
                   className="text-[0.74rem] text-[var(--text)] leading-[1.7]"

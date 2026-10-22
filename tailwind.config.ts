@@ -6,9 +6,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          50: "#f0fdfa",
+          100: "#ccfbf1",
+          200: "#99f6e4",
+          300: "#5eead4",
+          400: "#2dd4bf",
+          500: "#14b8a6",
+          600: "#0d9488",
+          700: "#0f766e",
+          800: "#115e59",
+          DEFAULT: "#0d9488",
+        },
+        /* Alias legacy "blue" supaya file lama tidak langsung patah */
         blue: {
-          DEFAULT: "#0ea5a0",
-          dark: "#0d7a8a",
+          DEFAULT: "#0d9488",
+          dark: "#0f766e",
         },
         hadir: {
           DEFAULT: "#16a34a",

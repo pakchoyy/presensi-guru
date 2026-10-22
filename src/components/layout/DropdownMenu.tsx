@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
-import { Home, BookOpen, Info, Download, Globe, ArrowUpCircle, Settings, Cloud, QrCode } from "lucide-react";
+import { Home, BookOpen, Info, Download, Globe, ArrowUpCircle, Settings, Cloud, QrCode, Users, Calendar } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -61,6 +61,18 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           <Home size={16} /> Home
         </button>
         <button
+          onClick={() => { setActivePage(PageName.GURU); onClose(); }}
+          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
+        >
+          <Users size={16} /> Daftar Guru
+        </button>
+        <button
+          onClick={() => { setActivePage(PageName.KALENDER); onClose(); }}
+          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
+        >
+          <Calendar size={16} /> Kalender
+        </button>
+        <button
           onClick={() => { setActivePage(PageName.PETUNJUK); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
@@ -94,7 +106,7 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
-          <QrCode size={16} /> Mode QR {qrMode ? <span className="ml-auto text-[0.65rem] font-bold text-[#1e40af]">ON</span> : <span className="ml-auto text-[0.65rem] text-[var(--text-light)]">OFF</span>}
+          <QrCode size={16} /> Mode QR {qrMode ? <span className="ml-auto text-[0.65rem] font-bold text-[var(--brand)]">ON</span> : <span className="ml-auto text-[0.65rem] text-[var(--text-light)]">OFF</span>}
         </button>
 
         {isPRO && isAuthenticated && (
@@ -138,7 +150,7 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
         {!isPRO && (
           <button
             onClick={() => { setActivePage(PageName.UPGRADE); onClose(); }}
-            className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[#1e40af] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
+            className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--brand)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
           >
             <ArrowUpCircle size={16} /> Upgrade PRO
             <span className="ml-auto text-[0.65rem] text-[var(--text-light)]">{PRO_PRICE}</span>

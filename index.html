@@ -3,24 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#1e40af" />
-    <meta name="description" content="Bantu Guru Yuk | Presensi Guru — Absen guru dengan GPS & selfie" />
+    <meta name="theme-color" content="#0d9488" />
+    <meta name="description" content="Presensi Yuk | Guru — Absen guru dengan GPS & selfie" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/guru-presguru.png" type="image/png" />
-    <title>Bantu Guru Yuk | Presensi Guru</title>
+    <title>Presensi Yuk | Guru</title>
     <style>
-      #loadingScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1e40af,#1e3a8a,#172554);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;color:#fff;font-family:'Segoe UI',system-ui,sans-serif}
-      #loadingScreen img{width:96px;height:96px;border-radius:18px;margin-bottom:24px;animation:lsPulse 1.5s ease-in-out infinite}
-      #loadingScreen .ls-title{font-size:1.6rem;font-weight:800;letter-spacing:.5px}
-      #loadingScreen .ls-sub{font-size:.9rem;opacity:.8;margin-top:8px}
+      #loadingScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#14b8a6,#0d9488,#0f766e);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+      #loadingScreen::before,#loadingScreen::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12);filter:blur(28px);pointer-events:none}
+      #loadingScreen::before{width:220px;height:220px;top:-60px;right:-50px}
+      #loadingScreen::after{width:160px;height:160px;bottom:-40px;left:-40px}
+      #loadingScreen img{width:96px;height:96px;border-radius:18px;margin-bottom:24px;animation:lsPulse 1.5s ease-in-out infinite;position:relative;z-index:1}
+      #loadingScreen .ls-title{font-size:1.6rem;font-weight:800;letter-spacing:.5px;font-style:italic;position:relative;z-index:1}
+      #loadingScreen .ls-sub{font-size:.9rem;opacity:.85;margin-top:6px;position:relative;z-index:1}
       @keyframes lsPulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.06);opacity:1}}
     </style>
   </head>
   <body>
     <div id="loadingScreen">
-      <img src="/guru-presguru.png" alt="BGY Presensi Guru" />
-      <div class="ls-title">Bantu Guru Yuk</div>
-      <div class="ls-sub">Presensi Guru</div>
+      <img src="/guru-presguru.png" alt="Presensi Yuk | Guru" />
+      <div class="ls-title">Presensi Yuk</div>
+      <div class="ls-sub">| Guru</div>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

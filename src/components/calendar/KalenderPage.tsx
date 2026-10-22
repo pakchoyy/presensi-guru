@@ -156,7 +156,7 @@ export function KalenderPage() {
       {!isPRO && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2 text-[0.7rem] text-[var(--text-light)]">
           <Lock size={12} className="text-[#b45309]" />
-          Kalender hanya bisa dilihat. <span className="font-semibold text-[#1e40af]">Upgrade ke PRO</span> untuk menambah/mengedit hari libur & hari penting.
+          Kalender hanya bisa dilihat. <span className="font-semibold text-[#0d9488]">Upgrade ke PRO</span> untuk menambah/mengedit hari libur & hari penting.
         </div>
       )}
 
@@ -166,8 +166,8 @@ export function KalenderPage() {
             <div className="flex items-center gap-2 text-[0.7rem] text-[var(--text)]">
               {isEditMode ? (
                 <>
-                  <PenLine size={13} className="text-[#1e40af]" />
-                  <span><b className="text-[#1e40af]">Mode Edit:</b> Klik tanggal untuk tambah/edit event</span>
+                  <PenLine size={13} className="text-[#0d9488]" />
+                  <span><b className="text-[#0d9488]">Mode Edit:</b> Klik tanggal untuk tambah/edit event</span>
                 </>
               ) : (
                 <>
@@ -238,7 +238,7 @@ export function KalenderPage() {
               bg = "bg-[#dbeafe]";
               textColor = "text-[#1d4ed8] font-bold";
             } else if (todayClass) {
-              bg = "bg-[#1e40af]";
+              bg = "bg-[#0d9488]";
               textColor = "text-white font-bold";
             } else if (isWeekend) {
               textColor = "text-[#dc2626]";
@@ -316,7 +316,7 @@ export function KalenderPage() {
               onChange={(e) => setNewLiburName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder={entryType === CalendarEntryType.HARI_LIBUR ? "Nama hari libur (contoh: Ulang Tahun Sekolah)" : "Nama hari penting (contoh: Penerimaan Rapor)"}
-              className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
               autoFocus
             />
           </div>
@@ -324,7 +324,7 @@ export function KalenderPage() {
             <button
               onClick={handleAdd}
               className="flex-1 flex items-center justify-center gap-[4px] py-[9px] rounded-[10px] text-white font-bold text-[0.78rem] cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
             >
               <Plus size={14} /> {editTarget?.id ? "Simpan" : "Tambah"}
             </button>
@@ -357,7 +357,7 @@ export function KalenderPage() {
             <div className="w-3 h-3 rounded bg-[#1d4ed8]" /> Hari Penting
           </div>
           <div className="flex items-center gap-1 text-[0.7rem]">
-            <div className="w-3 h-3 rounded bg-[#1e40af]" /> Hari Ini
+            <div className="w-3 h-3 rounded bg-[#0d9488]" /> Hari Ini
           </div>
           <div className="flex items-center gap-1 text-[0.7rem]">
             <span className="text-[#dc2626] font-bold">Min</span> Minggu

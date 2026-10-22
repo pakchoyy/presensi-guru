@@ -13,6 +13,8 @@ import { useAutoSync } from "@/hooks/useAutoSync";
 import { WizardSetup } from "@/components/wizard/WizardSetup";
 import { LoginPage } from "@/components/auth/LoginPage";
 import { DashboardHarianPage } from "@/components/attendance/DashboardHarianPage";
+import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
+import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { RekapPage } from "@/components/reports/RekapPage";
 import { GuruPage } from "@/components/teachers/GuruPage";
 import { KalenderPage } from "@/components/calendar/KalenderPage";
@@ -83,6 +85,10 @@ function PageContent() {
       return <PengaturanPage />;
     case PageName.CLOUD_SETTINGS:
       return <CloudSettingsPage />;
+    case PageName.PRESENSI:
+      return <PresensiGuruPage />;
+    case PageName.LOG_PRESENSI:
+      return <LogPresensiPage />;
     default:
       return <DashboardHarianPage />;
   }

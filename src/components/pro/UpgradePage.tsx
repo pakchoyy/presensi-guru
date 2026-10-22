@@ -165,7 +165,7 @@ export function UpgradePage() {
 
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[130px] lg:pb-4">
-      <div className="bg-gradient-to-br from-[#1e40af] to-[#172554] rounded-2xl p-6 mb-3 text-white text-center">
+      <div className="bg-gradient-to-br from-[#0d9488] to-[#115e59] rounded-2xl p-6 mb-3 text-white text-center">
         <ArrowUpCircle size={48} className="mx-auto mb-3 opacity-90" />
         <h2 className="text-[1.3rem] font-extrabold mb-2">Upgrade ke PRO</h2>
         <p className="text-[0.85rem] opacity-90 mb-3">
@@ -176,7 +176,7 @@ export function UpgradePage() {
           href="https://kreacy.my.id/produk/8nonq6ro"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block w-full max-w-[280px] py-3 rounded-xl bg-white text-[#1e40af] font-extrabold text-[0.95rem] no-underline hover:bg-white/90 transition-all"
+          className="inline-block w-full max-w-[280px] py-3 rounded-xl bg-white text-[#0d9488] font-extrabold text-[0.95rem] no-underline hover:bg-white/90 transition-all"
         >
           🛒 Beli Sekarang
         </a>
@@ -189,9 +189,9 @@ export function UpgradePage() {
         </button>
       </div>
 
-      <div className="bg-[rgba(14,165,160,0.08)] border-2 border-[#1e40af] rounded-xl p-4 mb-3">
+      <div className="bg-[rgba(14,165,160,0.08)] border-2 border-[#0d9488] rounded-xl p-4 mb-3">
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-10 h-10 rounded-full bg-[#1e40af] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#0d9488] flex items-center justify-center">
             <Mail size={20} className="text-white" />
           </div>
           <div>
@@ -214,7 +214,7 @@ export function UpgradePage() {
           }}
           placeholder="email@example.com"
           className={`w-full px-4 py-3 rounded-lg border-2 bg-white text-[0.85rem] mb-1 outline-none ${
-            emailError ? "border-red-500" : "border-[#1e40af]/30 focus:border-[#1e40af]"
+            emailError ? "border-red-500" : "border-[#0d9488]/30 focus:border-[#0d9488]"
           }`}
         />
         
@@ -226,7 +226,7 @@ export function UpgradePage() {
           onClick={handleCheckEmail}
           disabled={checking}
           className="w-full py-3 rounded-lg font-bold text-[0.9rem] text-white border-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-2"
-          style={{ background: checking ? "#999" : "linear-gradient(135deg, #1e40af, #1e3a8a)" }}
+          style={{ background: checking ? "#999" : "linear-gradient(135deg,#14b8a6,#0d9488)" }}
         >
           {checking && <Loader2 size={16} className="animate-spin" />}
           {checking ? "Mengecek Email..." : "✅ Verifikasi Email"}
@@ -268,7 +268,7 @@ export function UpgradePage() {
 
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
         <div className="text-[0.78rem] font-bold flex items-center gap-[6px] mb-2">
-          <ShieldCheck size={14} className="text-[#1e40af]" /> Perbandingan
+          <ShieldCheck size={14} className="text-[#0d9488]" /> Perbandingan
         </div>
         <div className="grid grid-cols-2 gap-2 text-[0.7rem]">
           <div className="bg-[var(--input-bg)] rounded-lg p-2">
@@ -277,8 +277,8 @@ export function UpgradePage() {
               • 1 kelas<br />• 12 siswa<br />• Offline<br />• Rekap & export
             </div>
           </div>
-          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 border border-[#1e40af]/20">
-            <div className="font-bold text-[#1e40af] mb-1">PRO</div>
+          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 border border-[#0d9488]/20">
+            <div className="font-bold text-[#0d9488] mb-1">PRO</div>
             <div className="text-[var(--text-light)] leading-[1.6]">
               • Unlimited kelas<br />• Unlimited siswa<br />• Cloud sync<br />• Multi device
             </div>

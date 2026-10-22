@@ -153,7 +153,7 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           className="flex-1 flex items-center justify-center gap-[6px] py-[9px] rounded-[10px] text-white font-bold text-[0.78rem] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+          style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
         >
           <Upload size={14} />
           {uploading ? "Mengupload..." : "Upload Logo"}

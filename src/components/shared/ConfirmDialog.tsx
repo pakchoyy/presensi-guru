@@ -59,7 +59,7 @@ export function ConfirmDialogProvider() {
                 className={`flex-1 flex items-center justify-center gap-[6px] py-[11px] px-[14px] rounded-[12px] text-white font-bold text-[0.82rem] cursor-pointer border-none ${
                   opts.danger
                     ? "bg-gradient-to-r from-[#ef4444] to-[#dc2626]"
-                    : "bg-gradient-to-r from-[#1e40af] to-[#1e3a8a]"
+                    : "bg-gradient-to-r from-[#0d9488] to-[#0f766e]"
                 }`}
               >
                 <Check size={15} /> {opts.confirmText || "Lanjutkan"}

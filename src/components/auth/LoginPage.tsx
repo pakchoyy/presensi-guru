@@ -63,20 +63,23 @@ export function LoginPage() {
   const isValid = email.includes("@") && password.length >= 6;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}>
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488, #0f766e)" }}>
+      {/* Ornamen lingkaran */}
+      <span className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-white/10 blur-2xl" />
+      <span className="absolute -bottom-20 -left-16 w-80 h-80 rounded-full bg-white/8 blur-3xl" />
+      <div className="w-full max-w-md relative">
         {/* Card */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a)" }}>
-              <span className="text-3xl text-white font-bold">PS</span>
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488)" }}>
+              <span className="text-2xl text-white font-extrabold italic">PY</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-800 mb-2">
-              {mode === "login" ? "Login" : "Daftar Akun Baru"}
+              {mode === "login" ? "Login Admin" : "Daftar Akun Admin"}
             </h1>
             <p className="text-sm text-gray-600">
-              {mode === "login" ? "Masuk untuk sync data ke cloud" : "Buat akun untuk menggunakan cloud sync"}
+              {mode === "login" ? "Masuk untuk sinkron data ke cloud" : "Akun ini untuk Operator / Kepala Sekolah"}
             </p>
           </div>
 
@@ -94,7 +97,7 @@ export function LoginPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Nama Anda"
-                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#1e40af] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
                     required
                   />
                   <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -113,7 +116,7 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nama@email.com"
-                  className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#1e40af] focus:bg-white transition-colors"
+                  className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
                   required
                 />
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -131,7 +134,7 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
-                  className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#1e40af] focus:bg-white transition-colors"
+                  className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
                   required
                   minLength={6}
                 />
@@ -161,7 +164,7 @@ export function LoginPage() {
               type="submit"
               disabled={!isValid || submitting || loading}
               className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:shadow-lg"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a)" }}
+              style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488)" }}
             >
               {submitting ? (
                 "Memproses..."
@@ -186,7 +189,7 @@ export function LoginPage() {
                 setMode(mode === "login" ? "register" : "login");
                 setError("");
               }}
-              className="text-sm text-gray-600 hover:text-[#1e40af] transition-colors"
+              className="text-sm text-gray-600 hover:text-[#0d9488] transition-colors"
             >
               {mode === "login" ? (
                 <>

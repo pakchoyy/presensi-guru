@@ -7,7 +7,7 @@ export function TentangKontak() {
       {/* Tentang */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.85rem] font-bold flex items-center gap-[8px] mb-3">
-          <Info size={18} className="text-[#1e40af]" /> Tentang
+          <Info size={18} className="text-[#0d9488]" /> Tentang
         </div>
 
         <div className="text-[0.8rem] text-[var(--text)] leading-[1.8] mb-3">
@@ -22,15 +22,15 @@ export function TentangKontak() {
 
         <div className="text-[0.74rem] text-[var(--text-light)] leading-[1.7]">
           <div className="flex gap-2 mb-1">
-            <span className="font-semibold text-[#1e40af]">Visi:</span>
+            <span className="font-semibold text-[#0d9488]">Visi:</span>
             <span>Presensi 1 kelas selesai dalam <b>&lt;30 detik</b></span>
           </div>
         <div className="flex gap-2 mb-1">
-          <span className="font-semibold text-[#1e40af]">FREE:</span>
+          <span className="font-semibold text-[#0d9488]">FREE:</span>
           <span>1 kelas (12 siswa), offline penuh, rekap & export lengkap</span>
         </div>
           <div className="flex gap-2">
-            <span className="font-semibold text-[#1e40af]">PRO:</span>
+            <span className="font-semibold text-[#0d9488]">PRO:</span>
             <span>Unlimited kelas, cloud sync, multi-device — Rp15.000/tahun</span>
           </div>
         </div>
@@ -39,7 +39,7 @@ export function TentangKontak() {
       {/* Kontak */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.85rem] font-bold flex items-center gap-[8px] mb-3">
-          <MessageCircle size={18} className="text-[#1e40af]" /> Kontak
+          <MessageCircle size={18} className="text-[#0d9488]" /> Kontak
         </div>
 
         <p className="text-[0.78rem] text-[var(--text-light)] mb-4">
@@ -73,7 +73,7 @@ export function TentangKontak() {
             href={APP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-[11px] rounded-[10px] bg-[#1e40af]/10 border-2 border-[#1e40af] text-[#1e40af] font-bold text-[0.82rem] no-underline hover:bg-[#1e40af]/20 transition-colors"
+            className="flex items-center gap-3 px-4 py-[11px] rounded-[10px] bg-[#0d9488]/10 border-2 border-[#0d9488] text-[#0d9488] font-bold text-[0.82rem] no-underline hover:bg-[#0d9488]/20 transition-colors"
           >
             <ExternalLink size={18} />
             <div className="flex-1 text-left">
@@ -86,9 +86,9 @@ export function TentangKontak() {
             href={MAIN_SITE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-[11px] rounded-[10px] border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text)] font-bold text-[0.82rem] no-underline hover:border-[#1e40af] transition-colors"
+            className="flex items-center gap-3 px-4 py-[11px] rounded-[10px] border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text)] font-bold text-[0.82rem] no-underline hover:border-[#0d9488] transition-colors"
           >
-            <ExternalLink size={18} className="text-[#1e40af]" />
+            <ExternalLink size={18} className="text-[#0d9488]" />
             bantuguruyuk.web.id
           </a>
         </div>

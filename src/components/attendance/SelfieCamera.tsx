@@ -129,7 +129,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
             </button>
             <button
               onClick={confirm}
-              className="px-6 py-3 rounded-full bg-[#1e40af] text-white font-bold flex items-center gap-2"
+              className="px-6 py-3 rounded-full bg-[#0d9488] text-white font-bold flex items-center gap-2"
             >
               <Check size={18} /> Pakai Foto Ini
             </button>
@@ -138,7 +138,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
           !error && (
             <button
               onClick={capture}
-              className="w-16 h-16 rounded-full bg-white border-4 border-[#1e40af] active:scale-95 transition-transform"
+              className="w-16 h-16 rounded-full bg-white border-4 border-[#0d9488] active:scale-95 transition-transform"
               aria-label="Ambil foto"
             />
           )

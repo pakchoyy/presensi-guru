@@ -3,16 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --grad: linear-gradient(135deg, #1e40af, #1e3a8a, #172554);
-  --bg: #f0f4f8;
+  /* Palette teal lembut — "Presensi Yuk | Guru" */
+  --grad: linear-gradient(135deg, #14b8a6, #0d9488, #0f766e);
+  --grad-soft: linear-gradient(135deg, #2dd4bf, #14b8a6);
+  --brand: #0d9488;
+  --brand-strong: #0f766e;
+  --brand-soft: #ccfbf1;
+  --bg: #f0fdfa;
   --card-bg: #ffffff;
-  --text: #1e293b;
+  --text: #0f172a;
   --text-light: #64748b;
-  --border: #e2e8f0;
+  --border: #d1fae5;
   --input-bg: #f8fafc;
-  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.13);
-  --radius: 12px;
+  --shadow: 0 2px 12px rgba(13, 148, 136, 0.07);
+  --shadow-lg: 0 8px 32px rgba(13, 148, 136, 0.15);
+  --radius: 14px;
   --hadir: #16a34a;
   --hadir-bg: #dcfce7;
   --sakit: #b45309;
@@ -26,6 +31,11 @@
 }
 
 .dark {
+  --grad: linear-gradient(135deg, #0d4a47, #113a3a, #0f2e2e);
+  --grad-soft: linear-gradient(135deg, #0f766e, #115e59);
+  --brand: #2dd4bf;
+  --brand-strong: #14b8a6;
+  --brand-soft: #134e4a;
   --bg: #0f172a;
   --card-bg: #1e293b;
   --text: #f1f5f9;
@@ -197,4 +207,23 @@ body {
 }
 .animate-scale-pop {
   animation: scale-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Toast dropdown modern — jatuh dari atas dengan easing */
+@keyframes toast-drop {
+  0%   { transform: translateY(-18px) scale(0.96); opacity: 0; }
+  60%  { transform: translateY(2px)  scale(1.02); opacity: 1; }
+  100% { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+.animate-toast-drop {
+  animation: toast-drop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Ornamen lingkaran header */
+.header-orb {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  filter: blur(14px);
+  pointer-events: none;
 }

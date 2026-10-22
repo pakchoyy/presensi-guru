@@ -71,7 +71,7 @@ export function Sidebar() {
               onClick={() => setActivePage(item.page)}
               className={`w-full flex items-center gap-3 px-3 py-[8px] rounded-lg text-left text-[0.8rem] font-semibold transition-colors mb-[2px] ${
                 isActive
-                  ? "bg-[rgba(30,64,175,0.1)] text-[#1e40af]"
+                  ? "bg-[rgba(30,64,175,0.1)] text-[#0d9488]"
                   : "text-[var(--text)] hover:bg-[var(--input-bg)]"
               }`}
             >
@@ -87,17 +87,17 @@ export function Sidebar() {
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgba(30,64,175,0.1)]">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[0.6rem] font-bold"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a)" }}
+              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}
             >
               PRO
             </div>
-            <span className="text-[0.72rem] font-semibold text-[#1e40af]">Akun PRO</span>
+            <span className="text-[0.72rem] font-semibold text-[#0d9488]">Akun PRO</span>
           </div>
         ) : (
           <button
             onClick={() => setActivePage(PageName.UPGRADE)}
             className="w-full flex items-center gap-2 px-3 py-[8px] rounded-lg text-[0.78rem] font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+            style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
           >
             <ArrowUpCircle size={16} />
             <span>Upgrade PRO</span>

@@ -113,7 +113,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a,#172554)" }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
         <div className="text-white font-bold">Memuat...</div>
       </div>
     );
@@ -121,7 +121,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
 
   if (err && !info) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a,#172554)" }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
         <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
           <AlertTriangle className="mx-auto text-[#dc2626] mb-2" size={32} />
           <div className="font-bold text-[#1e293b]">{err}</div>
@@ -135,10 +135,10 @@ export function AbsenGuruPage({ token }: { token: string }) {
   const statusMasukColor = info?.existing?.statusMasuk ? STATUS_COLOR[info.existing.statusMasuk] : "#64748b";
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-6" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a,#172554)" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 py-6" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
       <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
         <div className="text-center mb-4">
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a)" }}>
+          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center text-white" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}>
             <Clock size={28} />
           </div>
           <div className="font-extrabold text-[#1e293b] text-[1.1rem]">{info?.guru.nama}</div>
@@ -147,16 +147,16 @@ export function AbsenGuruPage({ token }: { token: string }) {
           )}
           <div className="text-sm text-[#64748b] mt-1">{info?.sekolah.nama}</div>
           <div className="text-xs text-[#94a3b8] mt-1">{info ? formatTanggalPanjang(info.tanggal) : ""}</div>
-          <div className="mt-3 text-[2rem] font-extrabold text-[#1e40af] tracking-tight tabular-nums">{jamNow}</div>
+          <div className="mt-3 text-[2rem] font-extrabold text-[#0d9488] tracking-tight tabular-nums">{jamNow}</div>
         </div>
 
         {err && <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-sm text-red-700 text-center mb-3">{err}</div>}
 
         {/* Status hari ini */}
         {sudahMasuk && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 text-center">
+          <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 mb-3 text-center">
             <div className="text-[0.75rem] text-[#64748b]">Jam Masuk</div>
-            <div className="font-extrabold text-[#1e40af] text-[1.1rem]">{info?.existing?.jamMasuk?.slice(0, 5)}</div>
+            <div className="font-extrabold text-[#0d9488] text-[1.1rem]">{info?.existing?.jamMasuk?.slice(0, 5)}</div>
             {statusMasukLabel && (
               <div className="text-[0.72rem] font-bold mt-1" style={{ color: statusMasukColor }}>
                 {statusMasukLabel}
@@ -182,7 +182,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
             disabled={submitting || geoLoading}
             onClick={() => startAction("in")}
             className="w-full py-4 rounded-xl text-white font-extrabold text-[1rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a)" }}
+            style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}
           >
             <LogIn size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Datang"}
           </button>
@@ -202,7 +202,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
         {sudahMasuk && sudahPulang && (
           <button
             onClick={() => { try { window.close(); } catch { /* ignore */ } }}
-            className="w-full py-3 rounded-xl bg-[#1e40af] text-white font-bold text-[0.9rem] flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-[#0d9488] text-white font-bold text-[0.9rem] flex items-center justify-center gap-2"
           >
             <X size={16} /> Selesai, Tutup Halaman
           </button>

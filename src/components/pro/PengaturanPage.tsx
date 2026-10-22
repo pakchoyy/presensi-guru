@@ -695,7 +695,7 @@ export function PengaturanPage() {
         <div className="flex items-center gap-3 mb-2">
           <div
             className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold text-[0.9rem]"
-            style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+            style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
           >
             {teacher?.nama?.charAt(0)?.toUpperCase() || "G"}
           </div>
@@ -705,7 +705,7 @@ export function PengaturanPage() {
           </div>
           <div className="ml-auto">
             {isPRO ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[#1e40af]/10 text-[#1e40af] border border-[#1e40af]/20">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[#0d9488]/10 text-[#0d9488] border border-[#0d9488]/20">
                 <Crown size={11} /> PRO
               </span>
             ) : (
@@ -719,7 +719,7 @@ export function PengaturanPage() {
           Sekolah: {school?.nama || "-"} ({school?.jenjang || "-"})
           <button
             onClick={() => { setEditSekolah(true); setEditNamaSekolah(school?.nama || ""); setEditJenjang(school?.jenjang || Jenjang.SD); }}
-            className="text-[#1e40af] bg-transparent border-none cursor-pointer p-0"
+            className="text-[#0d9488] bg-transparent border-none cursor-pointer p-0"
           >
             <PenLine size={13} />
           </button>
@@ -737,7 +737,7 @@ export function PengaturanPage() {
               type="text"
               value={editNamaSekolah}
               onChange={(e) => setEditNamaSekolah(e.target.value)}
-              className="w-full px-[11px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[9px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[11px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[9px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
           <div className="mb-3">
@@ -748,7 +748,7 @@ export function PengaturanPage() {
                   key={j}
                   onClick={() => setEditJenjang(j)}
                   className={`py-[10px] rounded-[8px] border-[1.5px] text-[0.78rem] font-bold cursor-pointer ${
-                    editJenjang === j ? "border-[#1e40af] bg-[rgba(14,165,160,0.1)] text-[#1e40af]" : "border-[var(--border)] bg-[var(--input-bg)] text-[var(--text-light)]"
+                    editJenjang === j ? "border-[#0d9488] bg-[rgba(14,165,160,0.1)] text-[#0d9488]" : "border-[var(--border)] bg-[var(--input-bg)] text-[var(--text-light)]"
                   }`}
                 >
                   {j}
@@ -758,7 +758,7 @@ export function PengaturanPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={() => setEditSekolah(false)} className="flex-1 py-[10px] rounded-[10px] border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text)] font-bold text-[0.8rem] cursor-pointer">Batal</button>
-            <button onClick={handleSaveSekolah} disabled={savingSekolah} className="flex-1 py-[10px] rounded-[10px] text-white font-bold text-[0.8rem] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-opacity" style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}>{savingSekolah ? "Menyimpan..." : "Simpan"}</button>
+            <button onClick={handleSaveSekolah} disabled={savingSekolah} className="flex-1 py-[10px] rounded-[10px] text-white font-bold text-[0.8rem] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-opacity" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>{savingSekolah ? "Menyimpan..." : "Simpan"}</button>
           </div>
         </div>
       )}
@@ -766,7 +766,7 @@ export function PengaturanPage() {
       {/* Lokasi & Jam Sekolah (geofencing presensi guru) */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">
-          <MapPin size={15} className="text-[#1e40af]" /> Lokasi &amp; Jam Sekolah
+          <MapPin size={15} className="text-[#0d9488]" /> Lokasi &amp; Jam Sekolah
         </div>
 
         <div className="text-[0.68rem] text-[var(--text-light)] mb-3 leading-relaxed">
@@ -783,7 +783,7 @@ export function PengaturanPage() {
               value={editLat}
               onChange={(e) => setEditLat(e.target.value)}
               placeholder="-7.2504"
-              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
           <div>
@@ -793,7 +793,7 @@ export function PengaturanPage() {
               value={editLng}
               onChange={(e) => setEditLng(e.target.value)}
               placeholder="112.7688"
-              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.8rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
         </div>
@@ -808,7 +808,7 @@ export function PengaturanPage() {
             }
           }}
           disabled={gettingGps}
-          className="w-full flex items-center justify-center gap-[6px] py-[9px] mb-2 rounded-[10px] border-[1.5px] border-[#1e40af] text-[#1e40af] font-bold text-[0.78rem] bg-transparent active:scale-95 disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-[6px] py-[9px] mb-2 rounded-[10px] border-[1.5px] border-[#0d9488] text-[#0d9488] font-bold text-[0.78rem] bg-transparent active:scale-95 disabled:opacity-50"
         >
           <Target size={14} /> {gettingGps ? "Mengambil lokasi..." : "Ambil Lokasi Saat Ini (GPS)"}
         </button>
@@ -821,7 +821,7 @@ export function PengaturanPage() {
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
             <label className="text-[0.65rem] font-bold text-[var(--text-light)] uppercase">Radius Geofence</label>
-            <span className="text-[0.78rem] font-bold text-[#1e40af]">{editRadius} m</span>
+            <span className="text-[0.78rem] font-bold text-[#0d9488]">{editRadius} m</span>
           </div>
           <input
             type="range"
@@ -830,7 +830,7 @@ export function PengaturanPage() {
             step={10}
             value={editRadius}
             onChange={(e) => setEditRadius(Number(e.target.value))}
-            className="w-full accent-[#1e40af]"
+            className="w-full accent-[#0d9488]"
           />
           <div className="flex justify-between text-[0.6rem] text-[var(--text-light)]">
             <span>50m</span><span>250m</span><span>500m</span>
@@ -847,7 +847,7 @@ export function PengaturanPage() {
               type="time"
               value={editJamMasuk}
               onChange={(e) => setEditJamMasuk(e.target.value)}
-              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
           <div>
@@ -858,7 +858,7 @@ export function PengaturanPage() {
               type="time"
               value={editJamPulang}
               onChange={(e) => setEditJamPulang(e.target.value)}
-              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
         </div>
@@ -874,7 +874,7 @@ export function PengaturanPage() {
             max={60}
             value={editToleransi}
             onChange={(e) => setEditToleransi(Number(e.target.value))}
-            className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+            className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
           />
           <div className="text-[0.6rem] text-[var(--text-light)] mt-1">
             Guru yang absen setelah jam masuk + toleransi akan ditandai <b>Terlambat</b>
@@ -898,7 +898,7 @@ export function PengaturanPage() {
               toast(newVal ? "✅ Isi Hadir Otomatis: ON" : "Isi Hadir Otomatis: OFF");
             }}
             className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${
-              autoHadir ? "bg-[#1e40af]" : "bg-[var(--border)]"
+              autoHadir ? "bg-[#0d9488]" : "bg-[var(--border)]"
             }`}
           >
             <span
@@ -940,7 +940,7 @@ export function PengaturanPage() {
           }}
           disabled={savingLokasi}
           className="w-full flex items-center justify-center gap-[6px] py-[10px] mt-3 rounded-[10px] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95"
-          style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+          style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
         >
           <Save size={14} /> {savingLokasi ? "Menyimpan..." : "Simpan Lokasi & Jam"}
         </button>
@@ -951,7 +951,7 @@ export function PengaturanPage() {
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Smartphone size={15} className="text-[#1e40af]" />
+              <Smartphone size={15} className="text-[#0d9488]" />
               <span className="text-[0.8rem] font-bold text-[var(--text)]">
                 Cloud Sync — {devices.length} Device
               </span>
@@ -962,10 +962,10 @@ export function PengaturanPage() {
             <div className="mb-3 space-y-1">
               {devices.slice(0, 3).map((device: any) => (
                 <div key={device.id} className="text-[0.68rem] text-[var(--text-light)] flex items-center gap-2">
-                  <div className="w-1 h-1 rounded-full bg-[#1e40af]"></div>
+                  <div className="w-1 h-1 rounded-full bg-[#0d9488]"></div>
                   {device.device_name} • {formatRelativeTime(device.last_active_at)}
                   {device.device_id === thisDeviceId && (
-                    <span className="ml-auto text-[0.58rem] font-bold bg-[#1e40af]/20 text-[#1e40af] px-1.5 py-0.5 rounded-full">
+                    <span className="ml-auto text-[0.58rem] font-bold bg-[#0d9488]/20 text-[#0d9488] px-1.5 py-0.5 rounded-full">
                       Device ini
                     </span>
                   )}
@@ -1020,7 +1020,7 @@ export function PengaturanPage() {
                 <button
                   onClick={handleForceUpload}
                   disabled={uploading}
-                  className="flex items-center justify-center gap-[6px] py-[8px] rounded-[9px] bg-[#1e40af] text-white font-bold text-[0.75rem] cursor-pointer disabled:opacity-50"
+                  className="flex items-center justify-center gap-[6px] py-[8px] rounded-[9px] bg-[#0d9488] text-white font-bold text-[0.75rem] cursor-pointer disabled:opacity-50"
                 >
                   <Upload size={13} className={uploading ? "animate-bounce" : ""} />
                   {uploading ? "Upload..." : "Upload Cloud"}
@@ -1057,13 +1057,13 @@ export function PengaturanPage() {
               value={loginEmail || teacher?.email || ""}
               onChange={(e) => setLoginEmail(e.target.value)}
               placeholder="email@example.com"
-              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
             />
           </div>
           <button
             onClick={handleDeviceLogin}
             disabled={connecting || !(loginEmail || teacher?.email)}
-            className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#1e40af] text-[#1e40af] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
+            className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#0d9488] text-[#0d9488] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
           >
             <Upload size={15} />
             {connecting ? "Menghubungkan..." : "Hubungkan Sekarang"}
@@ -1093,7 +1093,7 @@ export function PengaturanPage() {
                 type="text"
                 value={editLabel}
                 onChange={(e) => setEditLabel(e.target.value)}
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
               />
             </div>
             <div className="flex gap-2 mb-2">
@@ -1103,7 +1103,7 @@ export function PengaturanPage() {
                   type="date"
                   value={editMulai}
                   onChange={(e) => setEditMulai(e.target.value)}
-                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
                 />
               </div>
               <div className="flex-1">
@@ -1112,7 +1112,7 @@ export function PengaturanPage() {
                   type="date"
                   value={editSelesai}
                   onChange={(e) => setEditSelesai(e.target.value)}
-                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
                 />
               </div>
             </div>
@@ -1120,7 +1120,7 @@ export function PengaturanPage() {
               <button
                 onClick={handleSaveAjaran}
                 disabled={savingAjaran}
-                className="flex-1 py-[9px] rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.78rem] border-none cursor-pointer disabled:opacity-50"
+                className="flex-1 py-[9px] rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.78rem] border-none cursor-pointer disabled:opacity-50"
               >
                 {savingAjaran ? "Menyimpan..." : "Simpan"}
               </button>
@@ -1161,7 +1161,7 @@ export function PengaturanPage() {
               </button>
               <button
                 onClick={handleTambahAjaranBaru}
-                className="flex-1 py-[9px] rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.78rem] border-none cursor-pointer flex items-center justify-center gap-1"
+                className="flex-1 py-[9px] rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.78rem] border-none cursor-pointer flex items-center justify-center gap-1"
               >
                 <Plus size={13} /> Ajaran Baru
               </button>
@@ -1183,7 +1183,7 @@ export function PengaturanPage() {
             onClick={() => saveHariAktifSettings("Senin-Jumat", "1,2,3,4,5")}
             className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
               hariAktif === "Senin-Jumat"
-                ? "border-[#1e40af] bg-[rgba(14,165,160,0.1)] text-[#1e40af]"
+                ? "border-[#0d9488] bg-[rgba(14,165,160,0.1)] text-[#0d9488]"
                 : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
             }`}
           >
@@ -1193,7 +1193,7 @@ export function PengaturanPage() {
             onClick={() => saveHariAktifSettings("Senin-Sabtu", "1,2,3,4,5,6")}
             className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
               hariAktif === "Senin-Sabtu"
-                ? "border-[#1e40af] bg-[rgba(14,165,160,0.1)] text-[#1e40af]"
+                ? "border-[#0d9488] bg-[rgba(14,165,160,0.1)] text-[#0d9488]"
                 : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
             }`}
           >
@@ -1203,7 +1203,7 @@ export function PengaturanPage() {
             onClick={() => saveHariAktifSettings("Kustom", customDays || "1,2,3,4,5,6")}
             className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
               hariAktif === "Kustom"
-                ? "border-[#1e40af] bg-[rgba(14,165,160,0.1)] text-[#1e40af]"
+                ? "border-[#0d9488] bg-[rgba(14,165,160,0.1)] text-[#0d9488]"
                 : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
             }`}
           >
@@ -1229,7 +1229,7 @@ export function PengaturanPage() {
                     }}
                     className={`py-2 rounded-lg text-[0.72rem] font-bold border-[1.5px] cursor-pointer transition-all ${
                       active
-                        ? "border-[#1e40af] bg-[#1e40af] text-white shadow-sm"
+                        ? "border-[#0d9488] bg-[#0d9488] text-white shadow-sm"
                         : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
                     }`}
                   >
@@ -1309,7 +1309,7 @@ export function PengaturanPage() {
                   value={kode}
                   onChange={(e) => setKode(e.target.value)}
                   placeholder="BGY-PS-XXXX"
-                  className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit] uppercase"
+                  className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit] uppercase"
                 />
                 {kode && (
                   <button
@@ -1325,7 +1325,7 @@ export function PengaturanPage() {
               onClick={handleRenew}
               disabled={renewing || !kode.trim()}
               className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
             >
               <ArrowUpCircle size={15} />
               {renewing ? "Memperpanjang..." : "Perpanjang 1 Tahun"}
@@ -1350,26 +1350,26 @@ export function PengaturanPage() {
         /* FREE / Upgrade */
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
           <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-            <ArrowUpCircle size={15} className="text-[#1e40af]" /> Upgrade ke PRO
+            <ArrowUpCircle size={15} className="text-[#0d9488]" /> Upgrade ke PRO
           </div>
 
           <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 mb-3 text-[0.72rem] text-[var(--text)] flex items-start gap-2">
-            <Info size={13} className="text-[#1e40af] flex-shrink-0 mt-[2px]" />
+            <Info size={13} className="text-[#0d9488] flex-shrink-0 mt-[2px]" />
             <span>Sudah pernah beli? Masukkan email & kode yang sama untuk aktivasi ulang.</span>
           </div>
 
-          <div className="bg-gradient-to-br from-[#1e40af]/8 to-[#1e3a8a]/12 rounded-xl p-4 mb-3 border-2 border-[#1e40af]/20 text-center"
+          <div className="bg-gradient-to-br from-[#0d9488]/8 to-[#0f766e]/12 rounded-xl p-4 mb-3 border-2 border-[#0d9488]/20 text-center"
             style={{
               background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(13,122,138,0.10))",
             }}>
-            <Crown size={24} className="text-[#1e40af] mx-auto mb-1" />
+            <Crown size={24} className="text-[#0d9488] mx-auto mb-1" />
             <div className="text-[1rem] font-bold text-[var(--text)] mb-1">
               Akses Penuh Semua Fitur Premium
             </div>
             <div className="text-[0.75rem] text-[var(--text-light)] mb-2">
               Kelola semua kelas, cloud sync, backup otomatis & banyak lagi
             </div>
-            <div className="text-[1.6rem] font-black text-[#1e40af] leading-tight">
+            <div className="text-[1.6rem] font-black text-[#0d9488] leading-tight">
               {PRO_PRICE}
             </div>
             <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
@@ -1392,7 +1392,7 @@ export function PengaturanPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer no-underline"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
             >
               Beli Disini
             </a>
@@ -1421,7 +1421,7 @@ export function PengaturanPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama@email.com"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
               />
             </div>
             <div className="mb-3">
@@ -1433,14 +1433,14 @@ export function PengaturanPage() {
                 value={kode}
                 onChange={(e) => setKode(e.target.value)}
                 placeholder="BGY-PS-XXXX"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit] uppercase"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit] uppercase"
               />
             </div>
             <button
               onClick={handleActivate}
               disabled={activating || !kode.trim() || !email.trim()}
               className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
             >
               <ArrowUpCircle size={15} />
               {activating ? "Mengaktivasi..." : "Aktivasi Sekarang"}
@@ -1464,13 +1464,13 @@ export function PengaturanPage() {
                 value={loginEmail || teacher?.email || ""}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="email@example.com"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#1e40af] font-[inherit]"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
               />
             </div>
             <button
               onClick={handleDeviceLogin}
               disabled={connecting || !(loginEmail || teacher?.email)}
-              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#1e40af] text-[#1e40af] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
+              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#0d9488] text-[#0d9488] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
             >
               <Upload size={15} />
               {connecting ? "Menghubungkan..." : "Hubungkan Device"}
@@ -1491,7 +1491,7 @@ export function PengaturanPage() {
                 <tr className="border-b border-[var(--border)]">
                   <th className="py-2 px-2 text-left text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Fitur</th>
                   <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Gratis</th>
-                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[#1e40af] font-bold">PRO</th>
+                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[#0d9488] font-bold">PRO</th>
                 </tr>
               </thead>
               <tbody>
@@ -1509,7 +1509,7 @@ export function PengaturanPage() {
                   <tr key={i} className="border-b border-[var(--border)] last:border-0">
                     <td className="py-2 px-2 font-semibold">{row.fitur}</td>
                     <td className="py-2 px-2 text-center text-[var(--text-light)]">{row.free}</td>
-                    <td className="py-2 px-2 text-center text-[#1e40af] font-bold">{row.pro}</td>
+                    <td className="py-2 px-2 text-center text-[#0d9488] font-bold">{row.pro}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1564,8 +1564,8 @@ export function PengaturanPage() {
           <div className="bg-[var(--card-bg)] rounded-t-2xl lg:rounded-2xl w-full max-w-[420px] mx-4 px-4 pt-[18px] pb-[22px] animate-slide-up" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-1.5 bg-[var(--border)] rounded-full mx-auto mb-[14px]" />
             <div className="flex justify-center mb-3">
-              <div className="w-14 h-14 rounded-full bg-[#1e40af]/10 flex items-center justify-center">
-                <Smartphone size={28} className="text-[#1e40af]" />
+              <div className="w-14 h-14 rounded-full bg-[#0d9488]/10 flex items-center justify-center">
+                <Smartphone size={28} className="text-[#0d9488]" />
               </div>
             </div>
             <div className="text-[0.85rem] font-bold mb-2 text-center text-[var(--text)]">
@@ -1587,14 +1587,14 @@ export function PengaturanPage() {
               <button
                 onClick={() => { setShowSyncPrompt(false); localStorage.setItem("bgy_pro_sync_reminded", "1"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="flex-1 flex items-center justify-center py-[10px] px-[14px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer"
-                style={{ background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)" }}
+                style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
               >
                 Oke, Saya Mau!
               </button>
             </div>
             <button
               onClick={() => { setShowSyncPrompt(false); localStorage.setItem("bgy_pro_sync_reminded", "1"); setActivePage(PageName.CLOUD_SETTINGS); }}
-              className="w-full text-center text-[0.68rem] text-[#1e40af] font-semibold mt-2 bg-transparent border-none cursor-pointer"
+              className="w-full text-center text-[0.68rem] text-[#0d9488] font-semibold mt-2 bg-transparent border-none cursor-pointer"
             >
               Buka Pengaturan Cloud Sync
             </button>

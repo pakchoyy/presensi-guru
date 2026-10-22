@@ -150,7 +150,7 @@ export function CloudSettingsPage() {
           </p>
           <button
             onClick={() => setActivePage(PageName.PENGATURAN)}
-            className="px-4 py-2 rounded-lg bg-[#1e40af] text-white font-bold text-[0.78rem]"
+            className="px-4 py-2 rounded-lg bg-[#0d9488] text-white font-bold text-[0.78rem]"
           >
             Kembali ke Pengaturan
           </button>
@@ -163,7 +163,7 @@ export function CloudSettingsPage() {
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
       <button
         onClick={() => setActivePage(PageName.PENGATURAN)}
-        className="flex items-center gap-2 text-[0.78rem] font-bold text-[#1e40af] mb-3 bg-transparent border-none cursor-pointer"
+        className="flex items-center gap-2 text-[0.78rem] font-bold text-[#0d9488] mb-3 bg-transparent border-none cursor-pointer"
       >
         <ArrowLeft size={16} /> Kembali
       </button>
@@ -227,7 +227,7 @@ export function CloudSettingsPage() {
       {/* Manual Upload / Tarik */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-2 mb-2">
-          <Upload size={15} className="text-[#1e40af]" /> Upload & Tarik Manual
+          <Upload size={15} className="text-[#0d9488]" /> Upload & Tarik Manual
         </div>
         <div className="text-[0.68rem] text-[var(--text-light)] mb-3">
           Upload data lokal ke cloud, atau tarik data dari cloud ke device ini.
@@ -247,7 +247,7 @@ export function CloudSettingsPage() {
               }
             }}
             disabled={syncing}
-            className="flex-1 flex items-center justify-center gap-[5px] py-[9px] rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.75rem] border-none cursor-pointer disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-[5px] py-[9px] rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.75rem] border-none cursor-pointer disabled:opacity-50"
           >
             <Upload size={13} /> {syncing ? "Memproses..." : "Upload ke Cloud"}
           </button>
@@ -265,7 +265,7 @@ export function CloudSettingsPage() {
               }
             }}
             disabled={syncing}
-            className="flex-1 flex items-center justify-center gap-[5px] py-[9px] rounded-[10px] border border-[#1e40af] text-[#1e40af] font-bold text-[0.75rem] cursor-pointer bg-transparent disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-[5px] py-[9px] rounded-[10px] border border-[#0d9488] text-[#0d9488] font-bold text-[0.75rem] cursor-pointer bg-transparent disabled:opacity-50"
           >
             <Download size={13} /> {syncing ? "Memproses..." : "Tarik dari Cloud"}
           </button>
@@ -275,7 +275,7 @@ export function CloudSettingsPage() {
       {/* Sync Sekarang — with dropdown options */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-2 mb-3">
-          <RefreshCw size={15} className="text-[#1e40af]" /> Manual Sync
+          <RefreshCw size={15} className="text-[#0d9488]" /> Manual Sync
         </div>
         <div className="text-[0.68rem] text-[var(--text-light)] mb-3">
           Pilih opsi sync sesuai kebutuhan. <b>Tarik dari Cloud</b> untuk dapat data terbaru dari device lain. <b>Upload ke Cloud</b> untuk share data lokal ke device lain.
@@ -284,7 +284,7 @@ export function CloudSettingsPage() {
           <button
             onClick={handleManualSync}
             disabled={syncing}
-            className="flex flex-col items-center gap-1 py-3 rounded-[10px] bg-[#1e40af] text-white font-bold text-[0.72rem] cursor-pointer disabled:opacity-50 border-none"
+            className="flex flex-col items-center gap-1 py-3 rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.72rem] cursor-pointer disabled:opacity-50 border-none"
           >
             <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
             <span>{syncing ? "Sync..." : "Sync Biasa"}</span>
@@ -292,7 +292,7 @@ export function CloudSettingsPage() {
           <button
             onClick={handleForceDownload}
             disabled={downloading}
-            className="flex flex-col items-center gap-1 py-3 rounded-[10px] border-[1.5px] border-[#1e40af] bg-white dark:bg-transparent text-[#1e40af] font-bold text-[0.72rem] cursor-pointer disabled:opacity-50"
+            className="flex flex-col items-center gap-1 py-3 rounded-[10px] border-[1.5px] border-[#0d9488] bg-white dark:bg-transparent text-[#0d9488] font-bold text-[0.72rem] cursor-pointer disabled:opacity-50"
           >
             <Download size={16} className={downloading ? "animate-bounce" : ""} />
             <span>{downloading ? "Menarik..." : "Tarik Cloud"}</span>
@@ -300,7 +300,7 @@ export function CloudSettingsPage() {
           <button
             onClick={handleForceUpload}
             disabled={uploading}
-            className="flex flex-col items-center gap-1 py-3 rounded-[10px] border-[1.5px] border-[#1e40af] bg-white dark:bg-transparent text-[#1e40af] font-bold text-[0.72rem] cursor-pointer disabled:opacity-50"
+            className="flex flex-col items-center gap-1 py-3 rounded-[10px] border-[1.5px] border-[#0d9488] bg-white dark:bg-transparent text-[#0d9488] font-bold text-[0.72rem] cursor-pointer disabled:opacity-50"
           >
             <Upload size={16} className={uploading ? "animate-bounce" : ""} />
             <span>{uploading ? "Upload..." : "Upload Cloud"}</span>

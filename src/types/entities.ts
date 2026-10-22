@@ -28,6 +28,10 @@ export interface Teacher {
   role?: "admin" | "guru";
   jabatan?: string;
   nip?: string;
+  /** Kode login guru (opsional) — bisa NIP, NUPTK, atau kode auto-generate `G-XXXX`. Dipakai untuk login mandiri guru lewat halaman Presensi. */
+  kodeLogin?: string;
+  /** PIN login mandiri guru (4-6 digit). Disetel oleh Ops / Kepala Sekolah di halaman Daftar Guru. */
+  pin?: string;
   statusAktif?: boolean;
   hariAktifMode?: string;
   hariAktifCustom?: string;

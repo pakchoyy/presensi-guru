@@ -88,7 +88,7 @@ export function WizardSetup() {
           <div className="text-[1.2rem] font-extrabold text-[var(--text)]">{APP_BRAND}</div>
           <div className="text-[0.78rem] text-[var(--text-light)]">Setup awal — {step}/{WIZARD_TOTAL}</div>
           <div className="mt-3 bg-[var(--border)] rounded-full h-2 overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#1e40af,#1e3a8a)" }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#0d9488,#0f766e)" }} />
           </div>
         </div>
 
@@ -100,7 +100,7 @@ export function WizardSetup() {
               <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Jenjang</div>
               <div className="grid grid-cols-3 gap-2">
                 {[Jenjang.SD, Jenjang.SMP, Jenjang.SMA].map((j) => (
-                  <button key={j} onClick={() => setJenjang(j)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${jenjang === j ? "border-[#1e40af] bg-[rgba(30,64,175,0.1)] text-[#1e40af]" : "border-[var(--border)]"}`}>{j}</button>
+                  <button key={j} onClick={() => setJenjang(j)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${jenjang === j ? "border-[#0d9488] bg-[rgba(30,64,175,0.1)] text-[#0d9488]" : "border-[var(--border)]"}`}>{j}</button>
                 ))}
               </div>
             </>
@@ -119,7 +119,7 @@ export function WizardSetup() {
               <div className="text-[0.78rem] text-[var(--text-light)] mb-2">Semester Aktif</div>
               <div className="grid grid-cols-2 gap-2">
                 {[Semester.GANJIL, Semester.GENAP].map((s) => (
-                  <button key={s} onClick={() => setSemester(s)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${semester === s ? "border-[#1e40af] bg-[rgba(30,64,175,0.1)] text-[#1e40af]" : "border-[var(--border)]"}`}>{s}</button>
+                  <button key={s} onClick={() => setSemester(s)} className={`py-2 rounded-lg border-[1.5px] font-bold text-[0.82rem] ${semester === s ? "border-[#0d9488] bg-[rgba(30,64,175,0.1)] text-[#0d9488]" : "border-[var(--border)]"}`}>{s}</button>
                 ))}
               </div>
             </>
@@ -127,7 +127,7 @@ export function WizardSetup() {
           {step === 4 && (
             <>
               <div className="flex items-center gap-2 mb-4 text-[1rem] font-bold text-[var(--text)]"><MapPin size={18} /> Lokasi & Jam Sekolah</div>
-              <button onClick={ambilLokasi} disabled={gpsLoading} className="w-full py-2 rounded-lg bg-[rgba(30,64,175,0.1)] text-[#1e40af] font-bold text-[0.85rem] mb-3 flex items-center justify-center gap-2">
+              <button onClick={ambilLokasi} disabled={gpsLoading} className="w-full py-2 rounded-lg bg-[rgba(30,64,175,0.1)] text-[#0d9488] font-bold text-[0.85rem] mb-3 flex items-center justify-center gap-2">
                 <Target size={16} /> {gpsLoading ? "Mengambil GPS..." : "Ambil Lokasi Sekolah Sekarang"}
               </button>
               <div className="grid grid-cols-2 gap-2 mb-3">
@@ -156,7 +156,7 @@ export function WizardSetup() {
           {step > 1 && (
             <button onClick={back} className="flex-1 py-3 rounded-xl border border-[var(--border)] font-bold text-[0.85rem]">Kembali</button>
           )}
-          <button onClick={next} className="flex-1 py-3 rounded-xl text-white font-bold text-[0.85rem] flex items-center justify-center gap-2" style={{ background: "linear-gradient(135deg,#1e40af,#1e3a8a)" }}>
+          <button onClick={next} className="flex-1 py-3 rounded-xl text-white font-bold text-[0.85rem] flex items-center justify-center gap-2" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}>
             {step === WIZARD_TOTAL ? (<><Check size={16} /> Selesai Setup</>) : "Lanjut"}
           </button>
         </div>

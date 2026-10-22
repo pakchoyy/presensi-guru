@@ -3,7 +3,7 @@ export function Footer() {
     <footer
       className="hidden lg:block w-full text-white text-center py-[8px] px-5 flex-shrink-0"
       style={{
-        background: "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)",
+        background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)",
       }}
     >
       <div className="text-[0.72rem] font-semibold mb-[2px]">Presensi Siswa</div>

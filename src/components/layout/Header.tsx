@@ -12,7 +12,7 @@ export function Header() {
     useApp();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  let subtitle = "| Presensi Siswa";
+  let subtitle = "| Guru";
 
   if (!setupSelesai) {
     subtitle = "Setup Awal";
@@ -36,33 +36,53 @@ export function Header() {
     subtitle = "| Upgrade";
   } else if (activePage === "cloud-settings") {
     subtitle = "| Cloud Settings";
+  } else if (activePage === "presensi") {
+    subtitle = "| Presensi";
+  } else if (activePage === "log-presensi") {
+    subtitle = "| Log Presensi";
   }
 
   return (
     <header
-      className="sticky top-0 z-[300] px-3"
+      className="sticky top-0 z-[300] px-3 relative overflow-hidden"
       style={{
-        background: darkMode
-          ? "linear-gradient(135deg, #0d4a47, #1a3a4a)"
-          : "linear-gradient(135deg, #1e40af, #1e3a8a, #172554)",
-        boxShadow: "0 2px 10px rgba(0,0,0,.18)",
+        background: "var(--grad)",
+        boxShadow: "0 4px 18px rgba(13,148,136,.25)",
       }}
     >
-      <div className="flex items-center justify-between h-[54px]">
+      {/* Ornamen lingkaran dekoratif */}
+      <span className="header-orb" style={{ width: 110, height: 110, top: -40, right: -30 }} />
+      <span className="header-orb" style={{ width: 70, height: 70, bottom: -24, left: 60, background: "rgba(255,255,255,.08)" }} />
+      <span className="header-orb" style={{ width: 42, height: 42, top: 8, left: "40%", background: "rgba(255,255,255,.07)" }} />
+
+      <div className="flex items-center justify-between h-[58px] relative">
         <div className="flex items-center gap-[8px] flex-1 min-w-0">
           <LogoUpload />
-          <div className="min-w-0">
-            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis leading-tight">
-              {setupSelesai ? `Bantu Guru Yuk ${subtitle}` : "Setup"}
+          <div className="min-w-0 leading-tight">
+            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+              {setupSelesai ? (
+                <>
+                  <span className="italic">Presensi Yuk</span>{" "}
+                  <span className="font-bold opacity-95">{subtitle}</span>
+                </>
+              ) : (
+                "Setup"
+              )}
             </div>
+            {setupSelesai && teacher?.nama && (
+              <div className="text-[0.62rem] text-white/80 truncate flex items-center gap-1 mt-[1px]">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                {teacher.nama}{teacher.nip ? ` · ${teacher.nip}` : ""}
+              </div>
+            )}
           </div>
         </div>
 
         {setupSelesai && (
           <span className={`text-[0.65rem] px-[8px] py-[3px] rounded-full font-bold flex-shrink-0 mr-1 ${
             teacher?.tier === Tier.PRO
-              ? "bg-[#f59e0b]/20 text-[#fbbf24] border border-[#f59e0b]/30"
-              : "bg-white/10 text-white/60 border border-white/20"
+              ? "bg-[#f59e0b]/25 text-[#fef3c7] border border-[#f59e0b]/40"
+              : "bg-white/15 text-white/85 border border-white/25"
           }`}>
             {teacher?.tier === Tier.PRO ? "PRO" : "FREE"}
           </span>
@@ -73,7 +93,7 @@ export function Header() {
           <LicenseExpiryBadge />
           <button
             onClick={toggleDarkMode}
-            className="h-[34px] w-[34px] rounded-[8px] border-[1.5px] border-white/30 bg-white/10 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25 cursor-pointer"
+            className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25 cursor-pointer"
             title="Mode gelap/terang"
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
@@ -82,7 +102,7 @@ export function Header() {
             <>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="h-[34px] w-[34px] rounded-[8px] border-[1.5px] border-white/30 bg-white/10 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25 cursor-pointer"
+                className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25 cursor-pointer"
                 title="Menu"
               >
                 <Menu size={16} />
