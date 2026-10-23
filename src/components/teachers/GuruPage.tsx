@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Users,
   UserPlus,
@@ -8,7 +8,10 @@ import {
   KeyRound,
   Share2,
   X,
+  FileSpreadsheet,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { db } from "@/repositories/dexie/db";
@@ -43,6 +46,7 @@ export function GuruPage() {
   // form state
   const [fNama, setFNama] = useState("");
   const [fNip, setFNip] = useState("");
+  const [fKode, setFKode] = useState("");   // kode login G-XXXX saat tanpa NIP
   const [fPin, setFPin] = useState("");
   const [fJabatan, setFJabatan] = useState("");
   const [fRole, setFRole] = useState<"guru" | "admin">("guru");
@@ -50,14 +54,33 @@ export function GuruPage() {
 
   const [shareDialog, setShareDialog] = useState<{ nama: string; kode: string; pin: string; nip?: string } | null>(null);
 
+  const genKodeUnik = (): string => {
+    let candidate = randomKode();
+    let tries = 0;
+    while (kodeDipakai(candidate) && tries < 50) { candidate = randomKode(); tries++; }
+    return candidate;
+  };
+
+  // Kode login yang akan dipakai & ditampilkan di form.
+  const resolvedKode = punyaNip ? (fNip.trim() || "(ketik NIP)") : (fKode || "—");
+
   const resetForm = () => {
     setEditId(null);
     setFNama("");
     setFNip("");
+    setFKode("");
     setFPin("");
     setFJabatan("");
     setFRole("guru");
     setPunyaNip(false);
+  };
+
+  // Buka form Tambah guru baru (sekalian generate kode + PIN awal supaya terlihat).
+  const openTambah = () => {
+    resetForm();
+    setFKode(genKodeUnik());
+    setFPin(randomPin(4));
+    setShowAdd(true);
   };
 
   const load = async () => {
@@ -82,7 +105,7 @@ export function GuruPage() {
     }
     const now = timestamp();
 
-    // Kode login: kalau punya NIP → pakai NIP; kalau tidak → auto-generate G-XXXX.
+    // Kode login: kalau punya NIP → pakai NIP; kalau tidak → kode G-XXXX (fKode).
     const nipInput = punyaNip ? fNip.trim() : "";
     let kode: string;
     if (nipInput) {
@@ -92,13 +115,7 @@ export function GuruPage() {
       }
       kode = nipInput;
     } else {
-      let candidate = randomKode();
-      let tries = 0;
-      while (kodeDipakai(candidate) && tries < 50) {
-        candidate = randomKode();
-        tries++;
-      }
-      kode = candidate;
+      kode = fKode.trim() || genKodeUnik();
     }
 
     // PIN: kalau kosong → generate 4 digit
@@ -188,6 +205,7 @@ export function GuruPage() {
     setFNama(g.nama);
     setFNip(g.nip || "");
     setPunyaNip(!!g.nip);
+    setFKode(g.kodeLogin || g.nip || genKodeUnik());
     setFPin(g.pin || "");
     setFJabatan(g.jabatan || "");
     setFRole((g.role as "guru" | "admin") || "guru");
@@ -202,6 +220,92 @@ export function GuruPage() {
     toast(`${g.nama} dihapus`, "info");
     await load();
     await refreshTeachers();
+  };
+
+  // ── Import Excel ────────────────────────────────────────────────
+  const excelInputRef = useRef<HTMLInputElement>(null);
+
+  const downloadTemplate = () => {
+    const rows = [
+      ["Nama", "Jabatan", "NIP", "PIN"],
+      ["Budi Santoso", "Guru Kelas 1", "198001012005011001", "1234"],
+      ["Siti Aminah", "Guru Kelas 2", "", "5678"],
+      ["Ahmad (tanpa NIP)", "Guru Mapel", "", ""],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 8 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Guru");
+    XLSX.writeFile(wb, "template_import_guru.xlsx");
+    toast("Template diunduh — isi kolom Nama (wajib)", "success");
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = ""; // reset supaya bisa pilih file sama lagi
+    if (!file || !school) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+      if (data.length === 0) { toast("File kosong", "error"); return; }
+
+      // ambil kolom fleksibel (case-insensitive)
+      const pick = (row: Record<string, unknown>, keys: string[]): string => {
+        for (const k of Object.keys(row)) {
+          if (keys.includes(k.trim().toLowerCase())) return String(row[k] ?? "").trim();
+        }
+        return "";
+      };
+
+      let ok = 0, skip = 0;
+      const now = timestamp();
+      const existingCodes = new Set(guruList.flatMap((g) => [g.kodeLogin, g.nip].filter(Boolean) as string[]));
+      const genUnik = (): string => {
+        let c = randomKode();
+        while (existingCodes.has(c)) c = randomKode();
+        existingCodes.add(c);
+        return c;
+      };
+
+      for (const row of data) {
+        const nama = pick(row, ["nama", "name", "nama lengkap"]);
+        if (!nama) { skip++; continue; }
+        const jabatan = pick(row, ["jabatan", "jabatan (opsional)"]);
+        const nipRaw = pick(row, ["nip", "nip / nuptk", "nip/nuptk", "nuptk"]);
+        const pinRaw = pick(row, ["pin"]).replace(/\D/g, "").slice(0, 6);
+        const nip = nipRaw || undefined;
+        let kode = nipRaw;
+        if (!kode) kode = genUnik();
+        else existingCodes.add(kode);
+        const pin = /^\d{4,6}$/.test(pinRaw) ? pinRaw : randomPin(4);
+
+        await db.teachers.put({
+          id: generateId(),
+          nama,
+          email: "",
+          sekolahId: school.id,
+          tier: Tier.FREE,
+          nip,
+          kodeLogin: kode,
+          pin,
+          jabatan: jabatan || undefined,
+          role: "guru",
+          absenToken: crypto.randomUUID(),
+          statusAktif: true,
+          dibuatPada: now,
+          diubahPada: now,
+        });
+        ok++;
+      }
+      toast(`${ok} guru diimpor${skip ? `, ${skip} dilewati (nama kosong)` : ""}`, ok ? "success" : "info");
+      await load();
+      await refreshTeachers();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast(`Gagal baca Excel: ${msg}`, "error");
+    }
   };
 
   const handleResetPin = async (g: Teacher) => {
@@ -243,7 +347,7 @@ export function GuruPage() {
             <Users size={16} /> Daftar Guru <span className="text-[var(--text-light)] font-semibold">({guruList.length})</span>
           </div>
           <button
-            onClick={() => { if (showAdd) { resetForm(); } setShowAdd(!showAdd); }}
+            onClick={() => { if (showAdd) { resetForm(); setShowAdd(false); } else { openTambah(); } }}
             className="flex items-center gap-1 px-3 py-[8px] rounded-xl text-white font-bold text-[0.78rem] active:scale-95"
             style={{ background: "var(--grad)" }}
           >
@@ -251,6 +355,31 @@ export function GuruPage() {
             {showAdd ? "Batal" : "Tambah"}
           </button>
         </div>
+
+        {/* Import Excel */}
+        {!showAdd && (
+          <div className="flex gap-2 mt-3">
+            <input
+              ref={excelInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleImportExcel}
+              className="hidden"
+            />
+            <button
+              onClick={() => excelInputRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-[6px] py-[9px] rounded-xl border-[1.5px] border-[#16a34a] text-[#16a34a] font-bold text-[0.76rem] bg-transparent active:scale-95"
+            >
+              <FileSpreadsheet size={14} /> Import Excel
+            </button>
+            <button
+              onClick={downloadTemplate}
+              className="flex items-center justify-center gap-[6px] px-3 py-[9px] rounded-xl border-[1.5px] border-[var(--border)] text-[var(--text-light)] font-bold text-[0.76rem] bg-transparent active:scale-95"
+            >
+              <Download size={14} /> Template
+            </button>
+          </div>
+        )}
 
         {showAdd && (
           <div className="mt-3 space-y-3 animate-slide-down">
@@ -287,7 +416,7 @@ export function GuruPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => { const v = !punyaNip; setPunyaNip(v); if (!v) setFNip(""); }}
+                  onClick={() => { const v = !punyaNip; setPunyaNip(v); if (!v) { setFNip(""); if (!fKode) setFKode(genKodeUnik()); } }}
                   className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 border-none cursor-pointer ${punyaNip ? "bg-[var(--brand)]" : "bg-[var(--border)]"}`}
                   aria-label="Toggle punya NIP"
                 >
@@ -303,6 +432,12 @@ export function GuruPage() {
                   className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
                 />
               )}
+
+              {/* Kode login — ditampilkan langsung di atas PIN */}
+              <div className="flex items-center justify-between bg-[var(--card-bg)] border border-[var(--border)] rounded-xl px-3 py-2">
+                <span className="text-[0.68rem] font-bold text-[var(--text-light)] uppercase tracking-wide">Kode login</span>
+                <span className="font-mono font-extrabold text-[var(--brand-strong)] text-[0.95rem]">{resolvedKode}</span>
+              </div>
 
               {/* PIN sejajar tombol Reset PIN */}
               <div>

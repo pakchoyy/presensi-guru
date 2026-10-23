@@ -8,40 +8,10 @@ import { LicenseExpiryBadge } from "@/components/layout/LicenseExpiryBadge";
 import { Moon, Sun, Menu } from "lucide-react";
 
 export function Header() {
-  const { activePage, darkMode, toggleDarkMode, setupSelesai, teacher } =
-    useApp();
+  const { darkMode, toggleDarkMode, setupSelesai, teacher } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  let subtitle = "| Guru";
-
-  if (!setupSelesai) {
-    subtitle = "Setup Awal";
-  } else if (activePage === "dashboard") {
-    subtitle = "| Dashboard";
-  } else if (activePage === "rekap") {
-    subtitle = "| Rekap";
-  } else if (activePage === "guru") {
-    subtitle = "| Guru";
-  } else if (activePage === "kalender") {
-    subtitle = "| Kalender";
-  } else if (activePage === "petunjuk") {
-    subtitle = "| Petunjuk";
-  } else if (activePage === "tentang") {
-    subtitle = "| Tentang";
-  } else if (activePage === "pengaturan") {
-    subtitle = "| Pengaturan";
-  } else if (activePage === "backup") {
-    subtitle = "| Backup";
-  } else if (activePage === "upgrade") {
-    subtitle = "| Upgrade";
-  } else if (activePage === "cloud-settings") {
-    subtitle = "| Cloud Settings";
-  } else if (activePage === "presensi") {
-    subtitle = "| Presensi";
-  } else if (activePage === "log-presensi") {
-    subtitle = "| Log Presensi";
-  }
-
+  // Judul PATEN — selalu "Presensi Yuk | Guru" apapun halaman aktifnya.
   return (
     <header
       className="sticky top-0 z-[300] px-3 relative"
@@ -60,17 +30,14 @@ export function Header() {
 
       <div className="flex items-center justify-between h-[58px] relative">
         <div className="flex items-center gap-[8px] flex-1 min-w-0">
-          <LogoUpload />
+          {/* Logo di atas lingkaran/stabilo putih supaya menonjol di header biru */}
+          <div className="flex-shrink-0 w-[42px] h-[42px] rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden p-[2px]">
+            <LogoUpload />
+          </div>
           <div className="min-w-0 leading-tight">
             <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
-              {setupSelesai ? (
-                <>
-                  <span className="italic">Presensi Yuk</span>{" "}
-                  <span className="font-bold opacity-95">{subtitle}</span>
-                </>
-              ) : (
-                "Setup"
-              )}
+              <span className="italic">Presensi Yuk</span>{" "}
+              <span className="font-bold opacity-95">| Guru</span>
             </div>
             {setupSelesai && teacher?.nama && (
               <div className="text-[0.62rem] text-white/80 truncate flex items-center gap-1 mt-[1px]">

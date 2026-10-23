@@ -8,7 +8,10 @@ import {
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import type { TeacherAttendance, Teacher } from "@/types/entities";
-import { formatTanggalPanjang, inisial } from "@/lib/utils";
+import { formatTanggalPanjang, inisial, attendanceIdFrom, timestamp } from "@/lib/utils";
+import type { AttendanceStatus } from "@/types/enums";
+import { StatusSheet } from "./StatusSheet";
+import { useToast } from "@/components/shared/Toast";
 
 type Row = {
   guru: Teacher;
@@ -38,12 +41,15 @@ const CHIP_COLOR: Record<Bucket, { dot: string; label: string; text: string }> =
 };
 
 function bucketFor(att?: TeacherAttendance): Bucket {
-  if (!att?.jamMasuk) {
-    if (att?.statusHari === "S") return "sakit";
-    if (att?.statusHari === "I") return "izin";
-    if (att?.statusHari === "A") return "alpha";
-    return "belum";
+  // Status manual (statusHari) selalu diprioritaskan.
+  if (att?.statusHari) {
+    if (att.statusHari === "H") return "hadir";
+    if (att.statusHari === "T") return "terlambat";
+    if (att.statusHari === "S") return "sakit";
+    if (att.statusHari === "I") return "izin";
+    if (att.statusHari === "A") return "alpha";
   }
+  if (!att?.jamMasuk) return "belum";
   if (att.statusMasuk === "LATE") return "terlambat";
   if (att.statusMasuk === "FAR") return "alpha";
   return "hadir";
@@ -53,7 +59,32 @@ export function DashboardHarianPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tanggal, setTanggal] = useState<string>(ymd(new Date()));
+  const [editGuru, setEditGuru] = useState<Teacher | null>(null);
+  const { toast } = useToast();
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const setStatus = async (guru: Teacher, status: AttendanceStatus | "RESET") => {
+    const id = attendanceIdFrom(guru.id, tanggal);
+    const existing = await teacherAttendanceRepo.getById(id);
+    if (status === "RESET") {
+      await teacherAttendanceRepo.upsert({
+        ...(existing || {}),
+        id, guruId: guru.id, tanggal,
+        statusHari: undefined,
+        diubahPada: timestamp(),
+      } as TeacherAttendance);
+    } else {
+      await teacherAttendanceRepo.upsert({
+        ...(existing || {}),
+        id, guruId: guru.id, tanggal,
+        statusHari: status,
+        diubahPada: timestamp(),
+      } as TeacherAttendance);
+    }
+    setEditGuru(null);
+    toast(`Status ${guru.nama} diperbarui`, "success");
+    load(tanggal);
+  };
 
   const bukaKalender = () => {
     const el = dateInputRef.current;
@@ -196,7 +227,8 @@ export function DashboardHarianPage() {
           return (
             <div
               key={guru.id}
-              className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3 relative overflow-hidden"
+              onClick={() => setEditGuru(guru)}
+              className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3 relative overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors"
               style={{ boxShadow: "var(--shadow)" }}
             >
               <span className="absolute left-0 top-0 bottom-0 w-[4px]" style={{ background: c.dot }} />
@@ -229,6 +261,15 @@ export function DashboardHarianPage() {
           );
         })}
       </div>
+
+      {editGuru && (
+        <StatusSheet
+          nama={editGuru.nama}
+          tanggalLabel={formatTanggalPanjang(tanggal)}
+          onPick={(status) => setStatus(editGuru, status)}
+          onClose={() => setEditGuru(null)}
+        />
+      )}
     </div>
   );
 }

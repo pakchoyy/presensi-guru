@@ -16,8 +16,8 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const isPRO = teacher?.tier === Tier.PRO;
 
-  const logoUrl = school?.logoUrl || "/guru-cibisd2.png";
-  const isCustomLogo = school?.logoUrl && school.logoUrl !== "/guru-cibisd2.png";
+  const logoUrl = school?.logoUrl || "/logo-presensiyuk.png";
+  const isCustomLogo = school?.logoUrl && school.logoUrl !== "/logo-presensiyuk.png";
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,7 +65,7 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
     if (!school || !isCustomLogo) return;
     
     try {
-      await schoolRepo.updateLogo(school.id, "/guru-cibisd2.png");
+      await schoolRepo.updateLogo(school.id, "/logo-presensiyuk.png");
       toast("✅ Logo dihapus, kembali ke default");
       setTimeout(() => window.location.reload(), 500);
     } catch (error) {
