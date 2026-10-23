@@ -1,3 +1,4 @@
+import { ketukResetUji } from "@/lib/utils";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Tier } from "@/types/enums";
@@ -35,7 +36,7 @@ export function Header() {
             <LogoUpload />
           </div>
           <div className="min-w-0 leading-tight">
-            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis" onClick={ketukResetUji}>
               <span className="italic">Presensi Yuk</span>{" "}
               <span className="font-bold opacity-95">| Guru</span>
             </div>

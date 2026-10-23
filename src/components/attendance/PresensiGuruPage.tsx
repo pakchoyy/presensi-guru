@@ -21,7 +21,7 @@ import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
 import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp } from "@/lib/utils";
+import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp, EVENT_RESET_UJI } from "@/lib/utils";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { SelfieCamera, type InfoSelfie } from "./SelfieCamera";
 import { haversineDistance } from "@/lib/geo";
@@ -323,6 +323,21 @@ function SelfAbsenPanel({
   };
 
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [guru.id]);
+
+  // SEMENTARA (uji coba): reset absen hari ini, juga di cloud (data kosong yang lebih baru menimpa).
+  useEffect(() => {
+    const reset = async () => {
+      if (!window.confirm("Reset absen hari ini untuk uji coba?")) return;
+      const id = attendanceIdFrom(guru.id, tanggal);
+      await teacherAttendanceRepo.upsert({ id, guruId: guru.id, tanggal, diubahPada: timestamp() } as TeacherAttendance);
+      await refresh();
+      await kirimKeSekolah().catch(() => {});
+      toast("Absen hari ini direset", "info");
+    };
+    window.addEventListener(EVENT_RESET_UJI, reset);
+    return () => window.removeEventListener(EVENT_RESET_UJI, reset);
+    // eslint-disable-next-line
+  }, [guru.id, tanggal]);
 
   const izinAktif =
     existing?.statusHari === AttendanceStatus.SAKIT || existing?.statusHari === AttendanceStatus.IZIN

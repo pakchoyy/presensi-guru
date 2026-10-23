@@ -1,3 +1,4 @@
+import { ketukResetUji } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
@@ -97,7 +98,7 @@ export function GuruShell() {
           <div className="flex items-center gap-[8px] flex-1 min-w-0">
             <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
             <div className="min-w-0 leading-tight">
-              <div className="text-[1rem] font-extrabold text-white whitespace-nowrap">
+              <div className="text-[1rem] font-extrabold text-white whitespace-nowrap" onClick={ketukResetUji}>
                 <span className="italic">Presensi Yuk</span> <span className="opacity-95">| Guru</span>
               </div>
               {guru?.nama && (
