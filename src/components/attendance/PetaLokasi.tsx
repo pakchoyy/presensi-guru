@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, LocateFixed } from "lucide-react";
+import { MapPin, Navigation, LocateFixed, School as SchoolIcon, UserRound } from "lucide-react";
 
 /**
  * Peta lokasi presensi (Leaflet + tile OpenStreetMap — tanpa API key).
@@ -27,6 +27,9 @@ export function PetaLokasi({
   loading?: boolean;
   onRefresh?: () => void;
 }) {
+  // "sekolah" = radius selalu terlihat; "keduanya" = zoom out sampai posisi
+  // guru ikut masuk layar (lingkaran radius bisa jadi kecil kalau jauh).
+  const [fokus, setFokus] = useState<"sekolah" | "keduanya">("sekolah");
   const boxRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
@@ -64,29 +67,33 @@ export function PetaLokasi({
     layer.clearLayers();
 
     const titikSekolah = L.latLng(lat, lng);
-    L.circle(titikSekolah, {
+    const lingkaran = L.circle(titikSekolah, {
       radius,
       color: "#2563eb",
-      weight: 1.5,
+      weight: 2,
       fillColor: "#3b82f6",
-      fillOpacity: 0.12,
+      fillOpacity: 0.18,
     }).addTo(layer);
     L.marker(titikSekolah, { icon: pinIcon("#2563eb") })
       .addTo(layer)
       .bindPopup(namaSekolah);
 
-    if (posisi) {
-      const titikSaya = L.latLng(posisi.lat, posisi.lng);
+    const titikSaya = posisi ? L.latLng(posisi.lat, posisi.lng) : null;
+    if (titikSaya) {
       L.marker(titikSaya, { icon: pinIcon("#16a34a") })
         .addTo(layer)
         .bindPopup("Posisi Anda");
-      map.fitBounds(L.latLngBounds([titikSekolah, titikSaya]).pad(0.45), { maxZoom: 18 });
+    }
+
+    if (fokus === "keduanya" && titikSaya) {
+      map.fitBounds(L.latLngBounds([titikSekolah, titikSaya]).pad(0.3), { maxZoom: 18 });
     } else {
-      map.setView(titikSekolah, 17);
+      // Pas ke lingkaran radius supaya area geofence selalu kelihatan jelas.
+      map.fitBounds(lingkaran.getBounds().pad(0.6), { maxZoom: 18 });
     }
     // Container baru kadang belum punya ukuran final saat render pertama.
     setTimeout(() => map.invalidateSize(), 50);
-  }, [lat, lng, radius, posisi, namaSekolah]);
+  }, [lat, lng, radius, posisi, namaSekolah, fokus]);
 
   const diDalam = jarakMeter != null ? jarakMeter <= radius : null;
 
@@ -115,7 +122,25 @@ export function PetaLokasi({
         )}
       </div>
 
-      <div ref={boxRef} className="h-[190px] w-full bg-[var(--input-bg)] z-0" aria-label="Peta lokasi sekolah" />
+      <div className="relative">
+        <div ref={boxRef} className="h-[190px] w-full bg-[var(--input-bg)] z-0" aria-label="Peta lokasi sekolah" />
+        {posisi && (
+          <div className="absolute right-2 top-2 z-[400] flex rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-bg)] shadow">
+            <FokusBtn
+              aktif={fokus === "sekolah"}
+              onClick={() => setFokus("sekolah")}
+              icon={<SchoolIcon size={12} />}
+              label="Area"
+            />
+            <FokusBtn
+              aktif={fokus === "keduanya"}
+              onClick={() => setFokus("keduanya")}
+              icon={<UserRound size={12} />}
+              label="Saya"
+            />
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-2 px-3 py-[10px] border-t border-[var(--border)]">
         <Navigation size={13} className="text-[var(--text-light)] flex-shrink-0" />
@@ -139,6 +164,29 @@ export function PetaLokasi({
         )}
       </div>
     </div>
+  );
+}
+
+function FokusBtn({
+  aktif,
+  onClick,
+  icon,
+  label,
+}: {
+  aktif: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-[5px] text-[0.6rem] font-bold flex items-center gap-1 border-none ${
+        aktif ? "bg-[var(--brand)] text-white" : "bg-transparent text-[var(--text-light)]"
+      }`}
+    >
+      {icon} {label}
+    </button>
   );
 }
 

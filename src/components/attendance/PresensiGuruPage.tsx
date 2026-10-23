@@ -17,6 +17,7 @@ import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 import { IzinSheet } from "@/components/attendance/IzinSheet";
+import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp } from "@/lib/utils";
@@ -277,6 +278,9 @@ function SelfAbsenPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
   const [showIzin, setShowIzin] = useState(false);
+  const [konfirmasi, setKonfirmasi] = useState<
+    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number } } | null
+  >(null);
   const [, setTick] = useState(0);
   const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
   const pendingLocRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -379,14 +383,21 @@ function SelfAbsenPanel({
     setShowCamera(action);
   };
 
+  // Selfie selesai → tampilkan layar konfirmasi dulu (foto, lokasi, jarak, peta).
   const onCapture = async (blob: Blob) => {
     const action = showCamera;
     const loc = pendingLocRef.current;
     setShowCamera(null);
     if (!action || !loc) return;
+    const fotoUrl = await blobToDataUrl(blob);
+    setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc });
+  };
+
+  const simpanPresensi = async () => {
+    if (!konfirmasi) return;
+    const { aksi: action, fotoUrl: selfieUrl, lokasi: loc } = konfirmasi;
     setSubmitting(true);
     try {
-      const selfieUrl = await blobToDataUrl(blob);
       if (action === "in") {
         const res = await teacherAttendanceService.clockIn(guru.id, loc.lat, loc.lng, selfieUrl);
         toast(
@@ -406,6 +417,7 @@ function SelfAbsenPanel({
           "success"
         );
       }
+      setKonfirmasi(null);
       await refresh();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Gagal menyimpan absen";
@@ -565,12 +577,39 @@ function SelfAbsenPanel({
           onClick={() => (onRiwayat ? onRiwayat() : setActivePage(PageName.LOG_PRESENSI))}
           className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
         >
-          <History size={16} /> Riwayat Presensi Saya
+          <History size={16} /> Rekap Presensi Saya
         </button>
       </div>
 
       {showCamera && (
         <SelfieCamera onCapture={onCapture} onCancel={() => setShowCamera(null)} />
+      )}
+
+      {konfirmasi && (
+        <KonfirmasiPresensi
+          aksi={konfirmasi.aksi}
+          fotoUrl={konfirmasi.fotoUrl}
+          namaSekolah={school?.nama ?? "Sekolah"}
+          lat={school?.lat}
+          lng={school?.lng}
+          radiusMeter={school?.radiusMeter}
+          posisi={konfirmasi.lokasi}
+          jarakMeter={
+            school?.lat != null && school?.lng != null
+              ? Math.round(
+                  haversineDistance(
+                    konfirmasi.lokasi.lat,
+                    konfirmasi.lokasi.lng,
+                    school.lat,
+                    school.lng,
+                  ),
+                )
+              : null
+          }
+          menyimpan={submitting}
+          onKembali={() => setKonfirmasi(null)}
+          onSimpan={simpanPresensi}
+        />
       )}
 
       {showIzin && (

@@ -265,7 +265,7 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
       {/* Filter + export */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mt-3 mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">
-          <History size={15} /> Riwayat Presensi Saya
+          <History size={15} /> Rekap Presensi Saya
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-3">

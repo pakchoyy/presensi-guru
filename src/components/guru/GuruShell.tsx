@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
+import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, History, User, Moon, Sun } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun } from "lucide-react";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { useAbsenReminder } from "@/hooks/useAbsenReminder";
+import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
 import { todayStr } from "@/lib/utils";
 
-type GuruTab = "presensi" | "riwayat" | "profil";
+type GuruTab = "presensi" | "log" | "rekap" | "profil";
 
 export function GuruShell() {
   const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school } = useApp();
@@ -29,9 +30,12 @@ export function GuruShell() {
 
   useEffect(() => { muatStatus(); }, [muatStatus, tab]);
 
-  const reminder = useAbsenReminder({
+  const reminder = usePengingatAbsen({
+    guru,
     jamMasuk: school?.jamMasukStandar,
     jamPulang: school?.jamPulangStandar,
+    sekolahId: school?.id,
+    toleransiMenit: school?.toleransiTerlambatMenit,
     sudahMasuk: absenHariIni.masuk,
     sudahPulang: absenHariIni.pulang,
   });
@@ -77,9 +81,10 @@ export function GuruShell() {
       {/* Konten */}
       <div className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
         {tab === "presensi" && (
-          <PresensiGuruPage embedded onLogout={logoutGuru} onRiwayat={() => setTab("riwayat")} />
+          <PresensiGuruPage embedded onLogout={logoutGuru} onRiwayat={() => setTab("rekap")} />
         )}
-        {tab === "riwayat" && <LogPresensiPage embedded />}
+        {tab === "log" && <LogAbsenPage />}
+        {tab === "rekap" && <LogPresensiPage embedded />}
         {tab === "profil" && <GuruProfilPage onLogout={logoutGuru} reminder={reminder} />}
       </div>
 
@@ -89,7 +94,8 @@ export function GuruShell() {
         style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
       >
         <NavBtn active={tab === "presensi"} onClick={() => setTab("presensi")} icon={<ClipboardCheck size={20} />} label="Presensi" />
-        <NavBtn active={tab === "riwayat"} onClick={() => setTab("riwayat")} icon={<History size={20} />} label="Riwayat" />
+        <NavBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ClipboardList size={20} />} label="Log" />
+        <NavBtn active={tab === "rekap"} onClick={() => setTab("rekap")} icon={<BarChart3 size={20} />} label="Rekap" />
         <NavBtn active={tab === "profil"} onClick={() => setTab("profil")} icon={<User size={20} />} label="Profil" />
       </nav>
     </div>

@@ -2,20 +2,14 @@ import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
 import { useToast } from "@/components/shared/Toast";
-import type { ReminderState } from "@/hooks/useAbsenReminder";
-
-interface ReminderControl {
-  state: ReminderState;
-  nyalakan: () => Promise<ReminderState>;
-  matikan: () => void;
-}
+import type { KontrolPengingat } from "@/hooks/usePengingatAbsen";
 
 export function GuruProfilPage({
   onLogout,
   reminder,
 }: {
   onLogout: () => void;
-  reminder?: ReminderControl;
+  reminder?: KontrolPengingat;
 }) {
   const { toast } = useToast();
   const { teachers, guruSessionId, school } = useApp();
@@ -72,7 +66,7 @@ export function GuruProfilPage({
       </div>
 
       {/* Pengingat absen */}
-      {reminder && reminder.state !== "unsupported" && (
+      {reminder && reminder.mode !== "unsupported" && (
         <div
           className="mt-3 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4"
           style={{ boxShadow: "var(--shadow)" }}
@@ -82,39 +76,55 @@ export function GuruProfilPage({
             <div className="flex-1 min-w-0">
               <div className="font-bold text-[var(--text)] text-[0.85rem]">Pengingat absen</div>
               <div className="text-[0.63rem] text-[var(--text-light)] mt-[1px]">
-                {reminder.state === "denied"
+                {reminder.mode === "denied"
                   ? "Notifikasi diblokir — izinkan dulu lewat setelan browser."
-                  : "Diingatkan 10 menit sebelum jam masuk & jam pulang."}
+                  : "Sekali saja: 5 menit sebelum batas absen masuk, dan 5 menit sebelum jam pulang."}
               </div>
             </div>
             <button
               onClick={async () => {
-                if (reminder.state === "on") {
-                  reminder.matikan();
+                if (reminder.mode === "push" || reminder.mode === "lokal") {
+                  await reminder.matikan();
                   toast("Pengingat dimatikan", "info");
                   return;
                 }
                 const hasil = await reminder.nyalakan();
-                if (hasil === "on") toast("Pengingat aktif", "success");
-                else if (hasil === "denied") toast("Izin notifikasi ditolak browser", "error");
+                if (hasil.mode === "push") toast("Pengingat aktif — jalan walau aplikasi ditutup", "success");
+                else if (hasil.mode === "lokal") toast("Pengingat aktif (mode dalam aplikasi)", "success");
+                else if (hasil.mode === "denied") toast("Izin notifikasi ditolak browser", "error");
+                else toast("Pengingat gagal dinyalakan", "error");
               }}
-              disabled={reminder.state === "denied"}
-              aria-label={reminder.state === "on" ? "Matikan pengingat" : "Nyalakan pengingat"}
+              disabled={reminder.mode === "denied" || reminder.memuat}
+              aria-label={
+                reminder.mode === "push" || reminder.mode === "lokal"
+                  ? "Matikan pengingat"
+                  : "Nyalakan pengingat"
+              }
               className={`relative w-11 h-6 rounded-full border-none flex-shrink-0 transition-colors disabled:opacity-40 ${
-                reminder.state === "on" ? "bg-[var(--brand)]" : "bg-[var(--border)]"
+                reminder.mode === "push" || reminder.mode === "lokal"
+                  ? "bg-[var(--brand)]"
+                  : "bg-[var(--border)]"
               }`}
             >
               <span
                 className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform ${
-                  reminder.state === "on" ? "translate-x-5" : "translate-x-0"
+                  reminder.mode === "push" || reminder.mode === "lokal"
+                    ? "translate-x-5"
+                    : "translate-x-0"
                 }`}
               />
             </button>
           </div>
-          {reminder.state === "on" && (
+
+          {reminder.mode === "push" && (
+            <div className="text-[0.6rem] text-[var(--hadir)] mt-2 leading-snug font-semibold">
+              Mode push aktif — pengingat tetap datang walau aplikasi ditutup.
+            </div>
+          )}
+          {reminder.mode === "lokal" && (
             <div className="text-[0.6rem] text-[var(--text-light)] mt-2 leading-snug">
-              Pengingat hanya muncul selama aplikasi masih terbuka atau baru dibuka — belum ada
-              notifikasi latar belakang.
+              Mode dalam aplikasi — pengingat hanya muncul selama aplikasi terbuka. Push belum bisa
+              dipakai (akun Anda belum tersambung ke cloud).
             </div>
           )}
         </div>

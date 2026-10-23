@@ -39,13 +39,19 @@ function ymd(d: Date): string {
 export function useAbsenReminder({
   jamMasuk,
   jamPulang,
-  menitSebelum = 10,
+  menitSebelum = 0,
+  teksMasuk,
+  teksPulang,
   sudahMasuk,
   sudahPulang,
 }: {
+  /** Jam pengingat masuk ("HH:MM"), sudah dihitung pemanggil. */
   jamMasuk?: string;
+  /** Jam pengingat pulang ("HH:MM"), sudah dihitung pemanggil. */
   jamPulang?: string;
   menitSebelum?: number;
+  teksMasuk?: string;
+  teksPulang?: string;
   sudahMasuk: boolean;
   sudahPulang: boolean;
 }) {
@@ -109,7 +115,7 @@ export function useAbsenReminder({
         const tanda = `${hari}:masuk`;
         if (!sudahDitampilkan(tanda)) {
           new Notification("Presensi Yuk | Guru", {
-            body: `Jam masuk ${jamMasuk?.slice(0, 5)} — jangan lupa absen datang.`,
+            body: teksMasuk ?? "Batas absen masuk sebentar lagi — jangan lupa absen datang.",
             icon: "/logo-presensiyuk.png?v=2",
             tag: tanda,
           });
@@ -121,7 +127,7 @@ export function useAbsenReminder({
         const tanda = `${hari}:pulang`;
         if (!sudahDitampilkan(tanda)) {
           new Notification("Presensi Yuk | Guru", {
-            body: `Jam pulang ${jamPulang?.slice(0, 5)} — jangan lupa absen pulang.`,
+            body: teksPulang ?? "Jangan lupa absen pulang.",
             icon: "/logo-presensiyuk.png?v=2",
             tag: tanda,
           });
@@ -133,7 +139,7 @@ export function useAbsenReminder({
     cek();
     const t = setInterval(cek, 60_000);
     return () => clearInterval(t);
-  }, [state, jamMasuk, jamPulang, menitSebelum]);
+  }, [state, jamMasuk, jamPulang, menitSebelum, teksMasuk, teksPulang]);
 
   return { state, nyalakan, matikan };
 }
