@@ -862,23 +862,7 @@ export function PengaturanPage() {
           Dipakai untuk menentukan status Tepat Waktu / Terlambat saat guru absen.
         </div>
 
-        {/* Toleransi */}
-        <div className="mb-3">
-          <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-            Toleransi Terlambat (menit)
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={60}
-            value={editToleransi}
-            onChange={(e) => setEditToleransi(Number(e.target.value))}
-            className="w-full px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-          />
-          <div className="text-[0.6rem] text-[var(--text-light)] mt-1">
-            Guru yang absen setelah jam masuk + toleransi akan ditandai <b>Terlambat</b>
-          </div>
-        </div>
+        <div className="mb-3" />
 
         {/* Isi Hadir Otomatis — tetap pertahankan untuk fallback */}
         <div className="flex items-center justify-between py-[6px] border-t border-[var(--border)] pt-3">

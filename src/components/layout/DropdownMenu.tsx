@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
-import { Home, BookOpen, Info, Download, ArrowUpCircle, Cloud, Users, Calendar } from "lucide-react";
+import { Home, BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -57,22 +57,16 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           <Home size={16} /> Home
         </button>
         <button
-          onClick={() => { setActivePage(PageName.GURU); onClose(); }}
+          onClick={() => { setActivePage(PageName.PETUNJUK); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
-          <Users size={16} /> Daftar Guru
+          <BookOpen size={16} /> Petunjuk
         </button>
         <button
           onClick={() => { setActivePage(PageName.KALENDER); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
           <Calendar size={16} /> Kalender
-        </button>
-        <button
-          onClick={() => { setActivePage(PageName.PETUNJUK); onClose(); }}
-          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
-        >
-          <BookOpen size={16} /> Petunjuk
         </button>
 
         {isPRO && isAuthenticated && (

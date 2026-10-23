@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   Calendar as CalIcon,
@@ -54,6 +53,18 @@ export function DashboardHarianPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tanggal, setTanggal] = useState<string>(ymd(new Date()));
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const bukaKalender = () => {
+    const el = dateInputRef.current;
+    if (!el) return;
+    // showPicker() didukung browser modern; fallback ke focus+click.
+    if (typeof el.showPicker === "function") {
+      try { el.showPicker(); return; } catch { /* ignore */ }
+    }
+    el.focus();
+    el.click();
+  };
 
   const load = async (tglOverride?: string) => {
     const tgl = tglOverride || tanggal;
@@ -111,11 +122,21 @@ export function DashboardHarianPage() {
           </div>
         </div>
         <button
-          onClick={() => load()}
-          className="w-9 h-9 rounded-xl bg-[var(--input-bg)] text-[var(--text)] flex items-center justify-center cursor-pointer active:scale-95"
-          aria-label="Muat ulang"
+          onClick={bukaKalender}
+          className="relative w-9 h-9 rounded-xl bg-[var(--input-bg)] text-[var(--brand)] flex items-center justify-center cursor-pointer active:scale-95"
+          aria-label="Pilih tanggal"
+          title="Pilih tanggal"
         >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          <CalIcon size={17} className={loading ? "opacity-50" : ""} />
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={tanggal}
+            onChange={(e) => { if (e.target.value) setTanggal(e.target.value); }}
+            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
         </button>
         <button
           onClick={() => gantiTanggal(1)}

@@ -4,8 +4,7 @@ import {
   UserPlus,
   Trash2,
   Copy,
-  Check,
-  RefreshCw,
+  Pencil,
   KeyRound,
   Share2,
   X,
@@ -43,23 +42,22 @@ export function GuruPage() {
 
   // form state
   const [fNama, setFNama] = useState("");
-  const [fKode, setFKode] = useState("");
   const [fNip, setFNip] = useState("");
   const [fPin, setFPin] = useState("");
   const [fJabatan, setFJabatan] = useState("");
   const [fRole, setFRole] = useState<"guru" | "admin">("guru");
+  const [punyaNip, setPunyaNip] = useState(false);
 
-  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [shareDialog, setShareDialog] = useState<{ nama: string; kode: string; pin: string; nip?: string } | null>(null);
 
   const resetForm = () => {
     setEditId(null);
     setFNama("");
-    setFKode("");
     setFNip("");
     setFPin("");
     setFJabatan("");
     setFRole("guru");
+    setPunyaNip(false);
   };
 
   const load = async () => {
@@ -84,23 +82,23 @@ export function GuruPage() {
     }
     const now = timestamp();
 
-    // Kode login: ambil input; kalau kosong, generate baru yang belum dipakai.
-    let kode = fKode.trim();
-    if (!kode) {
-      // Prioritas: NIP > auto generate
-      if (fNip.trim()) kode = fNip.trim();
-      else {
-        let candidate = randomKode();
-        let tries = 0;
-        while (kodeDipakai(candidate) && tries < 50) {
-          candidate = randomKode();
-          tries++;
-        }
-        kode = candidate;
+    // Kode login: kalau punya NIP → pakai NIP; kalau tidak → auto-generate G-XXXX.
+    const nipInput = punyaNip ? fNip.trim() : "";
+    let kode: string;
+    if (nipInput) {
+      if (kodeDipakai(nipInput, editId ?? undefined)) {
+        toast("NIP sudah dipakai guru lain", "error");
+        return;
       }
-    } else if (kodeDipakai(kode, editId ?? undefined)) {
-      toast("Nomor / Kode sudah dipakai guru lain", "error");
-      return;
+      kode = nipInput;
+    } else {
+      let candidate = randomKode();
+      let tries = 0;
+      while (kodeDipakai(candidate) && tries < 50) {
+        candidate = randomKode();
+        tries++;
+      }
+      kode = candidate;
     }
 
     // PIN: kalau kosong → generate 4 digit
@@ -116,7 +114,7 @@ export function GuruPage() {
       const updated: Teacher = {
         ...existing,
         nama: fNama.trim(),
-        nip: fNip.trim() || undefined,
+        nip: nipInput || undefined,
         kodeLogin: kode,
         pin,
         jabatan: fJabatan.trim() || undefined,
@@ -140,7 +138,7 @@ export function GuruPage() {
             sekolah_id: school.id,
             kode_login: kode,
             pin,
-            nip: fNip.trim() || undefined,
+            nip: nipInput || undefined,
             jabatan: fJabatan.trim() || undefined,
             role: fRole,
             local_id: localId,
@@ -161,7 +159,7 @@ export function GuruPage() {
         email: cloudUserId ? `${kodeFinal}@guru.local` : "",
         sekolahId: school.id,
         tier: Tier.FREE,
-        nip: fNip.trim() || undefined,
+        nip: nipInput || undefined,
         kodeLogin: kodeFinal,
         pin: pinFinal,
         jabatan: fJabatan.trim() || undefined,
@@ -188,12 +186,14 @@ export function GuruPage() {
   const handleEdit = (g: Teacher) => {
     setEditId(g.id);
     setFNama(g.nama);
-    setFKode(g.kodeLogin || "");
     setFNip(g.nip || "");
+    setPunyaNip(!!g.nip);
     setFPin(g.pin || "");
     setFJabatan(g.jabatan || "");
     setFRole((g.role as "guru" | "admin") || "guru");
     setShowAdd(true);
+    // scroll ke atas supaya form kelihatan
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (g: Teacher) => {
@@ -229,8 +229,6 @@ export function GuruPage() {
     const text = `Login Presensi Yuk — ${g.nama}\nKode: ${kode}\nPIN: ${g.pin || "(belum diset)"}`;
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedId(g.id);
-      setTimeout(() => setCopiedId(null), 1500);
       toast("Info login disalin", "success");
     } catch {
       toast(text, "info");
@@ -244,27 +242,18 @@ export function GuruPage() {
           <div className="text-[0.9rem] font-extrabold flex items-center gap-[6px] text-[var(--text)]">
             <Users size={16} /> Daftar Guru <span className="text-[var(--text-light)] font-semibold">({guruList.length})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={load}
-              className="w-9 h-9 rounded-xl bg-[var(--input-bg)] flex items-center justify-center active:scale-95"
-              aria-label="Refresh"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            </button>
-            <button
-              onClick={() => { if (showAdd) { resetForm(); } setShowAdd(!showAdd); }}
-              className="flex items-center gap-1 px-3 py-[8px] rounded-xl text-white font-bold text-[0.78rem] active:scale-95"
-              style={{ background: "var(--grad)" }}
-            >
-              {showAdd ? <X size={14} /> : <UserPlus size={14} />}
-              {showAdd ? "Batal" : "Tambah"}
-            </button>
-          </div>
+          <button
+            onClick={() => { if (showAdd) { resetForm(); } setShowAdd(!showAdd); }}
+            className="flex items-center gap-1 px-3 py-[8px] rounded-xl text-white font-bold text-[0.78rem] active:scale-95"
+            style={{ background: "var(--grad)" }}
+          >
+            {showAdd ? <X size={14} /> : <UserPlus size={14} />}
+            {showAdd ? "Batal" : "Tambah"}
+          </button>
         </div>
 
         {showAdd && (
-          <div className="mt-3 space-y-2 animate-slide-down">
+          <div className="mt-3 space-y-3 animate-slide-down">
             <Field label="Nama lengkap *">
               <input
                 value={fNama}
@@ -273,57 +262,83 @@ export function GuruPage() {
                 className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.9rem] outline-none focus:border-[var(--brand)]"
               />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Nomor NIP / NUPTK (opsional)">
-                <input
-                  value={fNip}
-                  onChange={(e) => setFNip(e.target.value)}
-                  placeholder="Opsional"
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
-                />
-              </Field>
-              <Field label="Jabatan (opsional)">
-                <input
-                  value={fJabatan}
-                  onChange={(e) => setFJabatan(e.target.value)}
-                  placeholder="Guru Kelas 1 / dsb."
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
-                />
-              </Field>
-            </div>
-
-            <Field
-              label="Kode login (opsional)"
-              hint="Kosongkan untuk dibuatkan otomatis (G-XXXX). Kalau NIP di-isi, kode login = NIP."
-            >
+            <Field label="Jabatan (opsional)">
               <input
-                value={fKode}
-                onChange={(e) => setFKode(e.target.value)}
-                placeholder="Otomatis bila kosong"
-                className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
+                value={fJabatan}
+                onChange={(e) => setFJabatan(e.target.value)}
+                placeholder="Mis. Guru Kelas 1 / Kepala Sekolah"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.9rem] outline-none focus:border-[var(--brand)]"
               />
             </Field>
 
-            <div className="grid grid-cols-[1fr,auto] gap-2 items-end">
-              <Field label="PIN (4-6 digit)" hint="Kosongkan untuk dibuatkan otomatis 4 digit.">
+            {/* Kotak: Akun Login Guru */}
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--input-bg)] p-3 space-y-3">
+              <div className="text-[0.72rem] font-extrabold text-[var(--brand-strong)] flex items-center gap-1">
+                <KeyRound size={13} /> Akun Login Guru
+              </div>
+
+              {/* Toggle: Punya NIP? */}
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="text-[0.8rem] font-semibold text-[var(--text)]">Guru punya NIP?</div>
+                  <div className="text-[0.6rem] text-[var(--text-light)]">
+                    {punyaNip ? "Kode login = NIP" : "Kode login dibuatkan otomatis (G-XXXX)"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { const v = !punyaNip; setPunyaNip(v); if (!v) setFNip(""); }}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 border-none cursor-pointer ${punyaNip ? "bg-[var(--brand)]" : "bg-[var(--border)]"}`}
+                  aria-label="Toggle punya NIP"
+                >
+                  <span className={`absolute top-[2px] left-[2px] w-5 h-5 rounded-full bg-white shadow transition-transform ${punyaNip ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+
+              {punyaNip && (
                 <input
-                  value={fPin}
-                  onChange={(e) => setFPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="Otomatis bila kosong"
-                  inputMode="numeric"
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)] tracking-widest"
+                  value={fNip}
+                  onChange={(e) => setFNip(e.target.value)}
+                  placeholder="Ketik NIP / NUPTK"
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
                 />
-              </Field>
-              <button
-                type="button"
-                onClick={() => setFPin(randomPin(4))}
-                className="h-[38px] px-3 rounded-xl bg-[var(--input-bg)] border border-[var(--border)] text-[0.75rem] font-bold flex items-center gap-1 active:scale-95"
-              >
-                <KeyRound size={13} /> Buatkan
-              </button>
+              )}
+
+              {/* PIN sejajar tombol Reset PIN */}
+              <div>
+                <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mb-1 uppercase tracking-wide">PIN (4-6 digit)</label>
+                <div className="flex items-stretch gap-2">
+                  <input
+                    value={fPin}
+                    onChange={(e) => setFPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="Kosong = otomatis"
+                    inputMode="numeric"
+                    className="flex-1 px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)] tracking-widest"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFPin(randomPin(4))}
+                    className="px-3 rounded-xl text-white text-[0.75rem] font-bold flex items-center gap-1 active:scale-95"
+                    style={{ background: "var(--grad)" }}
+                  >
+                    <KeyRound size={13} /> Reset PIN
+                  </button>
+                </div>
+              </div>
+
+              {/* Salin info login — hanya saat edit (guru sudah ada) */}
+              {editId && (
+                <button
+                  type="button"
+                  onClick={() => { const g = guruList.find((x) => x.id === editId); if (g) handleCopyLogin(g); }}
+                  className="w-full py-2 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] text-[0.78rem] font-bold flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <Share2 size={14} /> Salin info login (kode + PIN)
+                </button>
+              )}
             </div>
 
-            <Field label="Jabatan Peran">
+            <Field label="Peran">
               <select
                 value={fRole}
                 onChange={(e) => setFRole(e.target.value as "guru" | "admin")}
@@ -359,7 +374,8 @@ export function GuruPage() {
           return (
             <div
               key={g.id}
-              className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3"
+              onClick={() => handleEdit(g)}
+              className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3 cursor-pointer hover:border-[var(--brand)] transition-colors"
               style={{ boxShadow: "var(--shadow)" }}
             >
               <div
@@ -383,17 +399,11 @@ export function GuruPage() {
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <IconBtn label="Reset PIN" color="#f59e0b" onClick={() => handleResetPin(g)}>
-                  <KeyRound size={14} />
+                <IconBtn label="Edit" color="var(--brand)" onClick={(e) => { e.stopPropagation(); handleEdit(g); }}>
+                  <Pencil size={15} />
                 </IconBtn>
-                <IconBtn label="Share login" color="var(--brand)" onClick={() => handleCopyLogin(g)}>
-                  {copiedId === g.id ? <Check size={14} /> : <Share2 size={14} />}
-                </IconBtn>
-                <IconBtn label="Edit" color="#64748b" onClick={() => handleEdit(g)}>
-                  <Copy size={14} />
-                </IconBtn>
-                <IconBtn label="Hapus" color="#dc2626" onClick={() => handleDelete(g)}>
-                  <Trash2 size={14} />
+                <IconBtn label="Hapus" color="#dc2626" onClick={(e) => { e.stopPropagation(); handleDelete(g); }}>
+                  <Trash2 size={15} />
                 </IconBtn>
               </div>
             </div>
@@ -447,13 +457,13 @@ function IconBtn({
 }: {
   label: string;
   color: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
-      className="w-8 h-8 rounded-lg bg-[var(--input-bg)] flex items-center justify-center active:scale-95"
+      className="w-9 h-9 rounded-lg bg-[var(--input-bg)] flex items-center justify-center active:scale-95"
       aria-label={label}
       title={label}
       style={{ color }}
