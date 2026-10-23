@@ -49,6 +49,8 @@ interface BarisSekolah {
   jam_masuk: string;
   jam_pulang: string;
   toleransi_menit: number;
+  mulai_masuk: string | null;
+  batas_pulang: string | null;
   hari_aktif: string;
   diubah_pada: number;
 }
@@ -195,6 +197,8 @@ function sekolahLokalDari(s: BarisSekolah, lama?: School): School {
     jamMasukStandar: s.jam_masuk,
     jamPulangStandar: s.jam_pulang,
     toleransiTerlambatMenit: s.toleransi_menit,
+    mulaiPresensiMasuk: u(s.mulai_masuk),
+    batasPresensiPulang: u(s.batas_pulang),
     diubahPada: timestamp(),
   } as School;
 }
@@ -480,6 +484,8 @@ export const adminCloud = {
           jam_masuk: school.jamMasukStandar ?? "07:00",
           jam_pulang: school.jamPulangStandar ?? "13:00",
           toleransi_menit: school.toleransiTerlambatMenit ?? 15,
+          mulai_masuk: n(school.mulaiPresensiMasuk),
+          batas_pulang: n(school.batasPresensiPulang),
           hari_aktif: getActiveDays(adminTeacher ?? undefined).join(","),
           diubah_pada: timestamp(),
         },

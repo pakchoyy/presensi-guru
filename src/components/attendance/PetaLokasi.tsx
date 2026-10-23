@@ -74,13 +74,14 @@ export function PetaLokasi({
       fillColor: "#3b82f6",
       fillOpacity: 0.18,
     }).addTo(layer);
-    L.marker(titikSekolah, { icon: pinIcon("#2563eb") })
+    L.marker(titikSekolah, { icon: ikonBulat("#16a34a", SVG_SEKOLAH, 34) })
       .addTo(layer)
       .bindPopup(namaSekolah);
 
     const titikSaya = posisi ? L.latLng(posisi.lat, posisi.lng) : null;
     if (titikSaya) {
-      L.marker(titikSaya, { icon: pinIcon("#16a34a") })
+      // Posisi guru di atas marker sekolah supaya tetap terlihat walau berimpit.
+      L.marker(titikSaya, { icon: ikonBulat("#eab308", SVG_ORANG, 30), zIndexOffset: 1000 })
         .addTo(layer)
         .bindPopup("Posisi Anda");
     }
@@ -191,12 +192,17 @@ function FokusBtn({
 }
 
 /** Marker custom (divIcon) supaya tidak perlu bundling aset ikon Leaflet. */
-function pinIcon(color: string): L.DivIcon {
+// Sekolah = gedung hijau, guru = orang kuning (ikon lucide School / UserRound).
+const SVG_SEKOLAH = '<path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 3.447 1.724a1 1 0 0 1 .553.894V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.382a1 1 0 0 1 .553-.894L6 10"/><path d="M18 5v17"/><path d="m4 6 7.106-3.553a2 2 0 0 1 1.788 0L20 6"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/>';
+const SVG_ORANG = '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>';
+
+function ikonBulat(warna: string, svg: string, ukuran: number): L.DivIcon {
+  const ikon = Math.round(ukuran * 0.55);
   return L.divIcon({
     className: "",
-    html: `<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 18],
-    popupAnchor: [0, -16],
+    html: `<div style="width:${ukuran}px;height:${ukuran}px;border-radius:50%;background:${warna};border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="${ikon}" height="${ikon}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></div>`,
+    iconSize: [ukuran, ukuran],
+    iconAnchor: [ukuran / 2, ukuran / 2],
+    popupAnchor: [0, -ukuran / 2],
   });
 }

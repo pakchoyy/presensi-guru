@@ -11,6 +11,7 @@ import { Tier, Jenjang, PageName } from "@/types/enums";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MAX_STUDENTS_FREE, PRO_PRICE } from "@/lib/constants";
 import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
+import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
 import { trackDevice } from "@/contexts/AuthContext";
 import {
@@ -95,6 +96,8 @@ export function PengaturanPage() {
   const [editJamMasuk, setEditJamMasuk] = useState<string>(school?.jamMasukStandar ?? "07:00");
   const [editJamPulang, setEditJamPulang] = useState<string>(school?.jamPulangStandar ?? "13:00");
   const [editToleransi, setEditToleransi] = useState<number>(school?.toleransiTerlambatMenit ?? 15);
+  const [editMulaiMasuk, setEditMulaiMasuk] = useState<string>(jendelaPresensi(school ?? undefined).mulaiMasuk);
+  const [editBatasPulang, setEditBatasPulang] = useState<string>(jendelaPresensi(school ?? undefined).batasPulang);
   const [savingLokasi, setSavingLokasi] = useState(false);
   const { loading: gettingGps, request: requestGps, error: gpsError } = useGeolocation();
   const schoolHydrated = useRef(false);
@@ -109,6 +112,8 @@ export function PengaturanPage() {
     setEditJamMasuk(school.jamMasukStandar ?? "07:00");
     setEditJamPulang(school.jamPulangStandar ?? "13:00");
     setEditToleransi(school.toleransiTerlambatMenit ?? 15);
+    setEditMulaiMasuk(jendelaPresensi(school).mulaiMasuk);
+    setEditBatasPulang(jendelaPresensi(school).batasPulang);
   }, [school]);
 
   const [editSekolah, setEditSekolah] = useState(false);
@@ -864,10 +869,11 @@ export function PengaturanPage() {
         </div>
 
         <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-          Batas presensi masuk
+          Presensi masuk dibuka → batas tepat waktu
         </label>
         <div className="flex items-center gap-2 mb-1">
-          <span className="flex-1 px-[8px] py-[8px] text-[0.85rem] text-[var(--text-light)]">{editJamMasuk} →</span>
+          <input type="time" value={editMulaiMasuk} onChange={(e) => e.target.value && setEditMulaiMasuk(e.target.value)} aria-label="Presensi masuk dibuka" className="flex-1 px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]" />
+          <span className="text-[var(--text-light)] font-bold text-[0.85rem]">→</span>
           <input
             type="time"
             value={geserMenit(editJamMasuk, editToleransi)}
@@ -880,7 +886,18 @@ export function PengaturanPage() {
           />
         </div>
         <div className="text-[0.6rem] text-[var(--text-light)] mb-2">
-          Presensi sampai jam {geserMenit(editJamMasuk, editToleransi)} dihitung Tepat Waktu, lewat dari itu Terlambat.
+          Presensi masuk bisa mulai jam {editMulaiMasuk}. Sampai jam {geserMenit(editJamMasuk, editToleransi)} dihitung Tepat Waktu, lewat dari itu Terlambat.
+        </div>
+
+        <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+          Presensi pulang ditutup jam
+        </label>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="flex-1 px-[8px] py-[8px] text-[0.85rem] text-[var(--text-light)]">{editJamPulang} →</span>
+          <input type="time" value={editBatasPulang} onChange={(e) => e.target.value && setEditBatasPulang(e.target.value)} aria-label="Presensi pulang ditutup" className="flex-1 px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]" />
+        </div>
+        <div className="text-[0.6rem] text-[var(--text-light)] mb-2">
+          Presensi pulang sebelum jam {editJamPulang} dicatat Pulang Cepat. Presensi boleh diulang, yang terakhir dihitung.
         </div>
 
         <div className="mb-3" />
@@ -933,6 +950,8 @@ export function PengaturanPage() {
                 jamMasukStandar: editJamMasuk,
                 jamPulangStandar: editJamPulang,
                 toleransiTerlambatMenit: editToleransi,
+                mulaiPresensiMasuk: editMulaiMasuk,
+                batasPresensiPulang: editBatasPulang,
                 diubahPada: Date.now(),
               };
               await schoolRepo.save(baru);

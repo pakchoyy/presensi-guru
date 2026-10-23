@@ -20,7 +20,7 @@ import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 import { IzinSheet } from "@/components/attendance/IzinSheet";
 import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
 import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
-import { teacherAttendanceService } from "@/services/teacher-attendance.service";
+import { jendelaPresensi, teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp, EVENT_RESET_UJI, zonaWaktu } from "@/lib/utils";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
@@ -415,6 +415,13 @@ function SelfAbsenPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [school?.lat, school?.lng]);
 
+  const jendela = jendelaPresensi(school ?? undefined);
+  const jamKini = new Date().toTimeString().slice(0, 5);
+  const masukBelumBuka = jamKini < jendela.mulaiMasuk;
+  // Presensi boleh diulang selama jendela masih buka; yang terakhir dihitung.
+  const bolehUlangMasuk = jamKini <= jendela.batasMasuk;
+  const pulangTutup = jamKini > jendela.batasPulang;
+
   const start = async (action: "in" | "out") => {
     const coords = await requestLocation();
     if (!coords) {
@@ -455,7 +462,9 @@ function SelfAbsenPanel({
         toast(
           res.statusPulang === "FAR"
             ? `Presensi pulang: di luar radius (${Math.round(res.jarakMeter)}m)`
-            : "Presensi pulang tersimpan — sampai besok!",
+            : res.statusPulang === "EARLY"
+              ? `Presensi pulang tersimpan — pulang cepat (jam pulang ${jendela.jamPulang})`
+              : "Presensi pulang tersimpan — sampai besok!",
           "success"
         );
       }
@@ -590,31 +599,50 @@ function SelfAbsenPanel({
       <div className="mt-4">
         {!sudahMasuk && (
           <button
-            disabled={submitting || geoLoading}
+            disabled={submitting || geoLoading || masukBelumBuka}
             onClick={() => start("in")}
             className="w-full py-4 rounded-2xl text-white font-extrabold text-[1rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             style={{ background: "var(--grad)" }}
           >
-            <Camera size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Ambil Presensi Masuk"}
+            <Camera size={20} />{" "}
+            {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : masukBelumBuka ? `Presensi masuk dibuka jam ${jendela.mulaiMasuk}` : "Ambil Presensi Masuk"}
           </button>
         )}
-        {sudahMasuk && !sudahPulang && (
+        {sudahMasuk && !pulangTutup && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => start("out")}
             className="w-full py-4 rounded-2xl text-white font-extrabold text-[1rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}
           >
-            <Camera size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Ambil Presensi Pulang"}
+            <Camera size={20} />{" "}
+            {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : sudahPulang ? "Ulangi Presensi Pulang" : "Ambil Presensi Pulang"}
           </button>
         )}
-        {sudahMasuk && sudahPulang && (
-          <div className="rounded-2xl p-4 bg-[var(--hadir-bg)] border border-[var(--border)] text-center">
+        {sudahMasuk && !sudahPulang && bolehUlangMasuk && (
+          <button
+            disabled={submitting || geoLoading}
+            onClick={() => start("in")}
+            className="w-full mt-2 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          >
+            <Camera size={16} /> Ulangi Presensi Masuk
+          </button>
+        )}
+        {sudahMasuk && (sudahPulang ? (
+          <div className="mt-3 rounded-2xl p-4 bg-[var(--hadir-bg)] border border-[var(--border)] text-center">
             <CheckCircle2 className="mx-auto text-[var(--hadir)]" size={28} />
             <div className="font-extrabold text-[var(--hadir)] mt-1">Presensi hari ini lengkap</div>
-            <div className="text-[0.72rem] text-[var(--text-light)]">Terima kasih — sampai besok!</div>
+            <div className="text-[0.72rem] text-[var(--text-light)]">
+              {pulangTutup ? "Terima kasih — sampai besok!" : `Boleh presensi ulang sampai jam ${jendela.batasPulang}, yang terakhir dihitung.`}
+            </div>
           </div>
-        )}
+        ) : (
+          <div className="mt-2 text-center text-[0.68rem] text-[var(--text-light)]">
+            {pulangTutup
+              ? `Presensi pulang sudah ditutup jam ${jendela.batasPulang}`
+              : `Presensi pulang ${jendela.jamPulang}–${jendela.batasPulang}. Boleh diulang, yang terakhir dihitung.`}
+          </div>
+        ))}
 
         {/* Ajukan sakit / izin sendiri */}
         {!fokusPresensi && !izinAktif && !sudahMasuk && (
@@ -708,7 +736,7 @@ function StatusCard({
             {jam}
           </div>
           <div className="text-[0.65rem] font-bold" style={{ color }}>
-            {status === "ONTIME" ? "Tepat Waktu" : status === "LATE" ? "Terlambat" : status === "FAR" ? "Di luar radius" : ""}
+            {status === "ONTIME" ? "Tepat Waktu" : status === "LATE" ? "Terlambat" : status === "FAR" ? "Di luar radius" : status === "EARLY" ? "Pulang Cepat" : ""}
           </div>
         </>
       ) : (

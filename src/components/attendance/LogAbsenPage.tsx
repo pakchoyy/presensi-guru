@@ -21,6 +21,7 @@ function statusLabel(s?: string) {
   if (s === "ONTIME") return "Tepat waktu";
   if (s === "LATE") return "Terlambat";
   if (s === "FAR") return "Luar area";
+  if (s === "EARLY") return "Pulang cepat";
   return null;
 }
 
@@ -28,6 +29,7 @@ function statusWarna(s?: string) {
   if (s === "ONTIME") return "#16a34a";
   if (s === "LATE") return "#f59e0b";
   if (s === "FAR") return "#dc2626";
+  if (s === "EARLY") return "#6b7280";
   return "var(--text-light)";
 }
 

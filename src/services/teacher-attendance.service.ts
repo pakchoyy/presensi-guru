@@ -18,10 +18,22 @@ function compareHHMM(a: string, b: string): number {
 
 function addMinutes(hhmm: string, mins: number): string {
   const [h, m] = hhmm.split(":").map(Number);
-  const total = h * 60 + m + mins;
+  const total = (((h * 60 + m + mins) % 1440) + 1440) % 1440;
   const hh = Math.floor(total / 60) % 24;
   const mm = total % 60;
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
+/** Jendela presensi sekolah, semua "HH:MM". Presensi bisa diulang di dalam jendela; yang terakhir dihitung. */
+export function jendelaPresensi(school?: School) {
+  const jamMasuk = school?.jamMasukStandar ?? "07:00";
+  const jamPulang = school?.jamPulangStandar ?? "13:00";
+  return {
+    mulaiMasuk: school?.mulaiPresensiMasuk ?? addMinutes(jamMasuk, -60),
+    batasMasuk: addMinutes(jamMasuk, school?.toleransiTerlambatMenit ?? 15),
+    jamPulang,
+    batasPulang: school?.batasPresensiPulang ?? addMinutes(jamPulang, 180),
+  };
 }
 
 export interface ClockInResult {
@@ -66,9 +78,10 @@ export const teacherAttendanceService = {
       ? haversineDistance(lat, lng, school.lat, school.lng)
       : 0;
     const radius = school?.radiusMeter ?? 100;
-    const jamMasukStandar = school?.jamMasukStandar ?? "07:00";
-    const toleransi = school?.toleransiTerlambatMenit ?? 15;
-    const cutoff = addMinutes(jamMasukStandar, toleransi);
+    const { mulaiMasuk, batasMasuk: cutoff } = jendelaPresensi(school);
+    if (compareHHMM(jam.slice(0, 5), mulaiMasuk) < 0) {
+      throw new Error(`Presensi masuk baru dibuka jam ${mulaiMasuk}`);
+    }
 
     let statusMasuk: ClockInStatus;
     if (jarakMeter > radius) statusMasuk = ClockInStatus.FAR;
@@ -111,9 +124,15 @@ export const teacherAttendanceService = {
       ? haversineDistance(lat, lng, school.lat, school.lng)
       : 0;
     const radius = school?.radiusMeter ?? 100;
+    const { jamPulang, batasPulang } = jendelaPresensi(school);
+    if (compareHHMM(jam.slice(0, 5), batasPulang) > 0) {
+      throw new Error(`Presensi pulang sudah ditutup jam ${batasPulang}`);
+    }
     const statusPulang: ClockInStatus = jarakMeter > radius
       ? ClockInStatus.FAR
-      : ClockInStatus.ONTIME;
+      : compareHHMM(jam.slice(0, 5), jamPulang) < 0
+        ? ClockInStatus.EARLY
+        : ClockInStatus.ONTIME;
 
     const existing = await teacherAttendanceRepo.getById(id);
     const record: TeacherAttendance = {

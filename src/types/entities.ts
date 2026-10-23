@@ -13,6 +13,10 @@ export interface School {
   jamMasukStandar?: string;   // "HH:MM" — default "07:00"
   jamPulangStandar?: string;  // "HH:MM" — default "13:00"
   toleransiTerlambatMenit?: number; // default 15
+  /** Presensi masuk baru dibuka jam ini ("HH:MM"); default 1 jam sebelum jam masuk. */
+  mulaiPresensiMasuk?: string;
+  /** Presensi pulang ditutup jam ini ("HH:MM"); default 3 jam setelah jam pulang. */
+  batasPresensiPulang?: string;
   dibuatPada: number;
   diubahPada: number;
 }

@@ -10,6 +10,8 @@ export enum ClockInStatus {
   ONTIME = "ONTIME",
   LATE = "LATE",
   FAR = "FAR",
+  /** Presensi pulang sebelum jam pulang. */
+  EARLY = "EARLY",
 }
 
 export enum Tier {
