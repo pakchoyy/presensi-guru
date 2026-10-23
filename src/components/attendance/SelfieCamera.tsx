@@ -21,6 +21,8 @@ const AMBANG_HADAP = 0.12;
 /** Kalau verifikasi tidak kunjung lolos, foto biasa boleh diambil (ditandai). */
 const BATAS_TUNGGU_MS = 45_000;
 const MODEL_URL = "/assets/face-v1";
+/** Verifikasi gerak kepala dimatikan dulu — kamera jadi foto biasa. Ubah ke true untuk mengaktifkan lagi. */
+const VERIFIKASI_AKTIF = false;
 
 const INSTRUKSI: Record<Fase, string> = {
   memuat: "Menyiapkan kamera…",
@@ -76,13 +78,13 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [fase, setFase] = useState<Fase>("memuat");
+  const [fase, setFase] = useState<Fase>(VERIFIKASI_AKTIF ? "memuat" : "manual");
   const [petunjuk, setPetunjuk] = useState<string | null>(null);
   const [progres, setProgres] = useState(0);
   const [bolehManual, setBolehManual] = useState(false);
   const [dialog, setDialog] = useState<{ judul: string; pesan: string; blob: Blob; info: InfoSelfie } | null>(null);
 
-  const faseRef = useRef<Fase>("memuat");
+  const faseRef = useRef<Fase>(VERIFIKASI_AKTIF ? "memuat" : "manual");
   const arahPertama = useRef<1 | -1>(1);
   const ubahFase = (f: Fase) => { faseRef.current = f; setFase(f); };
 
@@ -135,7 +137,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
 
   // ---- deteksi wajah & gerak kepala -----------------------------------
   useEffect(() => {
-    if (error) return;
+    if (error || !VERIFIKASI_AKTIF) return;
     let berhenti = false;
     let faceapi: FaceApi | null = null;
     const mulai = Date.now();
@@ -216,7 +218,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
 
   const jepretManual = async () => {
     const blob = await ambilFrame();
-    if (blob) onCapture(blob, { verifikasiWajah: false });
+    if (blob) onCapture(blob, VERIFIKASI_AKTIF ? { verifikasiWajah: false } : undefined);
   };
 
   const verifikasiBerjalan = fase === "cari" || fase === "toleh1" || fase === "toleh2" || fase === "hadap";
@@ -294,17 +296,17 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Tombol rana */}
-      <div className="h-[132px] flex-shrink-0 flex flex-col items-center justify-center gap-2 bg-[#6b7280]/90">
+      <div className="h-[150px] flex-shrink-0 flex flex-col items-center justify-center gap-2 bg-[#6b7280]/90">
         <button
           onClick={jepretManual}
           disabled={!!error || (verifikasiBerjalan && !bolehManual) || fase === "memuat" || fase === "selesai"}
-          className="w-[78px] h-[78px] rounded-full flex items-center justify-center text-white border-none shadow-xl active:scale-95 disabled:opacity-45 transition-opacity"
+          className="w-[92px] h-[92px] rounded-full flex items-center justify-center text-white border-none shadow-xl active:scale-95 disabled:opacity-45 transition-opacity"
           style={{ background: "var(--brand-strong)" }}
           aria-label="Ambil foto"
         >
-          <Camera size={30} />
+          <Camera size={40} />
         </button>
-        <div className="text-[0.65rem] text-white/85 font-semibold text-center px-6 leading-snug">
+        <div className="text-[0.8rem] text-white/90 font-semibold text-center px-6 leading-snug">
           {fase === "manual"
             ? "Tekan untuk mengambil foto"
             : bolehManual && verifikasiBerjalan

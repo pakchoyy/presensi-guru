@@ -68,6 +68,7 @@ export function KonfirmasiPresensi({
             <img src={fotoUrl} alt="Selfie presensi" className="w-full h-full object-cover" />
           </div>
         </div>
+        {verifikasiWajah !== undefined && (
         <div className="flex justify-center mt-2">
           <span
             className="px-3 py-[3px] rounded-full text-[0.66rem] font-extrabold"
@@ -80,6 +81,7 @@ export function KonfirmasiPresensi({
             {verifikasiWajah ? "✓ Wajah terverifikasi" : "Foto tanpa verifikasi wajah"}
           </span>
         </div>
+        )}
 
         {/* Info lokasi */}
         <div

@@ -299,7 +299,7 @@ function SelfAbsenPanel({
     setKiriman(hasil === "lokal" ? null : hasil);
   };
   const [konfirmasi, setKonfirmasi] = useState<
-    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number }; verifikasiWajah: boolean } | null
+    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number }; verifikasiWajah?: boolean } | null
   >(null);
   const [, setTick] = useState(0);
   const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
@@ -412,7 +412,7 @@ function SelfAbsenPanel({
     setShowCamera(null);
     if (!action || !loc) return;
     const fotoUrl = await blobToDataUrl(blob);
-    setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc, verifikasiWajah: !!info?.verifikasiWajah });
+    setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc, verifikasiWajah: info?.verifikasiWajah });
   };
 
   const simpanPresensi = async () => {
