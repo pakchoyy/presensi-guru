@@ -55,7 +55,7 @@ export function EntryGate() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-extrabold text-gray-800">Guru</div>
-                <div className="text-[0.72rem] text-gray-500">Absen masuk/pulang & lihat riwayat sendiri</div>
+                <div className="text-[0.72rem] text-gray-500">Presensi masuk/pulang & lihat riwayat sendiri</div>
               </div>
             </button>
 
@@ -185,7 +185,7 @@ function GuruLogin({
             className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-60"
             style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
           >
-            <LogIn size={16} /> {memproses ? "Menyambungkan..." : "Masuk & Absen"}
+            <LogIn size={16} /> {memproses ? "Menyambungkan..." : "Masuk & Presensi"}
           </button>
           <div className="text-[0.62rem] text-gray-400 text-center leading-snug">
             Kode & PIN diberikan Ops / Kepala Sekolah. Login pertama di HP sendiri butuh internet.

@@ -64,8 +64,8 @@ export function usePengingatAbsen({
   const batasMasuk = geserJam(jamM, toleransiMenit);
   const ingatMasuk = geserJam(batasMasuk, -MENIT_SEBELUM_BATAS);
   const ingatPulang = geserJam(jamP, -MENIT_SEBELUM_BATAS);
-  const teksMasuk = `Batas absen masuk ${batasMasuk} — tinggal ${MENIT_SEBELUM_BATAS} menit lagi.`;
-  const teksPulang = `Jam pulang ${jamP} — jangan lupa absen pulang.`;
+  const teksMasuk = `Batas presensi masuk ${batasMasuk} — tinggal ${MENIT_SEBELUM_BATAS} menit lagi.`;
+  const teksPulang = `Jam pulang ${jamP} — jangan lupa presensi pulang.`;
 
   // Pengingat dalam aplikasi hanya dipakai kalau push tidak aktif, supaya
   // notifikasinya tidak dobel.

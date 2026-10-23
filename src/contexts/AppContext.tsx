@@ -1,3 +1,5 @@
+import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
+import { addDays } from "@/lib/utils";
 import {
   createContext,
   useContext,
@@ -84,6 +86,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (sudah) {
         // Lengkapi akun lama yang belum punya kode login / PIN.
         await teacherRepo.ensureLoginCredentials();
+        teacherAttendanceRepo.hapusFotoLama(addDays(todayStr(), -7)).catch(() => {});
         const [school, teacher, teachers] = await Promise.all([
           schoolRepo.get(),
           teacherRepo.get(),

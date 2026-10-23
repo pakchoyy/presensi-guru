@@ -263,7 +263,7 @@ export function DashboardHarianPage() {
           <div className="font-extrabold text-[var(--brand-strong)] text-[1.25rem] leading-none mt-1">{total}</div>
         </div>
         <div className="rounded-2xl p-3 text-center bg-[var(--hadir-bg)]" style={{ border: "1px solid var(--border)" }}>
-          <div className="text-[0.65rem] text-[var(--text-light)] font-semibold">Sudah Absen</div>
+          <div className="text-[0.65rem] text-[var(--text-light)] font-semibold">Sudah Presensi</div>
           <div className="font-extrabold text-[var(--hadir)] text-[1.25rem] leading-none mt-1">{sudah}</div>
         </div>
         <div className="rounded-2xl p-3 text-center bg-[var(--alpha-bg)]" style={{ border: "1px solid var(--border)" }}>

@@ -40,4 +40,14 @@ export const teacherAttendanceRepo = {
       .filter((r) => r.tanggal >= startDate && r.tanggal <= endDate)
       .toArray();
   },
+
+  /**
+   * Foto selfie hanya disimpan 7 hari (cukup untuk dicek), data jam & lokasi tetap.
+   * diubahPada sengaja tidak diubah supaya tidak menimpa data cloud.
+   */
+  async hapusFotoLama(sebelumTanggal: string): Promise<number> {
+    return db.teacherAttendance
+      .filter((r) => r.tanggal < sebelumTanggal && !!(r.selfieMasukUrl || r.selfiePulangUrl))
+      .modify((r) => { delete r.selfieMasukUrl; delete r.selfiePulangUrl; });
+  },
 };

@@ -3,6 +3,7 @@ import {
   ClipboardCheck,
   MapPin,
   Stethoscope,
+  Camera,
   LogIn,
   LogOut,
   AlertTriangle,
@@ -21,7 +22,7 @@ import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
 import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp, EVENT_RESET_UJI } from "@/lib/utils";
+import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp, EVENT_RESET_UJI, zonaWaktu } from "@/lib/utils";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { SelfieCamera, type InfoSelfie } from "./SelfieCamera";
 import { haversineDistance } from "@/lib/geo";
@@ -74,13 +75,10 @@ export function PresensiGuruPage({
   embedded = false,
   onLogout: onLogoutProp,
   onRiwayat,
-  bukaIzin,
 }: {
   embedded?: boolean;
   onLogout?: () => void;
   onRiwayat?: () => void;
-  /** Naik setiap tab Izin ditekan → buka lembar izin. */
-  bukaIzin?: number;
 } = {}) {
   const { teachers, school, guruSessionId, logoutGuru } = useApp();
   const { toast } = useToast();
@@ -103,7 +101,7 @@ export function PresensiGuruPage({
         school={school}
         onLogout={onLogoutProp ?? logoutGuru}
         onRiwayat={onRiwayat}
-        bukaIzin={bukaIzin}
+        fokusPresensi
       />
     );
   }
@@ -240,7 +238,7 @@ function PickerForm({
           className="w-full py-3 rounded-xl text-white font-bold text-[0.9rem] flex items-center justify-center gap-2 active:scale-95"
           style={{ background: "var(--grad)" }}
         >
-          <LogIn size={16} /> Masuk & Absen
+          <LogIn size={16} /> Masuk & Presensi
         </button>
 
         {hintPertama ? (
@@ -270,13 +268,14 @@ function SelfAbsenPanel({
   school,
   onLogout,
   onRiwayat,
-  bukaIzin,
+  fokusPresensi = false,
 }: {
   guru: Teacher;
   school: ReturnType<typeof useApp>["school"];
   onLogout: () => void;
   onRiwayat?: () => void;
-  bukaIzin?: number;
+  /** Di HP guru: izin & rekap punya tab sendiri, halaman ini khusus presensi. */
+  fokusPresensi?: boolean;
 }) {
   const { toast } = useToast();
   const { setActivePage } = useApp();
@@ -285,7 +284,6 @@ function SelfAbsenPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
   const [showIzin, setShowIzin] = useState(false);
-  useEffect(() => { if (bukaIzin) setShowIzin(true); }, [bukaIzin]);
   // Status kiriman ke sekolah (hanya di HP guru yang tersambung cloud).
   const [kiriman, setKiriman] = useState<"terkirim" | "tertunda" | null>(() =>
     guruCloud.aktif() && guruCloud.jumlahAntrian() > 0 ? "tertunda" : null,
@@ -334,12 +332,12 @@ function SelfAbsenPanel({
   // SEMENTARA (uji coba): reset absen hari ini, juga di cloud (data kosong yang lebih baru menimpa).
   useEffect(() => {
     const reset = async () => {
-      if (!window.confirm("Reset absen hari ini untuk uji coba?")) return;
+      if (!window.confirm("Reset presensi hari ini untuk uji coba?")) return;
       const id = attendanceIdFrom(guru.id, tanggal);
       await teacherAttendanceRepo.upsert({ id, guruId: guru.id, tanggal, diubahPada: timestamp() } as TeacherAttendance);
       await refresh();
       await kirimKeSekolah().catch(() => {});
-      toast("Absen hari ini direset", "info");
+      toast("Presensi hari ini direset", "info");
     };
     window.addEventListener(EVENT_RESET_UJI, reset);
     return () => window.removeEventListener(EVENT_RESET_UJI, reset);
@@ -446,9 +444,9 @@ function SelfAbsenPanel({
         const res = await teacherAttendanceService.clockIn(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
         toast(
           res.statusMasuk === "ONTIME"
-            ? "Absen masuk tersimpan — tepat waktu"
+            ? "Presensi masuk tersimpan — tepat waktu"
             : res.statusMasuk === "LATE"
-              ? "Absen masuk tersimpan — terlambat"
+              ? "Presensi masuk tersimpan — terlambat"
               : `Di luar radius (${Math.round(res.jarakMeter)}m)`,
           res.statusMasuk === "ONTIME" ? "success" : "info"
         );
@@ -456,8 +454,8 @@ function SelfAbsenPanel({
         const res = await teacherAttendanceService.clockOut(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
         toast(
           res.statusPulang === "FAR"
-            ? `Absen pulang: di luar radius (${Math.round(res.jarakMeter)}m)`
-            : "Absen pulang tersimpan — sampai besok!",
+            ? `Presensi pulang: di luar radius (${Math.round(res.jarakMeter)}m)`
+            : "Presensi pulang tersimpan — sampai besok!",
           "success"
         );
       }
@@ -465,7 +463,7 @@ function SelfAbsenPanel({
       await refresh();
       await kirimKeSekolah();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Gagal menyimpan absen";
+      const msg = e instanceof Error ? e.message : "Gagal menyimpan presensi";
       toast(msg, "error");
     } finally {
       setSubmitting(false);
@@ -499,7 +497,7 @@ function SelfAbsenPanel({
             <ArrowLeft size={14} /> Keluar
           </button>
         </div>
-        <div className="relative mt-3 text-[2rem] font-extrabold tabular-nums tracking-tight">{jamNow}</div>
+        <div className="relative mt-3 text-[2rem] font-extrabold tabular-nums tracking-tight">{jamNow} <span className="text-[0.9rem] font-bold opacity-80">{zonaWaktu()}</span></div>
         <div className="relative text-[0.75rem] opacity-90">{formatTanggalPanjang(tanggal)}</div>
       </div>
 
@@ -538,7 +536,7 @@ function SelfAbsenPanel({
             label="Jam Masuk"
             jam={existing?.jamMasuk?.slice(0, 5)}
             status={existing?.statusMasuk}
-            emptyLabel="Belum absen"
+            emptyLabel="Belum presensi"
           />
           <StatusCard
             label="Jam Pulang"
@@ -578,13 +576,13 @@ function SelfAbsenPanel({
               <div className="text-[0.7rem] text-[#475569] mt-[2px] break-words">{existing.catatan}</div>
             )}
           </div>
-          <button
+          {!fokusPresensi && <button
             onClick={() => setShowIzin(true)}
             className="text-[0.7rem] font-bold underline bg-transparent border-none flex-shrink-0"
             style={{ color: izinAktif === AttendanceStatus.SAKIT ? "#b45309" : "#1d4ed8" }}
           >
             Ubah
-          </button>
+          </button>}
         </div>
       )}
 
@@ -597,7 +595,7 @@ function SelfAbsenPanel({
             className="w-full py-4 rounded-2xl text-white font-extrabold text-[1rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             style={{ background: "var(--grad)" }}
           >
-            <LogIn size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Datang (Clock In)"}
+            <Camera size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Ambil Presensi Masuk"}
           </button>
         )}
         {sudahMasuk && !sudahPulang && (
@@ -607,7 +605,7 @@ function SelfAbsenPanel({
             className="w-full py-4 rounded-2xl text-white font-extrabold text-[1rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
             style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}
           >
-            <LogOut size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Pulang (Clock Out)"}
+            <Camera size={20} /> {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : "Ambil Presensi Pulang"}
           </button>
         )}
         {sudahMasuk && sudahPulang && (
@@ -619,7 +617,7 @@ function SelfAbsenPanel({
         )}
 
         {/* Ajukan sakit / izin sendiri */}
-        {!izinAktif && !sudahMasuk && (
+        {!fokusPresensi && !izinAktif && !sudahMasuk && (
           <button
             onClick={() => setShowIzin(true)}
             className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
@@ -629,12 +627,12 @@ function SelfAbsenPanel({
         )}
 
         {/* Riwayat presensi guru ybs */}
-        <button
+        {!fokusPresensi && <button
           onClick={() => (onRiwayat ? onRiwayat() : setActivePage(PageName.LOG_PRESENSI))}
           className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
         >
           <History size={16} /> Rekap Presensi Saya
-        </button>
+        </button>}
       </div>
 
       {showCamera && (

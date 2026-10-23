@@ -24,18 +24,7 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
 
   const isPRO = teacher?.tier === Tier.PRO;
 
-  const handleInstall = () => {
-    const promptEv = (window as any).__bgy_deferredPrompt as BeforeInstallPromptEvent | undefined;
-    if (promptEv) {
-      promptEv.prompt();
-      promptEv.userChoice.then(() => {
-        (window as any).__bgy_deferredPrompt = null;
-      });
-    } else {
-      toast("Buka di Chrome/Edge Android, lalu menu > Tambahkan ke Layar Utama");
-    }
-    onClose();
-  };
+  const handleInstall = () => { pasangAplikasi(toast); onClose(); };
 
   return (
     <>
@@ -114,4 +103,17 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
       </div>
     </>
   );
+}
+
+/** Tampilkan prompt install PWA; kalau browser tidak menyediakannya, beri petunjuk manual. */
+export function pasangAplikasi(toast: (pesan: string) => void) {
+  const promptEv = (window as any).__bgy_deferredPrompt as BeforeInstallPromptEvent | undefined;
+  if (promptEv) {
+    promptEv.prompt();
+    promptEv.userChoice.then(() => {
+      (window as any).__bgy_deferredPrompt = null;
+    });
+  } else {
+    toast("Buka di Chrome/Edge Android, lalu menu > Tambahkan ke Layar Utama");
+  }
 }

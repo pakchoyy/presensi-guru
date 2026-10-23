@@ -105,7 +105,7 @@ export function LogAbsenPage() {
           <ClipboardList size={16} /> Log Presensi
         </div>
         <div className="text-[0.63rem] text-[var(--text-light)] mt-1">
-          Aktivitas absen datang &amp; pulang Anda, 60 hari terakhir.
+          Aktivitas presensi datang &amp; pulang Anda, 60 hari terakhir.
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function LogAbsenPage() {
           <ClipboardList className="mx-auto text-[var(--text-light)] mb-2" size={30} />
           <div className="font-bold text-[var(--text)] text-[0.9rem]">Belum ada aktivitas</div>
           <div className="text-[0.75rem] text-[var(--text-light)] mt-1">
-            Absen datang dulu di tab Presensi.
+            Presensi datang dulu di tab Presensi.
           </div>
         </div>
       )}

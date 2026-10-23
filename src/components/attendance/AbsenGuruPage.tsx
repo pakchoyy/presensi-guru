@@ -100,7 +100,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
       fd.append("selfie", blob, `selfie_${action}.jpg`);
       const r = await fetch("/api/clockin", { method: "POST", body: fd });
       const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "Gagal simpan absen");
+      if (!r.ok) throw new Error(j.error || "Gagal simpan presensi");
       // Refresh info
       fetchInfo();
     } catch (e: unknown) {

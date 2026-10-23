@@ -76,11 +76,11 @@ export function GuruProfilPage({
           <div className="flex items-center gap-3">
             <span className="text-[var(--brand)] flex-shrink-0"><Bell size={16} /></span>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-[var(--text)] text-[0.85rem]">Pengingat absen</div>
+              <div className="font-bold text-[var(--text)] text-[0.85rem]">Pengingat presensi</div>
               <div className="text-[0.63rem] text-[var(--text-light)] mt-[1px]">
                 {reminder.mode === "denied"
                   ? "Notifikasi diblokir — izinkan dulu lewat setelan browser."
-                  : `Kalau dinyalakan, HP berbunyi 2x sehari: jam ${reminder.ingatMasuk} (5 menit sebelum batas absen masuk) dan jam ${reminder.ingatPulang} (5 menit sebelum pulang). Tidak berbunyi kalau sudah absen.`}
+                  : `Kalau dinyalakan, HP berbunyi 2x sehari: jam ${reminder.ingatMasuk} (5 menit sebelum batas presensi masuk) dan jam ${reminder.ingatPulang} (5 menit sebelum pulang). Tidak berbunyi kalau sudah presensi.`}
               </div>
             </div>
             <button

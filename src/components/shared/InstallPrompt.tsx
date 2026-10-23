@@ -85,7 +85,7 @@ export function InstallPrompt() {
               Pasang <i>Presensi Yuk</i> | Guru
             </h3>
             <p className="text-[0.78rem] text-[var(--text-light)] leading-snug mt-1">
-              Buka langsung dari layar utama, lebih cepat, dan pengingat absen bisa jalan.
+              Buka langsung dari layar utama, lebih cepat, dan pengingat presensi bisa jalan.
             </p>
           </div>
         </div>

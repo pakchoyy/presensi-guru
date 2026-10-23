@@ -5,6 +5,7 @@ import {
   BarChart3,
   Users,
   Settings,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,9 +33,9 @@ export function BottomNav() {
       className="lg:hidden fixed left-1/2 bottom-0 -translate-x-1/2 w-full max-w-app bg-[var(--card-bg)] border-t border-[var(--border)] flex items-stretch z-[300] py-[6px] px-1"
       style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
     >
-      {NAV_ITEMS.map((item) => {
+      {NAV_ITEMS.flatMap((item, i) => {
         const isActive = activePage === item.page;
-        return (
+        const tombol = (
           <button
             key={item.page}
             onClick={() => setActivePage(item.page)}
@@ -46,6 +47,26 @@ export function BottomNav() {
             <span className="text-[10px] font-bold">{item.label}</span>
           </button>
         );
+        if (i !== 1) return [tombol];
+        // Presensi di tengah, menonjol (sama dengan nav guru).
+        const presensiAktif = activePage === PageName.PRESENSI;
+        return [
+          tombol,
+          <button
+            key="presensi"
+            onClick={() => setActivePage(PageName.PRESENSI)}
+            className="flex-1 flex flex-col items-center gap-[2px] bg-transparent border-none font-[inherit] -mt-6"
+            aria-label="Presensi"
+          >
+            <span
+              className="w-[58px] h-[58px] rounded-full flex items-center justify-center text-white border-4 border-[var(--card-bg)]"
+              style={{ background: "var(--grad)", boxShadow: "0 6px 16px rgba(37,99,235,.35)" }}
+            >
+              <ClipboardCheck size={26} />
+            </span>
+            <span className={`text-[10px] font-bold ${presensiAktif ? "text-[var(--brand)]" : "text-[var(--text-light)]"}`}>Presensi</span>
+          </button>,
+        ];
       })}
     </nav>
   );

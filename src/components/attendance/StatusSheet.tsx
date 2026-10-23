@@ -84,7 +84,7 @@ export function StatusSheet({
               <Clock size={13} /> Isi jam manual
             </div>
             <div className="text-[0.62rem] text-[var(--text-light)] mb-2">
-              Dipakai kalau guru lupa absen. Kosongkan untuk menghapus jam.
+              Dipakai kalau guru lupa presensi. Kosongkan untuk menghapus jam.
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

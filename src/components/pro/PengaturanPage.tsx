@@ -10,7 +10,7 @@ import { getSyncLog, type SyncLogEntry } from "@/services/sync.service";
 import { Tier, Jenjang, PageName } from "@/types/enums";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { MAX_STUDENTS_FREE, PRO_PRICE } from "@/lib/constants";
-import { generateId, getActiveDays } from "@/lib/utils";
+import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { trackDevice } from "@/contexts/AuthContext";
 import {
@@ -772,7 +772,7 @@ export function PengaturanPage() {
 
         <div className="text-[0.68rem] text-[var(--text-light)] mb-3 leading-relaxed">
           Set koordinat sekolah untuk <b>geofencing</b> saat guru clock-in/out.
-          Guru akan dianggap <b>FAR</b> (di luar radius) kalau absen lebih dari radius di bawah dari lokasi ini.
+          Guru akan dianggap <b>FAR</b> (di luar radius) kalau presensi lebih dari radius di bawah dari lokasi ini.
         </div>
 
         {/* Lat / Lng */}
@@ -840,7 +840,7 @@ export function PengaturanPage() {
 
         {/* Jam Kerja Guru — masuk → pulang */}
         <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-          <Clock size={11} className="inline mr-1" /> Jam Kerja Guru (masuk → pulang)
+          <Clock size={11} className="inline mr-1" /> Jam Kerja Guru (masuk → pulang){zonaWaktu() && ` · ${zonaWaktu()}`}
         </label>
         <div className="flex items-center gap-2 mb-1">
           <input
@@ -860,7 +860,27 @@ export function PengaturanPage() {
           />
         </div>
         <div className="text-[0.6rem] text-[var(--text-light)] mb-2">
-          Dipakai untuk menentukan status Tepat Waktu / Terlambat saat guru absen.
+          Jam mengikuti jam HP, jadi otomatis sesuai daerah (WIB / WITA / WIT).
+        </div>
+
+        <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+          Batas presensi masuk
+        </label>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="flex-1 px-[8px] py-[8px] text-[0.85rem] text-[var(--text-light)]">{editJamMasuk} →</span>
+          <input
+            type="time"
+            value={geserMenit(editJamMasuk, editToleransi)}
+            onChange={(e) => {
+              const selisih = keMenit(e.target.value) - keMenit(editJamMasuk);
+              if (e.target.value && selisih >= 0) setEditToleransi(selisih);
+            }}
+            aria-label="Batas presensi masuk"
+            className="flex-1 px-[8px] py-[8px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+          />
+        </div>
+        <div className="text-[0.6rem] text-[var(--text-light)] mb-2">
+          Presensi sampai jam {geserMenit(editJamMasuk, editToleransi)} dihitung Tepat Waktu, lewat dari itu Terlambat.
         </div>
 
         <div className="mb-3" />
@@ -1622,3 +1642,12 @@ function formatSyncDetail(detail?: Record<string, number>): string {
   const parts = Object.entries(detail).map(([key, val]) => `${val} ${SYNC_DETAIL_LABEL[key] || key}`);
   return ` (${parts.join(" · ")})`;
 }
+
+const keMenit = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+const geserMenit = (hhmm: string, menit: number) => {
+  const t = (keMenit(hhmm) + menit) % (24 * 60);
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+};

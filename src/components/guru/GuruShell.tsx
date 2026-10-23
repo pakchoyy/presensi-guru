@@ -5,19 +5,25 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download } from "lucide-react";
+import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
+import { PetunjukPage } from "@/components/guide/PetunjukPage";
+import { pasangAplikasi } from "@/components/layout/DropdownMenu";
+import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
 import { todayStr } from "@/lib/utils";
 import { guruCloud } from "@/services/multi-perangkat.service";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-type GuruTab = "presensi" | "log" | "rekap" | "profil";
+type GuruTab = "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk";
 
 export function GuruShell() {
   const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
   const [tab, setTab] = useState<GuruTab>("presensi");
-  const [bukaIzin, setBukaIzin] = useState(0);
+  const [logJenis, setLogJenis] = useState<"presensi" | "izin">("presensi");
+  const [menuBuka, setMenuBuka] = useState(false);
+  const { toast } = useToast();
   const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
     masuk: false,
     pulang: false,
@@ -57,8 +63,8 @@ export function GuruShell() {
       const sisa = await guruCloud.kirimAntrian();
       if (sisa > 0) {
         const tetap = await showConfirmDialog({
-          title: "Absen belum terkirim",
-          message: `${sisa} absen belum terkirim ke sekolah karena belum ada internet. Kalau keluar sekarang, absen itu hilang dari HP ini. Tetap keluar?`,
+          title: "Presensi belum terkirim",
+          message: `${sisa} presensi belum terkirim ke sekolah karena belum ada internet. Kalau keluar sekarang, presensi itu hilang dari HP ini. Tetap keluar?`,
           confirmText: "Tetap keluar",
           cancelText: "Batal",
           danger: true,
@@ -117,15 +123,65 @@ export function GuruShell() {
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          <button
+            onClick={() => setMenuBuka((v) => !v)}
+            className="ml-2 h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25"
+            aria-label="Menu"
+          >
+            <Menu size={16} />
+          </button>
+          {menuBuka && (
+            <>
+              <div className="fixed inset-0 z-[290]" onClick={() => setMenuBuka(false)} />
+              <div
+                className="absolute top-[calc(100%+8px)] right-0 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl z-[400] min-w-[200px] overflow-hidden"
+                style={{ boxShadow: "var(--shadow-lg)" }}
+              >
+                {[
+                  { ikon: <BookOpen size={16} />, teks: "Petunjuk", aksi: () => setTab("petunjuk") },
+                  { ikon: <Download size={16} />, teks: "Install Presensi Yuk", aksi: () => pasangAplikasi(toast) },
+                ].map((m) => (
+                  <button
+                    key={m.teks}
+                    onClick={() => { m.aksi(); setMenuBuka(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] border-none bg-transparent text-left"
+                  >
+                    {m.ikon} {m.teks}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </header>
 
       {/* Konten */}
       <div key={versiData} className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
         {tab === "presensi" && (
-          <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} bukaIzin={bukaIzin} />
+          <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
         )}
-        {tab === "log" && <LogAbsenPage />}
+        {tab === "izin" && <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />}
+        {tab === "log" && (
+          <>
+            <div className="px-[14px] pt-[14px] -mb-[6px]">
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-[var(--input-bg)] border border-[var(--border)]">
+                {(["presensi", "izin"] as const).map((j) => (
+                  <button
+                    key={j}
+                    onClick={() => setLogJenis(j)}
+                    className={`py-2 rounded-lg text-[0.8rem] font-bold border-none ${
+                      logJenis === j ? "bg-[var(--card-bg)] text-[var(--brand)] shadow-sm" : "bg-transparent text-[var(--text-light)]"
+                    }`}
+                  >
+                    {j === "presensi" ? "Log Presensi" : "Log Izin"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {logJenis === "presensi" ? <LogAbsenPage /> : <div className="flex-1 px-[14px] pt-[14px] pb-[90px]"><LogIzinPage /></div>}
+          </>
+        )}
+        {tab === "petunjuk" && <PetunjukPage />}
         {tab === "rekap" && <LogPresensiPage embedded />}
         {tab === "profil" && <GuruProfilPage onLogout={keluar} reminder={reminder} />}
       </div>
@@ -135,13 +191,13 @@ export function GuruShell() {
         className="fixed left-1/2 bottom-0 -translate-x-1/2 w-full max-w-app bg-[var(--card-bg)] border-t border-[var(--border)] flex items-stretch z-[300] py-[6px] px-1"
         style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
       >
-        <NavBtn active={false} onClick={() => { setTab("presensi"); setBukaIzin((n) => n + 1); }} icon={<FileText size={20} />} label="Izin" />
+        <NavBtn active={tab === "izin"} onClick={() => setTab("izin")} icon={<FileText size={20} />} label="Izin" />
         <NavBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ClipboardList size={20} />} label="Log" />
-        {/* Absen di tengah, menonjol */}
+        {/* Presensi di tengah, menonjol */}
         <button
           onClick={() => setTab("presensi")}
           className="flex-1 flex flex-col items-center gap-[2px] bg-transparent border-none font-[inherit] -mt-6"
-          aria-label="Absen"
+          aria-label="Presensi"
         >
           <span
             className="w-[58px] h-[58px] rounded-full flex items-center justify-center text-white border-4 border-[var(--card-bg)]"
@@ -149,7 +205,7 @@ export function GuruShell() {
           >
             <ClipboardCheck size={26} />
           </span>
-          <span className={`text-[10px] font-bold ${tab === "presensi" ? "text-[var(--brand)]" : "text-[var(--text-light)]"}`}>Absen</span>
+          <span className={`text-[10px] font-bold ${tab === "presensi" ? "text-[var(--brand)]" : "text-[var(--text-light)]"}`}>Presensi</span>
         </button>
         <NavBtn active={tab === "rekap"} onClick={() => setTab("rekap")} icon={<BarChart3 size={20} />} label="Rekap" />
         <NavBtn active={tab === "profil"} onClick={() => setTab("profil")} icon={<User size={20} />} label="Profil" />

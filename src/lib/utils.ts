@@ -178,3 +178,9 @@ export function ketukResetUji(): void {
     window.dispatchEvent(new Event(EVENT_RESET_UJI));
   }
 }
+
+/** Zona waktu Indonesia dari jam HP (WIB/WITA/WIT); kosong kalau di luar ketiganya. */
+export function zonaWaktu(): string {
+  const off = -new Date().getTimezoneOffset();
+  return off === 420 ? "WIB" : off === 480 ? "WITA" : off === 540 ? "WIT" : "";
+}

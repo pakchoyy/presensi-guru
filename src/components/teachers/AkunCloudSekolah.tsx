@@ -81,7 +81,7 @@ export function AkunCloudSekolah({
         </div>
 
         <div className="mt-3 text-[0.68rem] text-[var(--text-light)] leading-snug">
-          <b className="text-[var(--text)]">{jumlahTersambung}</b> guru bisa absen dari HP sendiri
+          <b className="text-[var(--text)]">{jumlahTersambung}</b> guru bisa presensi dari HP sendiri
           {jumlahBelum > 0 && (
             <>
               {" · "}
@@ -110,9 +110,9 @@ export function AkunCloudSekolah({
           <CloudOff size={16} />
         </span>
         <div className="flex-1 min-w-0">
-          <div className="text-[0.8rem] font-bold text-[var(--text)]">Guru absen dari HP masing-masing?</div>
+          <div className="text-[0.8rem] font-bold text-[var(--text)]">Guru presensi dari HP masing-masing?</div>
           <div className="text-[0.63rem] text-[var(--text-light)] leading-snug mt-[2px]">
-            Hubungkan sekolah ke cloud sekali saja. Tanpa ini, guru hanya bisa absen di perangkat ini.
+            Hubungkan sekolah ke cloud sekali saja. Tanpa ini, guru hanya bisa presensi di perangkat ini.
           </div>
         </div>
       </div>
