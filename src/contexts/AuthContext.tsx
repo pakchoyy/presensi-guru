@@ -291,6 +291,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { name, tier: "FREE" },
+        // Link konfirmasi email kembali ke aplikasi ini, bukan Site URL bawaan (localhost).
+        emailRedirectTo: window.location.origin,
       },
     });
 
