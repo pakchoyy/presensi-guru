@@ -1,3 +1,4 @@
+import { labelPeran } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ClipboardCheck,
@@ -481,7 +482,7 @@ function SelfAbsenPanel({
           <div className="flex-1 min-w-0">
             <div className="text-[1rem] font-extrabold truncate">{guru.nama}</div>
             <div className="text-[0.74rem] opacity-95 truncate">
-              {guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
+              {labelPeran(guru) || guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
             </div>
           </div>
           <button

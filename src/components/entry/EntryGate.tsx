@@ -3,7 +3,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import type { Teacher } from "@/types/entities";
 import { guruCloud } from "@/services/multi-perangkat.service";
-import { ClipboardCheck, ShieldCheck, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { ClipboardCheck, ShieldCheck, Stamp, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   const needle = kode.trim();
@@ -17,7 +17,7 @@ function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   );
 }
 
-type Step = "choose" | "guru";
+type Step = "choose" | "guru" | "ks";
 
 export function EntryGate() {
   const { teachers, setEntryMode, loginGuru, refreshSchool, refreshTeachers } = useApp();
@@ -60,6 +60,19 @@ export function EntryGate() {
             </button>
 
             <button
+              onClick={() => setStep("ks")}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-amber-100 hover:border-amber-400 bg-amber-50/50 transition-colors text-left active:scale-[.99]"
+            >
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0 bg-gradient-to-br from-amber-500 to-amber-600">
+                <Stamp size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-extrabold text-gray-800">Kepala Sekolah</div>
+                <div className="text-[0.72rem] text-gray-500">Presensi, pantau kehadiran guru & setujui izin</div>
+              </div>
+            </button>
+
+            <button
               onClick={() => setEntryMode("admin")}
               className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-gray-300 bg-gray-50/60 transition-colors text-left active:scale-[.99]"
             >
@@ -67,13 +80,14 @@ export function EntryGate() {
                 <ShieldCheck size={24} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-gray-800">Admin / Operator</div>
+                <div className="font-extrabold text-gray-800">Operator</div>
                 <div className="text-[0.72rem] text-gray-500">Kelola guru, rekap, pengaturan sekolah</div>
               </div>
             </button>
           </div>
         ) : (
           <GuruLogin
+            judul={step === "ks" ? "Kepala Sekolah" : "Guru"}
             teachers={teachers}
             onBack={() => setStep("choose")}
             onSuccess={(g) => { loginGuru(g.id); toast(`Selamat datang, ${g.nama}`, "success"); }}
@@ -99,11 +113,13 @@ export function EntryGate() {
 }
 
 function GuruLogin({
+  judul,
   teachers,
   onBack,
   onSuccess,
   onCloudSuccess,
 }: {
+  judul: string;
   teachers: Teacher[];
   onBack: () => void;
   onSuccess: (g: Teacher) => void;
@@ -142,7 +158,7 @@ function GuruLogin({
       <button type="button" onClick={onBack} className="flex items-center gap-1 text-[0.78rem] font-bold text-gray-500 hover:text-[#2563eb]">
         <ArrowLeft size={14} /> Kembali
       </button>
-      <div className="font-extrabold text-gray-800 text-[1.05rem]">Masuk sebagai Guru</div>
+      <div className="font-extrabold text-gray-800 text-[1.05rem]">Masuk sebagai {judul}</div>
 
       <>
           <div>

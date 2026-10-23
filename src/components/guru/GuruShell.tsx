@@ -4,9 +4,10 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
-import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
+import { DashboardHarianPage } from "@/components/attendance/DashboardHarianPage";
+import { db } from "@/repositories/dexie/db";
 import { PetunjukPage } from "@/components/guide/PetunjukPage";
 import { TentangKontak } from "@/components/about/TentangKontak";
 import { pasangAplikasi } from "@/components/layout/DropdownMenu";
@@ -17,7 +18,7 @@ import { todayStr } from "@/lib/utils";
 import { guruCloud } from "@/services/multi-perangkat.service";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-type GuruTab = "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk" | "tentang";
+type GuruTab = "dashboard" | "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk" | "tentang";
 
 export function GuruShell() {
   const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
@@ -25,8 +26,8 @@ export function GuruShell() {
   const [logJenis, setLogJenis] = useState<"presensi" | "izin">("presensi");
   const [menuBuka, setMenuBuka] = useState(false);
   // Kepala Sekolah / verifikator yang ditunjuk admin: bisa memutuskan izin guru lain.
-  const [verifikator, setVerifikator] = useState(false);
-  useEffect(() => { guruCloud.cekVerifikator().then(setVerifikator).catch(() => {}); }, []);
+  const [cloudKs, setCloudKs] = useState(false);
+  useEffect(() => { guruCloud.cekVerifikator().then(setCloudKs).catch(() => {}); }, []);
   const { toast } = useToast();
   const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
     masuk: false,
@@ -34,6 +35,12 @@ export function GuruShell() {
   });
 
   const guru = teachers.find((t) => t.id === guruSessionId);
+  // Kepala Sekolah: Dashboard (lihat & ubah presensi semua guru + verifikasi izin).
+  const ks = guru?.role === "ks" || cloudKs;
+  useEffect(() => {
+    // Peran di cloud baru diubah admin → samakan di HP ini.
+    if (cloudKs && guru && guru.role !== "ks") db.teachers.update(guru.id, { role: "ks" });
+  }, [cloudKs, guru]);
 
   // Status absen hari ini dipakai pengingat: kalau sudah absen, tidak diingatkan.
   const muatStatus = useCallback(async () => {
@@ -142,6 +149,7 @@ export function GuruShell() {
                 style={{ boxShadow: "var(--shadow-lg)" }}
               >
                 {[
+                  ...(ks ? [{ ikon: <ClipboardList size={16} />, teks: "Log saya", aksi: () => setTab("log") }] : []),
                   { ikon: <BookOpen size={16} />, teks: "Petunjuk", aksi: () => setTab("petunjuk") },
                   { ikon: <Info size={16} />, teks: "Tentang & Kontak", aksi: () => setTab("tentang") },
                   { ikon: <Download size={16} />, teks: "Install Presensi Yuk", aksi: () => pasangAplikasi(toast) },
@@ -165,12 +173,8 @@ export function GuruShell() {
         {tab === "presensi" && (
           <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
         )}
-        {tab === "izin" && (
-          <>
-            {verifikator && <div className="px-[14px] pt-[14px] -mb-[14px]"><PersetujuanIzin mode="ks" /></div>}
-            <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />
-          </>
-        )}
+        {tab === "dashboard" && <DashboardHarianPage />}
+        {tab === "izin" && <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />}
         {tab === "log" && (
           <>
             <div className="px-[14px] pt-[14px] -mb-[6px]">
@@ -203,7 +207,11 @@ export function GuruShell() {
         style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
       >
         <NavBtn active={tab === "izin"} onClick={() => setTab("izin")} icon={<FileText size={20} />} label="Izin" />
-        <NavBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ClipboardList size={20} />} label="Log" />
+        {ks ? (
+          <NavBtn active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon={<LayoutDashboard size={20} />} label="Dashboard" />
+        ) : (
+          <NavBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ClipboardList size={20} />} label="Log" />
+        )}
         {/* Presensi di tengah, menonjol */}
         <button
           onClick={() => setTab("presensi")}

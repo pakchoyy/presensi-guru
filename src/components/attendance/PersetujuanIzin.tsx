@@ -3,17 +3,16 @@ import { Check, ChevronDown, FileText, Plus, X } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { adminCloud, guruCloud, type IzinSekolah } from "@/services/multi-perangkat.service";
+import { adminCloud, type IzinSekolah } from "@/services/multi-perangkat.service";
 import { bacaJenis, IzinGuruPage } from "@/components/guru/IzinGuruPage";
 import type { TeacherAttendance } from "@/types/entities";
 import { addDays, formatTanggalPanjang, timestamp, todayStr } from "@/lib/utils";
 
 /**
- * Verifikasi izin: yang menunggu + riwayat keputusan (31 hari terakhir).
- * mode "admin" = Dashboard admin (data lokal + cloud, bisa catat izin);
- * mode "ks" = HP Kepala Sekolah / verifikator (langsung dari cloud, hanya memutuskan).
+ * Verifikasi izin di Dashboard (Operator & Kepala Sekolah): yang menunggu +
+ * riwayat keputusan (31 hari terakhir), plus catat izin langsung.
  */
-export function PersetujuanIzin({ onBerubah, mode = "admin" }: { onBerubah?: () => void; mode?: "admin" | "ks" }) {
+export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
   const { teachers } = useApp();
   const { toast } = useToast();
   const [semua, setSemua] = useState<IzinSekolah[]>([]);
@@ -24,42 +23,33 @@ export function PersetujuanIzin({ onBerubah, mode = "admin" }: { onBerubah?: () 
   const guruAktif = teachers.filter((t) => t.statusAktif !== false);
 
   const muat = useCallback(async () => {
-    let daftar: IzinSekolah[];
-    if (mode === "ks") {
-      daftar = await guruCloud.daftarIzinSekolah().catch(() => []);
-    } else {
-      const dari = addDays(todayStr(), -31);
-      const sampai = addDays(todayStr(), 62);
-      await adminCloud.tarikAbsen(dari, sampai).catch(() => 0);
-      daftar = (await teacherAttendanceRepo.getAllRange(dari, sampai))
-        .filter((r) => r.statusIzin)
-        .map((r) => ({
-          kunci: String(r.id),
-          nama: teachers.find((t) => t.id === r.guruId)?.nama ?? "Guru",
-          tanggal: r.tanggal,
-          statusHari: r.statusHari,
-          statusIzin: r.statusIzin!,
-          catatan: r.catatan,
-        }));
-    }
+    const dari = addDays(todayStr(), -31);
+    const sampai = addDays(todayStr(), 62);
+    await adminCloud.tarikAbsen(dari, sampai).catch(() => 0);
+    const daftar: IzinSekolah[] = (await teacherAttendanceRepo.getAllRange(dari, sampai))
+      .filter((r) => r.statusIzin)
+      .map((r) => ({
+        kunci: String(r.id),
+        nama: teachers.find((t) => t.id === r.guruId)?.nama ?? "Guru",
+        tanggal: r.tanggal,
+        statusHari: r.statusHari,
+        statusIzin: r.statusIzin!,
+        catatan: r.catatan,
+      }));
     setSemua(daftar);
     // Ada yang menunggu → langsung terbuka supaya tidak terlewat.
     if (daftar.some((d) => d.statusIzin === "proses")) setBuka(true);
-  }, [mode, teachers]);
+  }, [teachers]);
 
   useEffect(() => { muat(); }, [muat]);
 
   const putuskan = async (izin: IzinSekolah, statusIzin: "disetujui" | "ditolak") => {
     try {
-      if (mode === "ks") {
-        await guruCloud.putuskanIzin(izin.kunci, statusIzin);
-      } else {
-        const rec = await teacherAttendanceRepo.getById(Number(izin.kunci));
-        if (!rec) return;
-        const baru: TeacherAttendance = { ...rec, statusIzin, diubahPada: timestamp() };
-        await teacherAttendanceRepo.save(baru);
-        await adminCloud.kirimAbsen(rec.guruId, baru).catch(() => "tertunda");
-      }
+      const rec = await teacherAttendanceRepo.getById(Number(izin.kunci));
+      if (!rec) return;
+      const baru: TeacherAttendance = { ...rec, statusIzin, diubahPada: timestamp() };
+      await teacherAttendanceRepo.save(baru);
+      await adminCloud.kirimAbsen(rec.guruId, baru).catch(() => "tertunda");
     } catch {
       toast("Gagal menyimpan keputusan — cek internet", "error");
       return;
@@ -112,14 +102,12 @@ export function PersetujuanIzin({ onBerubah, mode = "admin" }: { onBerubah?: () 
               </button>
             ))}
           </div>
-          {mode === "admin" && (
-            <button
+          <button
               onClick={() => setCatatUntuk(0)}
               className="w-full mb-2 py-[8px] rounded-xl border-[1.5px] border-dashed border-[var(--brand)] text-[var(--brand)] bg-transparent text-[0.78rem] font-bold flex items-center justify-center gap-1 active:scale-95"
             >
               <Plus size={14} /> Catat izin (termasuk untuk diri sendiri)
             </button>
-          )}
           {tampil.length === 0 && (
             <div className="py-4 text-center text-[0.75rem] text-[var(--text-light)]">
               {lihat === "menunggu" ? "Semua pengajuan sudah diputuskan." : "Belum ada izin yang diputuskan."}

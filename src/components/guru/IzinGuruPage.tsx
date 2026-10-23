@@ -38,9 +38,10 @@ const label = "text-[0.78rem] font-bold text-[var(--text)] mb-1 block";
  * admin, termasuk untuk dirinya sendiri) → langsung disetujui.
  */
 export function IzinGuruPage({ onSelesai, guruId }: { onSelesai: () => void; guruId?: number }) {
-  const { guruSessionId: sesi } = useApp();
-  const olehAdmin = guruId != null;
+  const { guruSessionId: sesi, teachers } = useApp();
   const guruSessionId = guruId ?? sesi;
+  // Dicatat admin, atau Kepala Sekolah untuk dirinya sendiri → langsung disetujui.
+  const olehAdmin = guruId != null || teachers.find((t) => t.id === sesi)?.role === "ks";
   const { toast } = useToast();
   const [awal, setAwal] = useState(todayStr());
   const [akhir, setAkhir] = useState(todayStr());
