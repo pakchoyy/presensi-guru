@@ -1,3 +1,4 @@
+import { labelPeran } from "@/lib/utils";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { LogOut, Clock, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
@@ -36,7 +37,7 @@ export function GuruProfilPage({
             <UserRound size={58} strokeWidth={1.6} className="text-[var(--brand)] translate-y-1" />
           </div>
           <div className="text-[1.15rem] font-extrabold mt-3">{guru.nama}</div>
-          <div className="text-[0.78rem] opacity-90">{guru.jabatan || "Guru"}</div>
+          <div className="text-[0.78rem] opacity-90">{labelPeran(guru) || guru.jabatan || "Guru"}</div>
         </div>
       </div>
 

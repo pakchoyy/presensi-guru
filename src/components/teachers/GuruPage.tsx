@@ -669,7 +669,7 @@ export function GuruPage() {
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-[var(--text)] text-[0.9rem] truncate">{g.nama}</div>
                 <div className="text-[0.65rem] text-[var(--text-light)] truncate">
-                  {labelPeran(g) && <span className="inline-block mr-1 px-[6px] py-[1px] rounded-md bg-[var(--brand-soft)] text-[var(--brand-strong)] text-[0.6rem] font-bold">{labelPeran(g)}</span>}{g.jabatan || "—"}{g.nip ? ` • ${g.nip}` : ""}
+                  {labelPeran(g) || g.jabatan || "—"}{g.nip ? ` • ${g.nip}` : ""}
                 </div>
                 <div className="text-[0.6rem] text-[var(--text-light)] mt-[2px] flex items-center gap-2 flex-wrap">
                   <span className="font-mono bg-[var(--input-bg)] px-[6px] py-[1px] rounded">

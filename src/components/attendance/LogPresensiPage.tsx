@@ -1,3 +1,4 @@
+import { labelPeran } from "@/lib/utils";
 import { ketPresensi } from "@/lib/ket-presensi";
 import { LegendKet } from "@/components/attendance/LegendKet";
 import { useEffect, useMemo, useState } from "react";
@@ -135,7 +136,7 @@ function GuruPicker({
             <div className="flex-1 min-w-0">
               <div className="font-bold text-[var(--text)] text-[0.88rem] truncate">{t.nama}</div>
               <div className="text-[0.68rem] text-[var(--text-light)] truncate">
-                {t.jabatan || "—"}{t.nip ? ` • ${t.nip}` : ""}
+                {labelPeran(t) || t.jabatan || "—"}{t.nip ? ` • ${t.nip}` : ""}
               </div>
             </div>
           </button>
@@ -251,7 +252,7 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
         <div className="flex-1 min-w-0 relative">
           <div className="text-[0.95rem] font-extrabold truncate">{guru.nama}</div>
           <div className="text-[0.7rem] opacity-90 truncate">
-            {guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
+            {labelPeran(guru) || guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
           </div>
         </div>
         {onChangeGuru && (

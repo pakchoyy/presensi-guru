@@ -66,16 +66,7 @@ interface BarisGuru {
   status_aktif: boolean;
 }
 
-interface BarisIzin {
-  id: number | string;
-  user_id: string;
-  tanggal: string;
-  status_hari: string | null;
-  status_izin: "proses" | "disetujui" | "ditolak";
-  catatan: string | null;
-}
-
-/** Satu pengajuan izin seperti terlihat oleh verifikator. */
+/** Satu pengajuan izin di daftar Verifikasi Izin. */
 export interface IzinSekolah {
   kunci: string;
   nama: string;
@@ -267,9 +258,9 @@ export const guruCloud = {
 
     const { data: guru } = await supabaseGuru
       .from("cloud_guru_teachers")
-      .select("user_id, local_id, nama, nip, jabatan, kode_login, sekolah_uuid, status_aktif")
+      .select("user_id, local_id, nama, nip, jabatan, kode_login, sekolah_uuid, status_aktif, verifikator")
       .eq("user_id", uid)
-      .maybeSingle<BarisGuru>();
+      .maybeSingle<BarisGuru & { verifikator: boolean }>();
     if (!guru || !guru.status_aktif || !guru.sekolah_uuid) {
       await supabaseGuru.auth.signOut();
       throw new Error("Akun guru ini sudah tidak aktif. Hubungi Ops / Kepala Sekolah.");
@@ -304,7 +295,7 @@ export const guruCloud = {
       email: "",
       sekolahId: sekolah.local_id,
       tier: Tier.FREE,
-      role: "guru",
+      role: guru.verifikator ? "ks" : "guru",
       jabatan: u(guru.jabatan),
       nip: u(guru.nip),
       kodeLogin: guru.kode_login ?? kode.trim(),
@@ -362,38 +353,67 @@ export const guruCloud = {
   },
 
   /**
-   * Pengajuan izin di sekolah (untuk verifikator), 31 hari terakhir ke depan.
-   * RLS hanya meloloskan baris izin; izin milik verifikator sendiri diputuskan admin.
+   * HP Kepala Sekolah: tarik daftar guru + presensi sekolah (RLS hanya
+   * meloloskannya untuk verifikator; guru biasa hanya mendapat datanya sendiri).
    */
-  async daftarIzinSekolah(): Promise<IzinSekolah[]> {
+  async tarikSekolah(dari: string, sampai: string): Promise<number> {
     const info = this.info();
-    if (!info) return [];
-    const [{ data: baris }, { data: guru }] = await Promise.all([
-      supabaseGuru
-        .from("cloud_guru_attendance")
-        .select("id, user_id, tanggal, status_hari, status_izin, catatan")
-        .not("status_izin", "is", null)
-        .neq("user_id", info.uid)
-        .gte("tanggal", addDays(todayStr(), -31)),
-      supabaseGuru.from("cloud_guru_teachers").select("user_id, nama"),
-    ]);
-    const nama = new Map(((guru ?? []) as { user_id: string; nama: string }[]).map((g) => [g.user_id, g.nama]));
-    return ((baris ?? []) as BarisIzin[]).map((b) => ({
-      kunci: String(b.id),
-      nama: nama.get(b.user_id) ?? "Guru",
-      tanggal: b.tanggal,
-      statusHari: u(b.status_hari) as TeacherAttendance["statusHari"],
-      statusIzin: b.status_izin,
-      catatan: u(b.catatan),
-    }));
+    if (!info || !navigator.onLine) return 0;
+    const { data: guru } = await supabaseGuru
+      .from("cloud_guru_teachers")
+      .select("user_id, local_id, nama, nip, jabatan, kode_login, status_aktif, verifikator");
+    const keLokal = new Map<string, number>();
+    for (const g of (guru ?? []) as (BarisGuru & { verifikator: boolean })[]) {
+      const id = Number(g.local_id);
+      keLokal.set(g.user_id, id);
+      if (id === info.guruId) continue;
+      const lama = await db.teachers.get(id);
+      await db.teachers.put({
+        ...(lama ?? { email: "", tier: Tier.FREE, dibuatPada: timestamp() }),
+        id,
+        nama: g.nama,
+        sekolahId: info.sekolahId,
+        role: g.verifikator ? "ks" : "guru",
+        jabatan: u(g.jabatan),
+        nip: u(g.nip),
+        kodeLogin: u(g.kode_login),
+        statusAktif: g.status_aktif,
+        diubahPada: timestamp(),
+      } as Teacher);
+    }
+    const { data } = await supabaseGuru
+      .from("cloud_guru_attendance")
+      .select("*")
+      .gte("tanggal", dari)
+      .lte("tanggal", sampai);
+    let berubah = 0;
+    for (const row of (data ?? []) as BarisAbsen[]) {
+      const guruId = keLokal.get(row.user_id);
+      if (guruId != null && (await gabungKeLokal(dariBarisAbsen(row, guruId)))) berubah++;
+    }
+    return berubah;
   },
 
-  async putuskanIzin(kunci: string, statusIzin: "disetujui" | "ditolak"): Promise<void> {
+  /** HP Kepala Sekolah: simpan perubahan presensi guru lain ke cloud. */
+  async kirimAbsenSekolah(guruLocalId: number, rec: TeacherAttendance): Promise<"terkirim" | "tertunda"> {
+    const info = this.info();
+    if (!info) return "tertunda";
+    if (guruLocalId === info.guruId) return (await this.kirimAbsen(rec.id)) ? "terkirim" : "tertunda";
+    if (!navigator.onLine) return "tertunda";
+    const { data: g } = await supabaseGuru
+      .from("cloud_guru_teachers")
+      .select("user_id")
+      .eq("local_id", guruLocalId)
+      .maybeSingle<{ user_id: string }>();
+    if (!g) return "tertunda";
+    // Foto tidak dikirim dari sini; server mempertahankan foto lama.
+    const path = (v?: string) => (v?.startsWith(PREFIX_STORAGE) ? v.slice(PREFIX_STORAGE.length) : null);
     const { error } = await supabaseGuru
       .from("cloud_guru_attendance")
-      .update({ status_izin: statusIzin, diubah_pada: timestamp() })
-      .eq("id", kunci);
-    if (error) throw new Error(error.message);
+      .upsert(keBarisAbsen(rec, g.user_id, info.sekolahUuid, { masuk: path(rec.selfieMasukUrl), pulang: path(rec.selfiePulangUrl) }), {
+        onConflict: "user_id,tanggal",
+      });
+    return error ? "tertunda" : "terkirim";
   },
 
   async tarikRiwayat(hari = 35): Promise<number> {
@@ -582,7 +602,8 @@ export const adminCloud = {
 
   /** Tarik absen guru sekolah ini dari cloud ke Dexie untuk rentang tanggal. */
   async tarikAbsen(dari: string, sampai: string): Promise<number> {
-    if (!(await this.siap())) return 0;
+    // HP Kepala Sekolah (login sebagai guru) menarik lewat akun gurunya.
+    if (!(await this.siap())) return guruCloud.aktif() ? guruCloud.tarikSekolah(dari, sampai) : 0;
     const peta = await this.petaGuru();
     if (peta.size === 0) return 0;
     const keGuru = new Map<string, number>();
@@ -612,7 +633,7 @@ export const adminCloud = {
   async kirimAbsen(guruLocalId: number, rec: TeacherAttendance): Promise<"terkirim" | "tertunda" | "lokal"> {
     // Sekolah tanpa akun cloud: cukup lokal, jangan menumpuk antrean.
     const uid = await uidAdmin();
-    if (!uid) return "lokal";
+    if (!uid) return guruCloud.aktif() ? guruCloud.kirimAbsenSekolah(guruLocalId, rec) : "lokal";
     if (!navigator.onLine) {
       this.antrekan(guruLocalId, rec.id);
       return "tertunda";
