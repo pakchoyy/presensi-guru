@@ -85,7 +85,6 @@ export function CloudSettingsPage() {
     try {
       syncService.resetSyncState();
       const downloaded = await syncService.downloadAll(cloudEmail);
-      localStorage.setItem("presensi_last_sync", Date.now().toString());
       toast(`✅ ${downloaded} data ditarik dari cloud`, "success");
       window.location.reload();
     } catch (error) {
@@ -110,7 +109,6 @@ export function CloudSettingsPage() {
     try {
       syncService.resetSyncState();
       const uploaded = await syncService.initialUpload(cloudEmail);
-      localStorage.setItem("presensi_last_sync", Date.now().toString());
       toast(`✅ ${uploaded} data diupload ke cloud`, "success");
       window.location.reload();
     } catch (error) {

@@ -37,25 +37,14 @@ export class PresensiDB extends Dexie {
 
 export const db = new PresensiDB();
 
-db.on('blocked', () => {
-  console.warn('[DB] Database blocked - forcing delete');
-  db.delete().then(() => {
-    console.warn('[DB] Database deleted, reloading page...');
-    window.location.reload();
-  }).catch(console.error);
-});
+// Jangan pernah hapus database otomatis: "blocked" berarti tab/PWA lain masih
+// membuka versi lama, dan data presensi bisa hanya ada di HP ini.
+const askReload = () =>
+  alert("Presensi Yuk sedang terbuka di tab lain. Tutup tab lain lalu muat ulang halaman ini.");
+db.on("blocked", askReload);
+db.on("versionchange", () => { db.close(); askReload(); return false; });
 
 db.open().catch((err) => {
-  console.error('[DB] Database open failed:', err);
-  const isCorrupt = err.name === 'DataError' ||
-                    err.name === 'InvalidStateError' ||
-                    (err.message && err.message.includes('not a valid key'));
-
-  if (isCorrupt) {
-    console.warn('[DB] Corrupt database detected - auto-deleting');
-    db.delete().then(() => {
-      console.warn('[DB] Database cleared, reloading page...');
-      window.location.reload();
-    }).catch(console.error);
-  }
+  console.error("[DB] Database open failed:", err);
+  askReload();
 });

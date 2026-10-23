@@ -59,6 +59,18 @@ function getLastSyncTimestamp(): number {
   return stored ? parseInt(stored) : 0;
 }
 
+// Supabase membatasi 1000 baris per select: ambil per halaman sampai habis.
+const PAGE = 1000;
+async function selectAll(build: () => any): Promise<{ data: any[]; error: { message: string } | null }> {
+  const all: any[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().order("id").range(from, from + PAGE - 1);
+    if (error) return { data: all, error };
+    all.push(...(data || []));
+    if (!data || data.length < PAGE) return { data: all, error: null };
+  }
+}
+
 function saveLastSyncTimestamp(ts: number) {
   localStorage.setItem(LAST_SYNC_KEY, ts.toString());
 }
@@ -204,7 +216,7 @@ export const syncService = {
       // downloadAll/incrementalSync dengan guard "data masih ada di cloud?"
       // supaya data yang di-create-ulang tidak ikut terhapus di device lain.
 
-      saveLastSyncTimestamp(Date.now());
+      if (!lastError) saveLastSyncTimestamp(Date.now());
       saveSyncLog({ at: Date.now(), action: "upload", ok: totalUploaded > 0 && !lastError, uploaded: totalUploaded, error: lastError || undefined, detail });
 
       return totalUploaded;
@@ -228,10 +240,10 @@ export const syncService = {
         // Skip tabel protected (schools, teachers) biar tier PRO & sekolah gak berubah
         if (PROTECTED_TABLES.has(table)) continue;
 
-        const { data: cloudRows } = await supabase
+        const { data: cloudRows } = await selectAll(() => supabase
           .from(CLOUD_TABLE_MAP[table])
           .select("*")
-          .eq("user_id", userId);
+          .eq("user_id", userId));
 
         if (!cloudRows || cloudRows.length === 0) continue;
 
@@ -327,12 +339,13 @@ export const syncService = {
     }
   },
 
-  async incrementalSync(email: string): Promise<{ uploaded: number; downloaded: number; hasChanges: boolean }> {
+  async incrementalSync(email: string): Promise<{ uploaded: number; downloaded: number; hasChanges: boolean; ok: boolean }> {
     try {
       const userId = await getUserIdByEmail(email);
-      if (!userId) return { uploaded: 0, downloaded: 0, hasChanges: false };
+      if (!userId) return { uploaded: 0, downloaded: 0, hasChanges: false, ok: false };
 
       const lastSync = getLastSyncTimestamp();
+      // Waktu MULAI dipakai sebagai cap waktu baru, supaya perubahan selama sinkron ikut terkirim berikutnya.
       const now = Date.now();
 
       const localChanges = await getLocalChanges(lastSync);
@@ -421,11 +434,12 @@ export const syncService = {
       if (hasCloud) {
         for (const table of SYNC_TABLES) {
           const cloudTable = CLOUD_TABLE_MAP[table];
-          const { data: cloudRows } = await supabase
+          const { data: cloudRows, error: pullErr } = await selectAll(() => supabase
             .from(cloudTable)
             .select("*")
             .eq("user_id", userId)
-            .gt("last_synced_at", lastSync);
+            .gt("last_synced_at", lastSync));
+          if (pullErr) lastError = `ambil ${cloudTable}: ${pullErr.message}`;
 
           if (cloudRows && cloudRows.length > 0) {
             for (const cloudRow of cloudRows) {
@@ -468,19 +482,22 @@ export const syncService = {
         }
       }
 
-      await db.tombstones.clear();
-      saveLastSyncTimestamp(now);
+      // Gagal sebagian: jangan buang tombstone & jangan majukan cap waktu, supaya dicoba lagi.
+      if (!lastError) {
+        await db.tombstones.clear();
+        saveLastSyncTimestamp(now);
+      }
       saveSyncLog({ at: now, action: "sync", ok: !lastError, uploaded, downloaded, error: lastError || undefined });
 
       if (downloaded > 0) {
         window.dispatchEvent(new Event("data-changed"));
       }
 
-      return { uploaded, downloaded, hasChanges };
+      return { uploaded, downloaded, hasChanges, ok: !lastError };
     } catch (error) {
       console.error("Incremental sync failed:", error);
       saveSyncLog({ at: Date.now(), action: "sync", ok: false, uploaded: 0, downloaded: 0, error: (error as Error)?.message || "Sinkronisasi gagal" });
-      return { uploaded: 0, downloaded: 0, hasChanges: false };
+      return { uploaded: 0, downloaded: 0, hasChanges: false, ok: false };
     }
   },
 

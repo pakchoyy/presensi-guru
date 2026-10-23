@@ -11,6 +11,13 @@ function getSupabase() {
   return createClient(url, key);
 }
 
+// Rate limit bersama semua instance (tabel rate_hits lewat fungsi DB rate_hit). Gagal cek = tidak membatasi.
+async function rateLimited(supabase, key, max, windowS) {
+  const { data, error } = await supabase.rpc("rate_hit", { p_key: key, p_max: max, p_window_s: windowS });
+  return !error && data === true;
+}
+const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+
 function todayWIB() {
   return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
@@ -119,12 +126,22 @@ function parseMultipart(buffer, boundary) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // Hanya situs sendiri yang boleh memanggil dari browser.
+  const origin = req.headers.origin;
+  if (origin && origin !== "https://preguru.bantuguruyuk.web.id" && !/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin) && !/^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    return res.status(403).json({ error: "Origin tidak diizinkan" });
+  }
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const supabase = getSupabase();
+  // Satu sekolah bisa satu IP (WiFi); batas longgar, cukup menahan tebak-tebak token.
+  if (await rateLimited(supabase, `clockin:${clientIp(req)}`, 120, 600)) {
+    return res.status(429).json({ error: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." });
+  }
 
   if (req.method === "GET") {
     const token = String(req.query.token || "").trim();

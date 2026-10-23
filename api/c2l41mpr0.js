@@ -9,6 +9,14 @@ function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
+
+// Rate limit bersama semua instance (tabel rate_hits lewat fungsi DB rate_hit). Gagal cek = tidak membatasi.
+async function rateLimited(supabase, key, max, windowS) {
+  const { data, error } = await supabase.rpc("rate_hit", { p_key: key, p_max: max, p_window_s: windowS });
+  return !error && data === true;
+}
+const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -21,6 +29,10 @@ export default async function handler(req, res) {
 
   try {
     const supabaseAdmin = getSupabaseAdmin();
+    // shortcut: belum diikat ke nomor pesanan (Fase 2); sementara dibatasi 5 klaim/jam per IP.
+    if (await rateLimited(supabaseAdmin, `klaim-guru:${clientIp(req)}`, 5, 3600)) {
+      throw Object.assign(new Error("limit"), { limit: true });
+    }
 
     const { data: available, error: queryError } = await supabaseAdmin
       .from("licenses")
@@ -36,7 +48,7 @@ export default async function handler(req, res) {
       kode = available[0].kode;
     }
   } catch (e) {
-    error = "Gagal menghubungi server. Coba lagi nanti.";
+    error = e?.limit ? "Terlalu banyak percobaan klaim. Coba lagi nanti atau hubungi admin." : "Gagal menghubungi server. Coba lagi nanti.";
   }
 
   const html = `<!DOCTYPE html>

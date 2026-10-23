@@ -36,6 +36,8 @@ export function useSyncDebounce(email: string | null) {
 
     try {
       const result = await syncService.incrementalSync(email);
+      // Gagal jangan dicatat sebagai "tersinkron".
+      if (!result.ok) throw new Error("sync gagal");
       const ts = Date.now();
       lastSyncRef.current = ts;
       setLastSync(ts);

@@ -109,13 +109,25 @@ async function status(supabase, body) {
 
 const ACTIONS = { activate, renew, status };
 
+// Rate limit bersama semua instance (tabel rate_hits lewat fungsi DB rate_hit). Gagal cek = tidak membatasi.
+async function rateLimited(supabase, key, max, windowS) {
+  const { data, error } = await supabase.rpc("rate_hit", { p_key: key, p_max: max, p_window_s: windowS });
+  return !error && data === true;
+}
+const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+const LIMITED_ACTIONS = new Set(["activate", "renew"]);
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const { action } = req.body || {};
   const fn = ACTIONS[action];
   if (!fn) return res.status(400).json({ error: "Action tidak dikenal" });
   try {
-    const [code, payload] = await fn(getSupabase(), req.body);
+    const supabase = getSupabase();
+    if (LIMITED_ACTIONS.has(action) && (await rateLimited(supabase, `lic-guru:${clientIp(req)}`, 30, 600))) {
+      return res.status(429).json({ error: "Terlalu banyak percobaan. Coba lagi 10 menit lagi." });
+    }
+    const [code, payload] = await fn(supabase, req.body);
     return res.status(code).json(payload);
   } catch {
     return res.status(500).json({ error: "Gagal memproses lisensi di server" });

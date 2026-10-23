@@ -122,8 +122,12 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas) return Promise.resolve(null);
-    const w = video.videoWidth || 720;
-    const h = video.videoHeight || 960;
+    // Perkecil ke sisi terpanjang 640px supaya foto ±40–80 KB (hemat penyimpanan).
+    const vw = video.videoWidth || 720;
+    const vh = video.videoHeight || 960;
+    const skala = Math.min(1, 640 / Math.max(vw, vh));
+    const w = Math.round(vw * skala);
+    const h = Math.round(vh * skala);
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
@@ -132,7 +136,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
     ctx.scale(-1, 1);
     ctx.drawImage(video, -w, 0, w, h);
     ctx.restore();
-    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.85));
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.7));
   }, []);
 
   // ---- deteksi wajah & gerak kepala -----------------------------------

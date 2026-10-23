@@ -378,7 +378,6 @@ export function PengaturanPage() {
     try {
       syncService.resetSyncState();
       const downloaded = await syncService.downloadAll(cloudUser.email);
-      localStorage.setItem("presensi_last_sync", Date.now().toString());
       await refreshTeacher();
       window.dispatchEvent(new Event("data-changed"));
       toast(
@@ -409,7 +408,6 @@ export function PengaturanPage() {
     try {
       syncService.resetSyncState();
       const uploaded = await syncService.initialUpload(cloudUser.email);
-      localStorage.setItem("presensi_last_sync", Date.now().toString());
       await refreshTeacher();
       window.dispatchEvent(new Event("data-changed"));
       toast(
