@@ -504,8 +504,9 @@ export const guruCloud = {
   /** URL sementara untuk menampilkan selfie yang tersimpan di Storage. */
   async urlSelfie(nilai: string | undefined): Promise<string | null> {
     if (!nilai) return null;
-    if (!nilai.startsWith(PREFIX_STORAGE)) return nilai;
-    const path = nilai.slice(PREFIX_STORAGE.length);
+    if (/^(data:|https?:|blob:)/.test(nilai)) return nilai;
+    // Path Storage: berawalan "sb:" (dari HP guru) atau mentah (dari link /g/token lewat sinkron).
+    const path = nilai.startsWith(PREFIX_STORAGE) ? nilai.slice(PREFIX_STORAGE.length) : nilai;
     const klien = this.aktif() ? supabaseGuru : supabase;
     const { data } = await klien.storage.from(BUCKET).createSignedUrl(path, 3600);
     return data?.signedUrl ?? null;

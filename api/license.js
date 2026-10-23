@@ -117,7 +117,25 @@ async function rateLimited(supabase, key, max, windowS) {
 const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
 const LIMITED_ACTIONS = new Set(["activate", "renew"]);
 
+// Pengumuman aktif untuk Presensi Guru (tanpa login). Di-cache CDN 5 menit.
+async function announcements(res) {
+  const now = new Date().toISOString();
+  const { data, error } = await getSupabase()
+    .from("announcements")
+    .select("id, title, body, target, level, link_url, link_label, starts_at")
+    .eq("active", true)
+    .in("product", ["guru", "all"])
+    .lte("starts_at", now)
+    .or(`ends_at.is.null,ends_at.gt.${now}`)
+    .order("starts_at", { ascending: false })
+    .limit(10);
+  if (error) return res.status(500).json({ items: [] });
+  res.setHeader("Vercel-CDN-Cache-Control", "max-age=300, stale-while-revalidate=60");
+  return res.status(200).json({ items: data || [] });
+}
+
 export default async function handler(req, res) {
+  if (req.method === "GET" && req.query?.action === "announcements") return announcements(res);
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const { action } = req.body || {};
   const fn = ACTIONS[action];

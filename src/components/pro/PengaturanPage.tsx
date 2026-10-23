@@ -1,3 +1,4 @@
+import { readAktivasiLink, clearAktivasiLink } from "@/lib/aktivasi-link";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { adminCloud } from "@/services/multi-perangkat.service";
@@ -72,8 +73,8 @@ export function PengaturanPage() {
 
   const isPRO = teacher?.tier === Tier.PRO;
 
-  const [email, setEmail] = useState("");
-  const [kode, setKode] = useState("");
+  const [email, setEmail] = useState(() => readAktivasiLink()?.email || "");
+  const [kode, setKode] = useState(() => readAktivasiLink()?.kode || "");
   const [activating, setActivating] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -307,6 +308,7 @@ export function PengaturanPage() {
     if (result.success) {
       toast(result.message);
       setKode("");
+      clearAktivasiLink();
       await refreshTeacher();
       const status = await licenseService.getStatus(teacher.id);
       setLicenseInfo(status);

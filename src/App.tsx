@@ -29,6 +29,11 @@ import { PageName } from "@/types/enums";
 import { AbsenGuruPage } from "@/components/attendance/AbsenGuruPage";
 import { EntryGate } from "@/components/entry/EntryGate";
 import { GuruShell } from "@/components/guru/GuruShell";
+import { useEffect } from "react";
+import { captureAktivasiLink, readAktivasiLink } from "@/lib/aktivasi-link";
+
+// Tangkap /aktivasi?email=&kode= dari link toko sebelum render apa pun.
+captureAktivasiLink();
 
 function getAbsenToken(): string | null {
   const m = window.location.pathname.match(/^\/g\/([^/]+)/);
@@ -97,9 +102,14 @@ function PageContent() {
 }
 
 function AppContent() {
-  const { setupSelesai, loading, entryMode } = useApp();
+  const { setupSelesai, loading, entryMode, setActivePage } = useApp();
 
   useAutoSync();
+
+  // Deep link aktivasi: setelah setup selesai, buka Pengaturan (form aktivasi terisi).
+  useEffect(() => {
+    if (setupSelesai && readAktivasiLink()) setActivePage(PageName.PENGATURAN);
+  }, [setupSelesai, setActivePage]);
 
   if (loading) {
     return (

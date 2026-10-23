@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { createHmac, timingSafeEqual } from "crypto";
 
-const ADMIN_EMAILS = ["pulsachoy@gmail.com", "choiruddin2410@gmail.com"];
-
+// Link klaim dibuat toko Kreacy untuk pesanan yang sudah dibayar:
+// ?t=<KLAIM_TOKEN_PLUS|KLAIM_TOKEN_PRO>&order=<id pesanan>&sig=<HMAC-SHA256(KLAIM_HMAC_SECRET, id pesanan)>.
+// Satu pesanan = satu kode (licenses.klaim_order unik); membuka link lagi menampilkan kode yang sama.
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -9,54 +11,70 @@ function getSupabaseAdmin() {
   return createClient(url, key);
 }
 
-
-// Rate limit bersama semua instance (tabel rate_hits lewat fungsi DB rate_hit). Gagal cek = tidak membatasi.
-async function rateLimited(supabase, key, max, windowS) {
-  const { data, error } = await supabase.rpc("rate_hit", { p_key: key, p_max: max, p_window_s: windowS });
-  return !error && data === true;
+function tierFromToken(t) {
+  if (!t) return null;
+  if (process.env.KLAIM_TOKEN_PLUS && t === process.env.KLAIM_TOKEN_PLUS) return "PLUS";
+  if (process.env.KLAIM_TOKEN_PRO && t === process.env.KLAIM_TOKEN_PRO) return "PRO";
+  return null;
 }
-const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
+
+export function validOrderSig(order, sig, secret) {
+  if (!secret || !/^[A-Za-z0-9-]{1,64}$/.test(order) || !/^[0-9a-f]{64}$/.test(sig)) return false;
+  const expected = createHmac("sha256", secret).update(order).digest();
+  return timingSafeEqual(expected, Buffer.from(sig, "hex"));
+}
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Robots-Tag", "noindex");
 
-  const email = req.query.email || "";
-
+  const tier = tierFromToken(String(req.query.t || ""));
   let kode = "";
   let error = "";
 
-  try {
-    const supabaseAdmin = getSupabaseAdmin();
-    // shortcut: belum diikat ke nomor pesanan (Fase 2); sementara dibatasi 5 klaim/jam per IP.
-    if (await rateLimited(supabaseAdmin, `klaim-guru:${clientIp(req)}`, 5, 3600)) {
-      throw Object.assign(new Error("limit"), { limit: true });
+  const order = String(req.query.order || "");
+  if (!tier || !validOrderSig(order, String(req.query.sig || ""), process.env.KLAIM_HMAC_SECRET)) {
+    error = "Link klaim tidak valid. Buka link dari halaman pesanan di toko, atau hubungi admin.";
+  } else {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      const byOrder = async () =>
+        (await supabaseAdmin.from("licenses").select("kode").eq("klaim_order", order).maybeSingle()).data?.kode || "";
+      kode = await byOrder();
+      for (let i = 0; !kode && i < 3; i++) {
+        let q = supabaseAdmin.from("licenses").select("id").eq("status", "tersedia").eq("product", "guru");
+                q = tier === "PLUS" ? q.eq("tier", "PLUS") : q.eq("tier", "PRO");
+        const { data: available, error: queryError } = await q.limit(1);
+        if (queryError) throw queryError;
+        if (!available || available.length === 0) break;
+        const { data: claimed, error: claimError } = await supabaseAdmin
+          .from("licenses")
+          .update({ status: "terkirim", klaim_order: order })
+          .eq("id", available[0].id)
+          .eq("status", "tersedia")
+          .select("kode");
+        // 23505: pesanan yang sama sedang diklaim bersamaan; ambil kode milik pesanan itu.
+        if (claimError?.code === "23505") kode = await byOrder();
+        else if (claimError) throw claimError;
+        else if (claimed && claimed.length) kode = claimed[0].kode;
+      }
+      if (!kode) error = "Stok kode habis. Hubungi admin via WhatsApp.";
+    } catch (e) {
+      error = "Gagal menghubungi server. Coba lagi nanti.";
     }
-
-    const { data: available, error: queryError } = await supabaseAdmin
-      .from("licenses")
-      .select("id, kode")
-      .eq("status", "tersedia")
-      .limit(1);
-
-    if (queryError) throw queryError;
-
-    if (!available || available.length === 0) {
-      error = "Stok kode habis. Hubungi admin via WhatsApp.";
-    } else {
-      kode = available[0].kode;
-    }
-  } catch (e) {
-    error = e?.limit ? "Terlalu banyak percobaan klaim. Coba lagi nanti atau hubungi admin." : "Gagal menghubungi server. Coba lagi nanti.";
   }
+  const paket = tier || "PRO";
+  const aktivasiUrl = kode ? `https://preguru.bantuguruyuk.web.id/aktivasi?kode=${encodeURIComponent(kode)}` : "";
 
   const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Klaim Kode PRO — Bantu Guru Yuk</title>
+<title>Klaim Kode — Presensi Yuk</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0ea5a0,#0d7a8a,#2d6a7f);min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
@@ -91,19 +109,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135d
   ${kode ? `
   <div class="emoji">🎉</div>
   <h1>Pembayaran Berhasil!</h1>
-  <p>Lisensi PRO Presensi Siswa siap diaktivasi.</p>
+  <p>Lisensi ${paket} Presensi Yuk siap diaktivasi.</p>
   <div class="code-box">
     <div class="kode" id="kodeTeks">${kode}</div>
     <button class="btn btn-copy" onclick="copyKode(this)">📋 Salin Kode</button>
   </div>
-  <button class="btn btn-app" onclick="window.location.href='https://presiswa.bantuguruyuk.web.id'">📲 Buka Presensi Siswa</button>
+  <button class="btn btn-app" onclick="window.location.href='${aktivasiUrl}'">📲 Aktifkan di Presensi Yuk</button>
   <div class="steps">
     <b>Cara aktivasi:</b><br/>
-    1. 📋 Copy kode di atas<br/>
-    2. 📲 Buka aplikasi <b>Presensi Siswa</b><br/>
-    3. ⚙️ Buka <b>Pengaturan</b> → <b>Upgrade PRO</b><br/>
-    4. 📧 Masukkan <b>email</b> &amp; <b>kode</b><br/>
-    5. ✅ <b>Aktivasi!</b> Lisensi aktif 1 tahun
+    1. 📲 Ketuk <b>Aktifkan di Presensi Yuk</b> (kode terisi otomatis)<br/>
+    2. 📧 Masukkan <b>email</b> kamu<br/>
+    3. ✅ <b>Aktivasi!</b> Lisensi aktif 1 semester (6 bulan)<br/>
+    Simpan kode ini. Ganti HP cukup masukkan email yang sama.
   </div>
   ` : `
   <div class="emoji">😔</div>
@@ -116,7 +133,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135d
 </div>
 <div class="footer">
   <a href="https://bantuguruyuk.web.id" target="_blank">Bantu Guru Yuk</a>
-  &bull; <a href="https://presiswa.bantuguruyuk.web.id" target="_blank">Presensi Siswa</a>
+  &bull; <a href="https://preguru.bantuguruyuk.web.id" target="_blank">Presensi Yuk</a>
 </div>
 <script>
 function copyKode(btn) {

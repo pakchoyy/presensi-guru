@@ -221,17 +221,19 @@ export default async function handler(req, res) {
       status = "ONTIME";
     }
 
-    // Upload selfie bila ada
+    // Upload selfie bila ada — bucket privat `selfie-guru`, path <sekolah_uuid>/<user_id>/…
+    // supaya terbaca admin (signed URL) dan ikut dihapus hapus-foto-lama setelah 7 hari.
     let selfieUrl = null;
     const sel = files.selfie;
     if (sel && sel.data && sel.data.length > 0) {
-      const path = `${g.user_id}/${g.local_id}/${tanggal}_${action}.jpg`;
+      const { data: sk } = await supabase.from("cloud_guru_sekolah").select("id").eq("owner_user_id", g.user_id).limit(1).maybeSingle();
+      if (!sk?.id) return res.status(500).json({ error: "Sekolah belum terhubung ke cloud" });
+      const path = `${sk.id}/${g.user_id}/${tanggal}-${action === "in" ? "masuk" : "pulang"}-g${g.local_id}.jpg`;
       const { error: upErr } = await supabase.storage
-        .from("teacher-selfies")
-        .upload(path, sel.data, { contentType: sel.contentType || "image/jpeg", upsert: true });
+        .from("selfie-guru")
+        .upload(path, sel.data, { contentType: "image/jpeg", upsert: true });
       if (upErr) return res.status(500).json({ error: `Gagal upload selfie: ${upErr.message}` });
-      const { data: pub } = supabase.storage.from("teacher-selfies").getPublicUrl(path);
-      selfieUrl = pub?.publicUrl || path;
+      selfieUrl = path;
     }
 
     // Upsert record

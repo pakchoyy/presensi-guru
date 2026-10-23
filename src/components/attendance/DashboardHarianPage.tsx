@@ -1,3 +1,4 @@
+import { AnnouncementCard } from "@/components/shared/AnnouncementCard";
 import { labelPeran } from "@/lib/utils";
 import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -202,6 +203,7 @@ export function DashboardHarianPage() {
 
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+      <AnnouncementCard />
       <PersetujuanIzin onBerubah={() => load()} />
       {/* Date pager */}
       <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2" style={{ boxShadow: "var(--shadow)" }}>
