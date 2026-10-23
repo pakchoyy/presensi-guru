@@ -1,19 +1,12 @@
-// PWA Install — simpan deferred prompt untuk dropdown "Install BGY"
+// PWA Install — simpan deferred prompt; InstallPrompt menampilkan tawarannya.
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   (window as any).__bgy_deferredPrompt = e;
-  // Show install popup after 5 seconds
-  setTimeout(() => {
-    if ((window as any).__bgy_deferredPrompt && !localStorage.getItem("bgy_install_dismissed")) {
-      (window as any).__bgy_showInstallPopup = true;
-      window.dispatchEvent(new Event("bgy_install_popup"));
-    }
-  }, 5000);
+  window.dispatchEvent(new Event("bgy_install_ready"));
 });
 
 window.addEventListener("appinstalled", () => {
   (window as any).__bgy_deferredPrompt = null;
-  (window as any).__bgy_showInstallPopup = false;
 });
 
 import React from "react";

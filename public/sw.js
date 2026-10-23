@@ -67,8 +67,8 @@ self.addEventListener("push", (event) => {
       const pesan = susunPesan(konfig);
       await self.registration.showNotification(pesan.title, {
         body: pesan.body,
-        icon: "/logo-presensiyuk.png?v=2",
-        badge: "/logo-presensiyuk.png?v=2",
+        icon: "/icons/pg-192-v1.png",
+        badge: "/icons/pg-192-v1.png",
         tag: "pengingat-absen",
         renotify: true,
         data: { url: "/" },

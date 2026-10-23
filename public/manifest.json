@@ -1,24 +1,17 @@
 {
+  "id": "/",
   "name": "Presensi Yuk | Guru",
-  "short_name": "Presensi Yuk",
+  "short_name": "Presensi Yuk | Guru",
   "description": "Aplikasi absen guru dengan GPS & selfie — simpel untuk sekolah",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#2563eb",
   "background_color": "#eff6ff",
   "icons": [
-    {
-      "src": "/logo-presensiyuk.png?v=2",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo-presensiyuk.png?v=2",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "/icons/pg-192-v1.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/pg-512-v1.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/pg-maskable-512-v1.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -132,7 +132,6 @@ function AppContent() {
         </div>
       )}
       <BottomNav />
-      {setupSelesai && <InstallPrompt />}
     </>
   );
 }
@@ -143,6 +142,7 @@ export default function App() {
     return (
       <ToastProvider>
         <AbsenGuruPage token={token} />
+        <InstallPrompt />
       </ToastProvider>
     );
   }
@@ -153,6 +153,7 @@ export default function App() {
           <ToastProvider>
             <ConfirmDialogProvider />
             <AppContent />
+            <InstallPrompt />
           </ToastProvider>
         </AppProvider>
       </CloudAuthProvider>

@@ -35,9 +35,7 @@ export function EntryGate() {
       <div className="w-full max-w-md relative">
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="w-24 h-24 mx-auto rounded-3xl bg-white flex items-center justify-center shadow-xl p-2">
-            <img src="/logo-presensiyuk.png" alt="Presensi Yuk" className="w-full h-full object-contain" />
-          </div>
+          <img src="/icons/pg-192-v1.png" alt="Presensi Yuk | Guru" className="w-24 h-24 mx-auto rounded-3xl shadow-xl" />
           <h1 className="text-2xl font-extrabold text-white mt-4">
             <span className="italic">Presensi Yuk</span>
           </h1>

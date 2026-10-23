@@ -95,9 +95,7 @@ export function GuruShell() {
         </div>
         <div className="flex items-center justify-between h-[58px] relative">
           <div className="flex items-center gap-[8px] flex-1 min-w-0">
-            <div className="flex-shrink-0 w-[42px] h-[42px] rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden p-[3px]">
-              <img src="/logo-presensiyuk.png" alt="Presensi Yuk" className="w-full h-full object-contain" />
-            </div>
+            <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
             <div className="min-w-0 leading-tight">
               <div className="text-[1rem] font-extrabold text-white whitespace-nowrap">
                 <span className="italic">Presensi Yuk</span> <span className="opacity-95">| Guru</span>

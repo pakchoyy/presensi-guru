@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { DEFAULT_LOGO, resolveLogo } from "@/lib/constants";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { schoolRepo } from "@/repositories/dexie/school.repo";
@@ -16,8 +17,8 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const isPRO = teacher?.tier === Tier.PRO;
 
-  const logoUrl = school?.logoUrl || "/logo-presensiyuk.png";
-  const isCustomLogo = school?.logoUrl && school.logoUrl !== "/logo-presensiyuk.png";
+  const logoUrl = resolveLogo(school?.logoUrl);
+  const isCustomLogo = logoUrl !== DEFAULT_LOGO;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,7 +66,7 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
     if (!school || !isCustomLogo) return;
     
     try {
-      await schoolRepo.updateLogo(school.id, "/logo-presensiyuk.png");
+      await schoolRepo.updateLogo(school.id, DEFAULT_LOGO);
       toast("✅ Logo dihapus, kembali ke default");
       setTimeout(() => window.location.reload(), 500);
     } catch (error) {
