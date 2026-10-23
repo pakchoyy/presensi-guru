@@ -27,6 +27,9 @@ export interface KontrolPengingat {
   memuat: boolean;
   nyalakan: () => Promise<{ mode: ModePengingat; catatan?: string }>;
   matikan: () => Promise<void>;
+  /** Jam notifikasi dikirim (HH:MM). */
+  ingatMasuk: string;
+  ingatPulang: string;
 }
 
 /**
@@ -146,5 +149,5 @@ export function usePengingatAbsen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pushAktif, identitas?.kodeLogin, identitas?.pin, lokal.matikan]);
 
-  return { mode, memuat, nyalakan, matikan };
+  return { mode, memuat, nyalakan, matikan, ingatMasuk, ingatPulang };
 }

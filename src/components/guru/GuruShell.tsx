@@ -5,7 +5,7 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText } from "lucide-react";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
 import { todayStr } from "@/lib/utils";
@@ -17,6 +17,7 @@ type GuruTab = "presensi" | "log" | "rekap" | "profil";
 export function GuruShell() {
   const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
   const [tab, setTab] = useState<GuruTab>("presensi");
+  const [bukaIzin, setBukaIzin] = useState(0);
   const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
     masuk: false,
     pulang: false,
@@ -122,7 +123,7 @@ export function GuruShell() {
       {/* Konten */}
       <div key={versiData} className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
         {tab === "presensi" && (
-          <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
+          <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} bukaIzin={bukaIzin} />
         )}
         {tab === "log" && <LogAbsenPage />}
         {tab === "rekap" && <LogPresensiPage embedded />}
@@ -134,8 +135,22 @@ export function GuruShell() {
         className="fixed left-1/2 bottom-0 -translate-x-1/2 w-full max-w-app bg-[var(--card-bg)] border-t border-[var(--border)] flex items-stretch z-[300] py-[6px] px-1"
         style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
       >
-        <NavBtn active={tab === "presensi"} onClick={() => setTab("presensi")} icon={<ClipboardCheck size={20} />} label="Presensi" />
+        <NavBtn active={false} onClick={() => { setTab("presensi"); setBukaIzin((n) => n + 1); }} icon={<FileText size={20} />} label="Izin" />
         <NavBtn active={tab === "log"} onClick={() => setTab("log")} icon={<ClipboardList size={20} />} label="Log" />
+        {/* Absen di tengah, menonjol */}
+        <button
+          onClick={() => setTab("presensi")}
+          className="flex-1 flex flex-col items-center gap-[2px] bg-transparent border-none font-[inherit] -mt-6"
+          aria-label="Absen"
+        >
+          <span
+            className="w-[58px] h-[58px] rounded-full flex items-center justify-center text-white border-4 border-[var(--card-bg)]"
+            style={{ background: "var(--grad)", boxShadow: "0 6px 16px rgba(37,99,235,.35)" }}
+          >
+            <ClipboardCheck size={26} />
+          </span>
+          <span className={`text-[10px] font-bold ${tab === "presensi" ? "text-[var(--brand)]" : "text-[var(--text-light)]"}`}>Absen</span>
+        </button>
         <NavBtn active={tab === "rekap"} onClick={() => setTab("rekap")} icon={<BarChart3 size={20} />} label="Rekap" />
         <NavBtn active={tab === "profil"} onClick={() => setTab("profil")} icon={<User size={20} />} label="Profil" />
       </nav>

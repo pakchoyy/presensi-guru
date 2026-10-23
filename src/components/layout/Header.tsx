@@ -2,7 +2,6 @@ import { ketukResetUji } from "@/lib/utils";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Tier } from "@/types/enums";
-import { LogoUpload } from "@/components/shared/LogoUpload";
 import { DropdownMenu } from "@/components/layout/DropdownMenu";
 import { SyncIndicator } from "@/components/layout/SyncIndicator";
 import { LicenseExpiryBadge } from "@/components/layout/LicenseExpiryBadge";
@@ -31,10 +30,8 @@ export function Header() {
 
       <div className="flex items-center justify-between h-[58px] relative">
         <div className="flex items-center gap-[8px] flex-1 min-w-0">
-          {/* Logo di atas lingkaran/stabilo putih supaya menonjol di header biru */}
-          <div className="flex-shrink-0 w-[42px] h-[42px] rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden p-[2px]">
-            <LogoUpload />
-          </div>
+          {/* Logo sama dengan tampilan guru */}
+          <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
           <div className="min-w-0 leading-tight">
             <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis" onClick={ketukResetUji}>
               <span className="italic">Presensi Yuk</span>{" "}

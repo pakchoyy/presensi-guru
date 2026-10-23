@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
+import { LogOut, Clock, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
 import { useToast } from "@/components/shared/Toast";
 import type { KontrolPengingat } from "@/hooks/usePengingatAbsen";
 
@@ -62,7 +62,9 @@ export function GuruProfilPage({
           }
         />
         <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator / Kepala Sekolah" : "Guru"} />
-        <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} last />
+        <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} />
+        <Row icon={<Clock size={16} />} label="Jam masuk" value={(school?.jamMasukStandar || "07:00").slice(0, 5)} />
+        <Row icon={<Clock size={16} />} label="Jam pulang" value={(school?.jamPulangStandar || "13:00").slice(0, 5)} last />
       </div>
 
       {/* Pengingat absen */}
@@ -78,7 +80,7 @@ export function GuruProfilPage({
               <div className="text-[0.63rem] text-[var(--text-light)] mt-[1px]">
                 {reminder.mode === "denied"
                   ? "Notifikasi diblokir — izinkan dulu lewat setelan browser."
-                  : "Sekali saja: 5 menit sebelum batas absen masuk, dan 5 menit sebelum jam pulang."}
+                  : `Kalau dinyalakan, HP berbunyi 2x sehari: jam ${reminder.ingatMasuk} (5 menit sebelum batas absen masuk) dan jam ${reminder.ingatPulang} (5 menit sebelum pulang). Tidak berbunyi kalau sudah absen.`}
               </div>
             </div>
             <button

@@ -74,10 +74,13 @@ export function PresensiGuruPage({
   embedded = false,
   onLogout: onLogoutProp,
   onRiwayat,
+  bukaIzin,
 }: {
   embedded?: boolean;
   onLogout?: () => void;
   onRiwayat?: () => void;
+  /** Naik setiap tab Izin ditekan → buka lembar izin. */
+  bukaIzin?: number;
 } = {}) {
   const { teachers, school, guruSessionId, logoutGuru } = useApp();
   const { toast } = useToast();
@@ -100,6 +103,7 @@ export function PresensiGuruPage({
         school={school}
         onLogout={onLogoutProp ?? logoutGuru}
         onRiwayat={onRiwayat}
+        bukaIzin={bukaIzin}
       />
     );
   }
@@ -266,11 +270,13 @@ function SelfAbsenPanel({
   school,
   onLogout,
   onRiwayat,
+  bukaIzin,
 }: {
   guru: Teacher;
   school: ReturnType<typeof useApp>["school"];
   onLogout: () => void;
   onRiwayat?: () => void;
+  bukaIzin?: number;
 }) {
   const { toast } = useToast();
   const { setActivePage } = useApp();
@@ -279,6 +285,7 @@ function SelfAbsenPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
   const [showIzin, setShowIzin] = useState(false);
+  useEffect(() => { if (bukaIzin) setShowIzin(true); }, [bukaIzin]);
   // Status kiriman ke sekolah (hanya di HP guru yang tersambung cloud).
   const [kiriman, setKiriman] = useState<"terkirim" | "tertunda" | null>(() =>
     guruCloud.aktif() && guruCloud.jumlahAntrian() > 0 ? "tertunda" : null,

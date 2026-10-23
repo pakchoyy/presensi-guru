@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
-import { Home, BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat } from "lucide-react";
+import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -50,12 +50,6 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
         className="absolute top-[calc(100%+8px)] right-0 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl z-[400] min-w-[200px] overflow-hidden"
         style={{ boxShadow: "var(--shadow-lg)" }}
       >
-        <button
-          onClick={() => { setActivePage(PageName.DASHBOARD); onClose(); }}
-          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
-        >
-          <Home size={16} /> Home
-        </button>
         <button
           onClick={() => { setActivePage(PageName.PETUNJUK); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"

@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   BarChart3,
   Users,
-  Calendar,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -20,7 +19,6 @@ const NAV_ITEMS: NavItemData[] = [
   { page: PageName.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
   { page: PageName.GURU, label: "Guru", icon: Users },
   { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
-  { page: PageName.KALENDER, label: "Kalender", icon: Calendar },
   { page: PageName.PENGATURAN, label: "Pengaturan", icon: Settings },
 ];
 
