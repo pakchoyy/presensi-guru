@@ -10,6 +10,8 @@ import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import type { TeacherAttendance, Teacher } from "@/types/entities";
 import { formatTanggalPanjang, inisial, attendanceIdFrom, timestamp } from "@/lib/utils";
 import type { AttendanceStatus } from "@/types/enums";
+import { ClockInStatus } from "@/types/enums";
+import { useApp } from "@/contexts/AppContext";
 import { StatusSheet } from "./StatusSheet";
 import { useToast } from "@/components/shared/Toast";
 
@@ -60,6 +62,7 @@ export function DashboardHarianPage() {
   const [loading, setLoading] = useState(true);
   const [tanggal, setTanggal] = useState<string>(ymd(new Date()));
   const [editGuru, setEditGuru] = useState<Teacher | null>(null);
+  const { school } = useApp();
   const { toast } = useToast();
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -83,6 +86,44 @@ export function DashboardHarianPage() {
     }
     setEditGuru(null);
     toast(`Status ${guru.nama} diperbarui`, "success");
+    load(tanggal);
+  };
+
+  /** Admin mengisi jam masuk/pulang manual (guru lupa absen). */
+  const simpanJamManual = async (guru: Teacher, jamMasuk: string, jamPulang: string) => {
+    const id = attendanceIdFrom(guru.id, tanggal);
+    const existing = await teacherAttendanceRepo.getById(id);
+
+    const masuk = jamMasuk ? `${jamMasuk}:00` : undefined;
+    const pulang = jamPulang ? `${jamPulang}:00` : undefined;
+
+    // Status masuk ikut jam standar + toleransi sekolah, sama seperti clock-in.
+    let statusMasuk = existing?.statusMasuk;
+    if (!masuk) {
+      statusMasuk = undefined;
+    } else {
+      const standar = school?.jamMasukStandar ?? "07:00";
+      const toleransi = school?.toleransiTerlambatMenit ?? 15;
+      const [h, m] = standar.split(":").map(Number);
+      const batas = h * 60 + m + toleransi;
+      const [jh, jm] = jamMasuk.split(":").map(Number);
+      statusMasuk = jh * 60 + jm <= batas ? ClockInStatus.ONTIME : ClockInStatus.LATE;
+    }
+
+    await teacherAttendanceRepo.upsert({
+      ...(existing || {}),
+      id,
+      guruId: guru.id,
+      tanggal,
+      jamMasuk: masuk,
+      jamPulang: pulang,
+      statusMasuk,
+      statusPulang: pulang ? (existing?.statusPulang ?? ClockInStatus.ONTIME) : undefined,
+      diubahPada: timestamp(),
+    } as TeacherAttendance);
+
+    setEditGuru(null);
+    toast(`Jam ${guru.nama} disimpan`, "success");
     load(tanggal);
   };
 
@@ -266,7 +307,11 @@ export function DashboardHarianPage() {
         <StatusSheet
           nama={editGuru.nama}
           tanggalLabel={formatTanggalPanjang(tanggal)}
+          jamMasukAwal={rows.find((r) => r.guru.id === editGuru.id)?.attendance?.jamMasuk}
+          jamPulangAwal={rows.find((r) => r.guru.id === editGuru.id)?.attendance?.jamPulang}
+          catatan={rows.find((r) => r.guru.id === editGuru.id)?.attendance?.catatan}
           onPick={(status) => setStatus(editGuru, status)}
+          onSimpanJam={(masuk, pulang) => simpanJamManual(editGuru, masuk, pulang)}
           onClose={() => setEditGuru(null)}
         />
       )}

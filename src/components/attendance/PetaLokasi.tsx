@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { MapPin, Navigation, LocateFixed } from "lucide-react";
 
 /**
- * Peta lokasi presensi (OpenStreetMap embed — tanpa API key / dependency baru).
- * Marker = titik sekolah. Kalau posisi guru sudah diketahui, bbox dilebarkan
- * supaya kedua titik kelihatan sekaligus.
+ * Peta lokasi presensi (Leaflet + tile OpenStreetMap — tanpa API key).
+ * Menampilkan marker sekolah, lingkaran radius geofence, dan marker posisi
+ * guru kalau GPS sudah didapat.
  */
 export function PetaLokasi({
   namaSekolah,
@@ -25,25 +27,68 @@ export function PetaLokasi({
   loading?: boolean;
   onRefresh?: () => void;
 }) {
-  const src = useMemo(() => {
-    // Setengah lebar bbox dalam derajat (~250 m default, melebar kalau guru jauh).
-    const extraM = Math.max(radiusMeter ?? 100, jarakMeter ?? 0) + 150;
-    const dLat = extraM / 111_320;
-    const dLng = extraM / (111_320 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  const boxRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const layerRef = useRef<L.LayerGroup | null>(null);
 
-    let minLat = lat - dLat, maxLat = lat + dLat;
-    let minLng = lng - dLng, maxLng = lng + dLng;
+  const radius = radiusMeter ?? 100;
+
+  // Inisialisasi peta sekali.
+  useEffect(() => {
+    if (!boxRef.current || mapRef.current) return;
+    const map = L.map(boxRef.current, {
+      center: [lat, lng],
+      zoom: 17,
+      zoomControl: true,
+      attributionControl: true,
+    });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+    layerRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      layerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Gambar ulang marker + radius setiap data berubah.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = layerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+
+    const titikSekolah = L.latLng(lat, lng);
+    L.circle(titikSekolah, {
+      radius,
+      color: "#2563eb",
+      weight: 1.5,
+      fillColor: "#3b82f6",
+      fillOpacity: 0.12,
+    }).addTo(layer);
+    L.marker(titikSekolah, { icon: pinIcon("#2563eb") })
+      .addTo(layer)
+      .bindPopup(namaSekolah);
+
     if (posisi) {
-      minLat = Math.min(minLat, posisi.lat - dLat / 3);
-      maxLat = Math.max(maxLat, posisi.lat + dLat / 3);
-      minLng = Math.min(minLng, posisi.lng - dLng / 3);
-      maxLng = Math.max(maxLng, posisi.lng + dLng / 3);
+      const titikSaya = L.latLng(posisi.lat, posisi.lng);
+      L.marker(titikSaya, { icon: pinIcon("#16a34a") })
+        .addTo(layer)
+        .bindPopup("Posisi Anda");
+      map.fitBounds(L.latLngBounds([titikSekolah, titikSaya]).pad(0.45), { maxZoom: 18 });
+    } else {
+      map.setView(titikSekolah, 17);
     }
-    const bbox = [minLng, minLat, maxLng, maxLat].map((n) => n.toFixed(6)).join(",");
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat.toFixed(6)},${lng.toFixed(6)}`;
-  }, [lat, lng, radiusMeter, jarakMeter, posisi]);
+    // Container baru kadang belum punya ukuran final saat render pertama.
+    setTimeout(() => map.invalidateSize(), 50);
+  }, [lat, lng, radius, posisi, namaSekolah]);
 
-  const diDalam = jarakMeter != null && radiusMeter != null ? jarakMeter <= radiusMeter : null;
+  const diDalam = jarakMeter != null ? jarakMeter <= radius : null;
 
   return (
     <div
@@ -70,15 +115,7 @@ export function PetaLokasi({
         )}
       </div>
 
-      <div className="relative h-[170px] bg-[var(--input-bg)]">
-        <iframe
-          title="Peta lokasi sekolah"
-          src={src}
-          className="w-full h-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
-      </div>
+      <div ref={boxRef} className="h-[190px] w-full bg-[var(--input-bg)] z-0" aria-label="Peta lokasi sekolah" />
 
       <div className="flex items-center gap-2 px-3 py-[10px] border-t border-[var(--border)]">
         <Navigation size={13} className="text-[var(--text-light)] flex-shrink-0" />
@@ -86,7 +123,7 @@ export function PetaLokasi({
           {loading
             ? "Mengambil lokasi Anda..."
             : jarakMeter != null
-              ? <>Jarak Anda <b className="text-[var(--text)]">{jarakMeter} m</b> dari sekolah</>
+              ? <>Jarak Anda <b className="text-[var(--text)]">{jarakMeter} m</b> · radius {radius} m</>
               : "Lokasi Anda belum diambil"}
         </div>
         {diDalam != null && (
@@ -103,4 +140,15 @@ export function PetaLokasi({
       </div>
     </div>
   );
+}
+
+/** Marker custom (divIcon) supaya tidak perlu bundling aset ikon Leaflet. */
+function pinIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${color};border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 18],
+    popupAnchor: [0, -16],
+  });
 }

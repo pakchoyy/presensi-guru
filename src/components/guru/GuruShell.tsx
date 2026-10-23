@@ -1,17 +1,40 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
 import { ClipboardCheck, History, User, Moon, Sun } from "lucide-react";
+import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
+import { useAbsenReminder } from "@/hooks/useAbsenReminder";
+import { todayStr } from "@/lib/utils";
 
 type GuruTab = "presensi" | "riwayat" | "profil";
 
 export function GuruShell() {
-  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId } = useApp();
+  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school } = useApp();
   const [tab, setTab] = useState<GuruTab>("presensi");
+  const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
+    masuk: false,
+    pulang: false,
+  });
 
   const guru = teachers.find((t) => t.id === guruSessionId);
+
+  // Status absen hari ini dipakai pengingat: kalau sudah absen, tidak diingatkan.
+  const muatStatus = useCallback(async () => {
+    if (guruSessionId == null) return;
+    const rec = await teacherAttendanceRepo.getToday(guruSessionId, todayStr());
+    setAbsenHariIni({ masuk: !!rec?.jamMasuk, pulang: !!rec?.jamPulang });
+  }, [guruSessionId]);
+
+  useEffect(() => { muatStatus(); }, [muatStatus, tab]);
+
+  const reminder = useAbsenReminder({
+    jamMasuk: school?.jamMasukStandar,
+    jamPulang: school?.jamPulangStandar,
+    sudahMasuk: absenHariIni.masuk,
+    sudahPulang: absenHariIni.pulang,
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -57,7 +80,7 @@ export function GuruShell() {
           <PresensiGuruPage embedded onLogout={logoutGuru} onRiwayat={() => setTab("riwayat")} />
         )}
         {tab === "riwayat" && <LogPresensiPage embedded />}
-        {tab === "profil" && <GuruProfilPage onLogout={logoutGuru} />}
+        {tab === "profil" && <GuruProfilPage onLogout={logoutGuru} reminder={reminder} />}
       </div>
 
       {/* Bottom nav guru */}

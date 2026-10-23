@@ -1,8 +1,23 @@
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff } from "lucide-react";
+import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
+import { useToast } from "@/components/shared/Toast";
+import type { ReminderState } from "@/hooks/useAbsenReminder";
 
-export function GuruProfilPage({ onLogout }: { onLogout: () => void }) {
+interface ReminderControl {
+  state: ReminderState;
+  nyalakan: () => Promise<ReminderState>;
+  matikan: () => void;
+}
+
+export function GuruProfilPage({
+  onLogout,
+  reminder,
+}: {
+  onLogout: () => void;
+  reminder?: ReminderControl;
+}) {
+  const { toast } = useToast();
   const { teachers, guruSessionId, school } = useApp();
   const [lihatPin, setLihatPin] = useState(false);
   const guru = teachers.find((t) => t.id === guruSessionId);
@@ -55,6 +70,55 @@ export function GuruProfilPage({ onLogout }: { onLogout: () => void }) {
         <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator / Kepala Sekolah" : "Guru"} />
         <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} last />
       </div>
+
+      {/* Pengingat absen */}
+      {reminder && reminder.state !== "unsupported" && (
+        <div
+          className="mt-3 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4"
+          style={{ boxShadow: "var(--shadow)" }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-[var(--brand)] flex-shrink-0"><Bell size={16} /></span>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-[var(--text)] text-[0.85rem]">Pengingat absen</div>
+              <div className="text-[0.63rem] text-[var(--text-light)] mt-[1px]">
+                {reminder.state === "denied"
+                  ? "Notifikasi diblokir — izinkan dulu lewat setelan browser."
+                  : "Diingatkan 10 menit sebelum jam masuk & jam pulang."}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                if (reminder.state === "on") {
+                  reminder.matikan();
+                  toast("Pengingat dimatikan", "info");
+                  return;
+                }
+                const hasil = await reminder.nyalakan();
+                if (hasil === "on") toast("Pengingat aktif", "success");
+                else if (hasil === "denied") toast("Izin notifikasi ditolak browser", "error");
+              }}
+              disabled={reminder.state === "denied"}
+              aria-label={reminder.state === "on" ? "Matikan pengingat" : "Nyalakan pengingat"}
+              className={`relative w-11 h-6 rounded-full border-none flex-shrink-0 transition-colors disabled:opacity-40 ${
+                reminder.state === "on" ? "bg-[var(--brand)]" : "bg-[var(--border)]"
+              }`}
+            >
+              <span
+                className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white transition-transform ${
+                  reminder.state === "on" ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+          {reminder.state === "on" && (
+            <div className="text-[0.6rem] text-[var(--text-light)] mt-2 leading-snug">
+              Pengingat hanya muncul selama aplikasi masih terbuka atau baru dibuka — belum ada
+              notifikasi latar belakang.
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="text-[0.65rem] text-[var(--text-light)] text-center mt-3">
         Untuk mengubah data atau reset PIN, hubungi Ops / Kepala Sekolah.

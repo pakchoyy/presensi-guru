@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ClipboardCheck,
   MapPin,
+  Stethoscope,
   LogIn,
   LogOut,
   AlertTriangle,
@@ -11,13 +12,14 @@ import {
   History,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
-import { PageName } from "@/types/enums";
+import { PageName, AttendanceStatus } from "@/types/enums";
 import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { PetaLokasi } from "@/components/attendance/PetaLokasi";
+import { IzinSheet } from "@/components/attendance/IzinSheet";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { formatTanggalPanjang, inisial, todayStr } from "@/lib/utils";
+import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp } from "@/lib/utils";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { SelfieCamera } from "./SelfieCamera";
 import { haversineDistance } from "@/lib/geo";
@@ -274,6 +276,7 @@ function SelfAbsenPanel({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
+  const [showIzin, setShowIzin] = useState(false);
   const [, setTick] = useState(0);
   const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
   const pendingLocRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -296,6 +299,44 @@ function SelfAbsenPanel({
   };
 
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [guru.id]);
+
+  const izinAktif =
+    existing?.statusHari === AttendanceStatus.SAKIT || existing?.statusHari === AttendanceStatus.IZIN
+      ? existing.statusHari
+      : undefined;
+
+  const ajukanIzin = async (jenis: AttendanceStatus.SAKIT | AttendanceStatus.IZIN, keterangan: string) => {
+    const id = attendanceIdFrom(guru.id, tanggal);
+    const rec = await teacherAttendanceRepo.getById(id);
+    await teacherAttendanceRepo.upsert({
+      ...(rec || {}),
+      id,
+      guruId: guru.id,
+      tanggal,
+      statusHari: jenis,
+      catatan: keterangan || undefined,
+      diubahPada: timestamp(),
+    } as TeacherAttendance);
+    setShowIzin(false);
+    toast(jenis === AttendanceStatus.SAKIT ? "Pengajuan sakit tercatat" : "Pengajuan izin tercatat", "success");
+    await refresh();
+  };
+
+  const batalkanIzin = async () => {
+    const id = attendanceIdFrom(guru.id, tanggal);
+    const rec = await teacherAttendanceRepo.getById(id);
+    if (rec) {
+      await teacherAttendanceRepo.upsert({
+        ...rec,
+        statusHari: undefined,
+        catatan: undefined,
+        diubahPada: timestamp(),
+      } as TeacherAttendance);
+    }
+    setShowIzin(false);
+    toast("Pengajuan dibatalkan", "info");
+    await refresh();
+  };
 
   const sudahMasuk = !!existing?.jamMasuk;
   const sudahPulang = !!existing?.jamPulang;
@@ -451,6 +492,34 @@ function SelfAbsenPanel({
         </div>
       )}
 
+      {/* Pengajuan sakit/izin yang sedang aktif */}
+      {izinAktif && (
+        <div
+          className="mt-3 rounded-2xl p-3 border flex items-start gap-3"
+          style={{
+            background: izinAktif === AttendanceStatus.SAKIT ? "#fef3c7" : "#dbeafe",
+            borderColor: izinAktif === AttendanceStatus.SAKIT ? "#b4530944" : "#1d4ed844",
+          }}
+        >
+          <Stethoscope size={16} className="flex-shrink-0 mt-[2px]" style={{ color: izinAktif === AttendanceStatus.SAKIT ? "#b45309" : "#1d4ed8" }} />
+          <div className="flex-1 min-w-0">
+            <div className="font-extrabold text-[0.85rem]" style={{ color: izinAktif === AttendanceStatus.SAKIT ? "#b45309" : "#1d4ed8" }}>
+              Tercatat {izinAktif === AttendanceStatus.SAKIT ? "Sakit" : "Izin"} hari ini
+            </div>
+            {existing?.catatan && (
+              <div className="text-[0.7rem] text-[#475569] mt-[2px] break-words">{existing.catatan}</div>
+            )}
+          </div>
+          <button
+            onClick={() => setShowIzin(true)}
+            className="text-[0.7rem] font-bold underline bg-transparent border-none flex-shrink-0"
+            style={{ color: izinAktif === AttendanceStatus.SAKIT ? "#b45309" : "#1d4ed8" }}
+          >
+            Ubah
+          </button>
+        </div>
+      )}
+
       {/* Aksi */}
       <div className="mt-4">
         {!sudahMasuk && (
@@ -481,6 +550,16 @@ function SelfAbsenPanel({
           </div>
         )}
 
+        {/* Ajukan sakit / izin sendiri */}
+        {!izinAktif && !sudahMasuk && (
+          <button
+            onClick={() => setShowIzin(true)}
+            className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
+          >
+            <Stethoscope size={16} /> Ajukan Sakit / Izin
+          </button>
+        )}
+
         {/* Riwayat presensi guru ybs */}
         <button
           onClick={() => (onRiwayat ? onRiwayat() : setActivePage(PageName.LOG_PRESENSI))}
@@ -492,6 +571,17 @@ function SelfAbsenPanel({
 
       {showCamera && (
         <SelfieCamera onCapture={onCapture} onCancel={() => setShowCamera(null)} />
+      )}
+
+      {showIzin && (
+        <IzinSheet
+          tanggalLabel={formatTanggalPanjang(tanggal)}
+          jenisAwal={izinAktif}
+          keteranganAwal={existing?.catatan}
+          onSubmit={ajukanIzin}
+          onBatalkan={izinAktif ? batalkanIzin : undefined}
+          onClose={() => setShowIzin(false)}
+        />
       )}
     </div>
   );

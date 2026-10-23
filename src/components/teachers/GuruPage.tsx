@@ -248,7 +248,11 @@ export function GuruPage() {
         return "";
       };
 
-      let ok = 0, skip = 0;
+      let ok = 0, skip = 0, cloudOk = 0, cloudGagal = 0;
+      // Kalau admin login + online, guru hasil import ikut diprovision ke cloud
+      // supaya bisa login mandiri dari HP lain.
+      const keCloud = isAuthenticated && navigator.onLine && (await guruCloudService.isReady());
+      const cloudIds: Record<number, string> = {};
       const now = timestamp();
       const existingCodes = new Set(guruList.flatMap((g) => [g.kodeLogin, g.nip].filter(Boolean) as string[]));
       const genUnik = (): string => {
@@ -270,15 +274,42 @@ export function GuruPage() {
         else existingCodes.add(kode);
         const pin = /^\d{4,6}$/.test(pinRaw) ? pinRaw : randomPin(4);
 
+        const localId = generateId();
+        let cloudUserId: string | undefined;
+        let kodeFinal = kode;
+        let pinFinal = pin;
+        if (keCloud) {
+          try {
+            const res = await guruCloudService.createAccount({
+              nama,
+              sekolah_id: school.id,
+              kode_login: kode,
+              pin,
+              nip,
+              jabatan: jabatan || undefined,
+              role: "guru",
+              local_id: localId,
+            });
+            cloudUserId = res.user_id;
+            kodeFinal = res.kode_login;
+            pinFinal = res.pin;
+            cloudIds[localId] = res.user_id;
+            cloudOk++;
+          } catch {
+            // Gagal di cloud → tetap simpan lokal, dilaporkan di akhir.
+            cloudGagal++;
+          }
+        }
+
         await db.teachers.put({
-          id: generateId(),
+          id: localId,
           nama,
-          email: "",
+          email: cloudUserId ? `${kodeFinal}@guru.local` : "",
           sekolahId: school.id,
           tier: Tier.FREE,
           nip,
-          kodeLogin: kode,
-          pin,
+          kodeLogin: kodeFinal,
+          pin: pinFinal,
           jabatan: jabatan || undefined,
           role: "guru",
           absenToken: crypto.randomUUID(),
@@ -288,7 +319,14 @@ export function GuruPage() {
         });
         ok++;
       }
-      toast(`${ok} guru diimpor${skip ? `, ${skip} dilewati (nama kosong)` : ""}`, ok ? "success" : "info");
+      if (Object.keys(cloudIds).length > 0) {
+        setCloudUserIdMap((m) => ({ ...m, ...cloudIds }));
+      }
+      const bagianCloud = keCloud ? ` · cloud: ${cloudOk} ok${cloudGagal ? `, ${cloudGagal} gagal (tersimpan lokal)` : ""}` : "";
+      toast(
+        `${ok} guru diimpor${skip ? `, ${skip} dilewati (nama kosong)` : ""}${bagianCloud}`,
+        ok ? "success" : "info"
+      );
       await load();
       await refreshTeachers();
     } catch (err) {
