@@ -8,8 +8,10 @@ import {
   CheckCircle2,
   Clock,
   ArrowLeft,
+  History,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { PageName } from "@/types/enums";
 import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
@@ -236,6 +238,7 @@ function SelfAbsenPanel({
   onLogout: () => void;
 }) {
   const { toast } = useToast();
+  const { setActivePage } = useApp();
   const [existing, setExisting] = useState<TeacherAttendance | undefined>();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -423,6 +426,14 @@ function SelfAbsenPanel({
             <div className="text-[0.72rem] text-[var(--text-light)]">Terima kasih — sampai besok!</div>
           </div>
         )}
+
+        {/* Riwayat presensi guru ybs */}
+        <button
+          onClick={() => setActivePage(PageName.LOG_PRESENSI)}
+          className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
+        >
+          <History size={16} /> Riwayat Presensi Saya
+        </button>
       </div>
 
       {showCamera && (
