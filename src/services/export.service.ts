@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
-import { isHariEfektif } from "@/lib/utils";
+import { isHariEfektif, todayStr } from "@/lib/utils";
 
 export interface RekapGuruCtx {
   school: School | null;
@@ -96,7 +96,9 @@ function buildRowsAndSummary(ctx: RekapGuruCtx): { rows: Row[]; summary: Summary
     if (!isHariEfektif(dateStr, ctx.guru, ctx.liburSet)) continue;
     const dow = new Date(ctx.tahun, ctx.bulan - 1, d).getDay();
     const rec = byDate.get(dateStr);
-    const sh = rec?.statusHari;
+    // Hari efektif yang sudah lewat tanpa presensi/izin = Alpha otomatis.
+    const izinDitolak = rec?.statusIzin === "ditolak" && (rec.statusHari === "S" || rec.statusHari === "I");
+    const sh = (izinDitolak ? undefined : rec?.statusHari) || (!rec?.jamMasuk && dateStr < todayStr() ? "A" : undefined);
     const sm = rec?.statusMasuk;
 
     rows.push({

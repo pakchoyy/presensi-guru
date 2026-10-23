@@ -1,3 +1,4 @@
+import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
@@ -45,7 +46,8 @@ const CHIP_COLOR: Record<Bucket, { dot: string; label: string; text: string }> =
 
 function bucketFor(att?: TeacherAttendance): Bucket {
   // Status manual (statusHari) selalu diprioritaskan.
-  if (att?.statusHari) {
+  const ditolak = att?.statusIzin === "ditolak" && (att.statusHari === "S" || att.statusHari === "I");
+  if (att?.statusHari && !ditolak) {
     if (att.statusHari === "H") return "hadir";
     if (att.statusHari === "T") return "terlambat";
     if (att.statusHari === "S") return "sakit";
@@ -75,6 +77,7 @@ export function DashboardHarianPage() {
         ...(existing || {}),
         id, guruId: guru.id, tanggal,
         statusHari: undefined,
+        statusIzin: undefined,
         diubahPada: timestamp(),
       } as TeacherAttendance);
     } else {
@@ -82,6 +85,8 @@ export function DashboardHarianPage() {
         ...(existing || {}),
         id, guruId: guru.id, tanggal,
         statusHari: status,
+        // Diputuskan admin langsung → bukan lagi pengajuan.
+        statusIzin: undefined,
         diubahPada: timestamp(),
       } as TeacherAttendance);
     }
@@ -196,6 +201,7 @@ export function DashboardHarianPage() {
 
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+      <PersetujuanIzin onBerubah={() => load()} />
       {/* Date pager */}
       <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2" style={{ boxShadow: "var(--shadow)" }}>
         <button

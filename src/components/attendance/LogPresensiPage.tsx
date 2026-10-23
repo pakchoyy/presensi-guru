@@ -1,3 +1,5 @@
+import { ketPresensi } from "@/lib/ket-presensi";
+import { LegendKet } from "@/components/attendance/LegendKet";
 import { useEffect, useMemo, useState } from "react";
 import { History, FileSpreadsheet, FileText } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
@@ -202,11 +204,11 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
   const rows = useMemo(() => {
     const dMax = daysInMonth(tahun, bulan);
     const byDate = new Map(records.map((r) => [r.tanggal, r]));
-    const out: Array<{ tgl: string; hari: string; rec?: TeacherAttendance }> = [];
+    const out: Array<{ tgl: string; date: string; hari: string; rec?: TeacherAttendance }> = [];
     for (let d = 1; d <= dMax; d++) {
       const date = `${tahun}-${String(bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       if (!isHariEfektif(date, guru, liburSet)) continue;
-      out.push({ tgl: String(d), hari: HARI[new Date(tahun, bulan - 1, d).getDay()], rec: byDate.get(date) });
+      out.push({ tgl: String(d), date, hari: HARI[new Date(tahun, bulan - 1, d).getDay()], rec: byDate.get(date) });
     }
     return out;
   }, [records, bulan, tahun, guru, liburSet]);
@@ -322,7 +324,7 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
           <StatBox label="Luar Area" value={stats.far} color="#dc2626" />
           <StatBox label="Sakit" value={stats.sakit} color="#ea580c" />
           <StatBox label="Izin" value={stats.izin} color="#2563eb" />
-          <StatBox label="Alpha" value={stats.alpha} color="#991b1b" />
+          <StatBox label="Alpha" value={rows.filter((r) => ketPresensi(r.date, r.rec).kode === "A").length} color="#991b1b" />
           <StatBox label="Hari" value={rows.length} color="var(--text-light)" />
         </div>
       </div>
@@ -345,7 +347,7 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
                   <th className="py-1 pr-2">Hari</th>
                   <th className="py-1 pr-2">Masuk</th>
                   <th className="py-1 pr-2">Pulang</th>
-                  <th className="py-1 pr-2">Status</th>
+                  <th className="py-1 pr-2 text-center">Ket</th>
                 </tr>
               </thead>
               <tbody>
@@ -355,13 +357,14 @@ function RiwayatGuru({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () 
                     <td className="py-1 pr-2 text-[var(--text-light)]">{r.hari}</td>
                     <td className="py-1 pr-2">{fmtTime(r.rec?.jamMasuk)}</td>
                     <td className="py-1 pr-2">{fmtTime(r.rec?.jamPulang)}</td>
-                    <td className="py-1 pr-2 font-bold" style={{ color: statusColor(r.rec) }}>
-                      {statusLabel(r.rec)}
+                    <td className="py-1 pr-2 font-bold text-center" style={{ color: ketPresensi(r.date, r.rec).warna }} title={ketPresensi(r.date, r.rec).label}>
+                      {ketPresensi(r.date, r.rec).kode}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <LegendKet />
           </div>
         )}
       </div>

@@ -73,6 +73,8 @@ export interface TeacherAttendance {
   statusPulang?: ClockInStatus;
   statusHari?: AttendanceStatus;    // H/S/I/A/T — manual input admin bila perlu
   catatan?: string;
+  /** Izin yang diajukan guru sendiri; kosong = dicatat admin (dianggap disetujui). */
+  statusIzin?: "proses" | "disetujui" | "ditolak";
   diubahPada: number;
 }
 

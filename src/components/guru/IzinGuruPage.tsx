@@ -14,7 +14,11 @@ const JENIS = ["Sakit", "Izin", "Cuti", "Dinas / Penugasan"] as const;
 type Jenis = (typeof JENIS)[number];
 const MAKS_HARI = 31;
 
-function bacaJenis(r: TeacherAttendance): { jenis: Jenis; keterangan: string } {
+type StatusIzin = NonNullable<TeacherAttendance["statusIzin"]>;
+export const LABEL_STATUS: Record<StatusIzin, string> = { proses: "Proses", disetujui: "Disetujui", ditolak: "Ditolak" };
+export const WARNA_STATUS: Record<StatusIzin, string> = { proses: "#f59e0b", disetujui: "#16a34a", ditolak: "#dc2626" };
+
+export function bacaJenis(r: TeacherAttendance): { jenis: Jenis; keterangan: string } {
   const m = /^\[(.+?)\]\s?(.*)$/s.exec(r.catatan ?? "");
   if (m && (JENIS as readonly string[]).includes(m[1])) return { jenis: m[1] as Jenis, keterangan: m[2] };
   return { jenis: r.statusHari === AttendanceStatus.SAKIT ? "Sakit" : "Izin", keterangan: r.catatan ?? "" };
@@ -58,12 +62,13 @@ export function IzinGuruPage({ onSelesai }: { onSelesai: () => void }) {
           tanggal: t,
           statusHari: jenis === "Sakit" ? AttendanceStatus.SAKIT : AttendanceStatus.IZIN,
           catatan: catatan || undefined,
+          statusIzin: "proses",
           diubahPada: timestamp(),
         } as TeacherAttendance;
         await teacherAttendanceRepo.upsert(rec);
         await kirim(guruSessionId, rec).catch(() => { /* tertunda, dikirim saat online */ });
       }
-      toast(`${jenis} tersimpan untuk ${tanggal.length} hari`, "success");
+      toast(`Pengajuan ${jenis.toLowerCase()} terkirim (${tanggal.length} hari) — menunggu persetujuan`, "success");
       onSelesai();
     } finally {
       setMenyimpan(false);
@@ -144,12 +149,13 @@ export function LogIzinPage() {
     const izin = (records ?? [])
       .filter((r) => r.statusHari === AttendanceStatus.SAKIT || r.statusHari === AttendanceStatus.IZIN)
       .sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-    const out: { awal: string; akhir: string; jenis: Jenis; keterangan: string }[] = [];
+    const out: { awal: string; akhir: string; jenis: Jenis; keterangan: string; status: StatusIzin }[] = [];
     for (const r of izin) {
       const { jenis, keterangan } = bacaJenis(r);
+      const status: StatusIzin = r.statusIzin ?? "disetujui";
       const akhir = out[out.length - 1];
-      if (akhir && akhir.jenis === jenis && addDays(akhir.akhir, 1) === r.tanggal) akhir.akhir = r.tanggal;
-      else out.push({ awal: r.tanggal, akhir: r.tanggal, jenis, keterangan });
+      if (akhir && akhir.jenis === jenis && akhir.status === status && addDays(akhir.akhir, 1) === r.tanggal) akhir.akhir = r.tanggal;
+      else out.push({ awal: r.tanggal, akhir: r.tanggal, jenis, keterangan, status });
     }
     return out.reverse();
   }, [records]);
@@ -175,8 +181,11 @@ export function LogIzinPage() {
             </div>
             {b.keterangan && <div className="text-[0.72rem] text-[var(--text)] mt-1 break-words">{b.keterangan}</div>}
           </div>
-          <span className="px-3 py-1 rounded-full text-[0.68rem] font-bold bg-[var(--hadir-bg)] text-[var(--hadir)] flex-shrink-0">
-            Tercatat
+          <span
+            className="px-3 py-1 rounded-full text-[0.68rem] font-bold text-white flex-shrink-0"
+            style={{ background: WARNA_STATUS[b.status] }}
+          >
+            {LABEL_STATUS[b.status]}
           </span>
         </div>
       ))}

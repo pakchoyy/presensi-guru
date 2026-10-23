@@ -87,6 +87,7 @@ interface BarisAbsen {
   status_masuk: string | null;
   status_pulang: string | null;
   status_hari: string | null;
+  status_izin: string | null;
   catatan: string | null;
   diubah_pada: number;
   last_synced_at: number;
@@ -139,7 +140,9 @@ function keBarisAbsen(
     jarak_masuk_meter: n(rec.jarakMasukMeter),
     jarak_pulang_meter: n(rec.jarakPulangMeter),
     status_masuk: n(rec.statusMasuk),
-    status_pulang: n(rec.statusPulang),
+    // EARLY disimpan sebagai 'LATE' di cloud (lihat migrasi 00306).
+    status_pulang: rec.statusPulang === "EARLY" ? "LATE" : n(rec.statusPulang),
+    status_izin: n(rec.statusIzin),
     status_hari: n(rec.statusHari),
     catatan: n(rec.catatan),
     diubah_pada: rec.diubahPada || timestamp(),
@@ -166,7 +169,8 @@ function dariBarisAbsen(row: BarisAbsen, guruId: number): TeacherAttendance {
     jarakMasukMeter: u(row.jarak_masuk_meter),
     jarakPulangMeter: u(row.jarak_pulang_meter),
     statusMasuk: u(row.status_masuk) as TeacherAttendance["statusMasuk"],
-    statusPulang: u(row.status_pulang) as TeacherAttendance["statusPulang"],
+    statusPulang: (row.status_pulang === "LATE" ? "EARLY" : u(row.status_pulang)) as TeacherAttendance["statusPulang"],
+    statusIzin: u(row.status_izin) as TeacherAttendance["statusIzin"],
     statusHari: u(row.status_hari) as TeacherAttendance["statusHari"],
     catatan: u(row.catatan),
     diubahPada: row.diubah_pada,

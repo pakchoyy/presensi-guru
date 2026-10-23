@@ -1,3 +1,5 @@
+import { ketPresensi } from "@/lib/ket-presensi";
+import { LegendKet } from "@/components/attendance/LegendKet";
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
@@ -127,12 +129,12 @@ export function RekapPage() {
   const previewRows = useMemo(() => {
     const dMax = daysInMonth(tahun, bulan);
     const byDate = new Map(records.map((r) => [r.tanggal, r]));
-    const rows: Array<{ tgl: string; hari: string; rec?: TeacherAttendance }> = [];
+    const rows: Array<{ tgl: string; date: string; hari: string; rec?: TeacherAttendance }> = [];
     for (let d = 1; d <= dMax; d++) {
       const date = `${tahun}-${String(bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       if (!isHariEfektif(date, selectedGuru ?? undefined, liburSet)) continue;
       const dow = new Date(tahun, bulan - 1, d).getDay();
-      rows.push({ tgl: String(d), hari: HARI[dow], rec: byDate.get(date) });
+      rows.push({ tgl: String(d), date, hari: HARI[dow], rec: byDate.get(date) });
     }
     return rows;
   }, [records, bulan, tahun, selectedGuru, liburSet]);
@@ -241,7 +243,7 @@ export function RekapPage() {
             <StatBox label="Luar Area" value={stats.far} color="#dc2626" />
             <StatBox label="Sakit" value={stats.sakit} color="#ea580c" />
             <StatBox label="Izin" value={stats.izin} color="#2563eb" />
-            <StatBox label="Alpha" value={stats.alpha} color="#991b1b" />
+            <StatBox label="Alpha" value={previewRows.filter((r) => ketPresensi(r.date, r.rec).kode === "A").length} color="#991b1b" />
             <StatBox label="Hari" value={previewRows.length} color="var(--text-light)" />
           </div>
         </div>
@@ -261,7 +263,7 @@ export function RekapPage() {
                   <th className="py-1 pr-2">Hari</th>
                   <th className="py-1 pr-2">Masuk</th>
                   <th className="py-1 pr-2">Pulang</th>
-                  <th className="py-1 pr-2">Status</th>
+                  <th className="py-1 pr-2 text-center">Ket</th>
                 </tr>
               </thead>
               <tbody>
@@ -271,13 +273,14 @@ export function RekapPage() {
                     <td className="py-1 pr-2 text-[var(--text-light)]">{r.hari}</td>
                     <td className="py-1 pr-2">{fmtTime(r.rec?.jamMasuk)}</td>
                     <td className="py-1 pr-2">{fmtTime(r.rec?.jamPulang)}</td>
-                    <td className="py-1 pr-2 font-bold" style={{ color: statusMasukColor(r.rec?.statusMasuk) }}>
-                      {statusMasukLabel(r.rec?.statusMasuk)}
+                    <td className="py-1 pr-2 font-bold text-center" style={{ color: ketPresensi(r.date, r.rec).warna }} title={ketPresensi(r.date, r.rec).label}>
+                      {ketPresensi(r.date, r.rec).kode}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <LegendKet />
           </div>
         </div>
       )}
