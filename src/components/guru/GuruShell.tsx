@@ -8,11 +8,13 @@ import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun } from "lucid
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
 import { todayStr } from "@/lib/utils";
+import { guruCloud } from "@/services/multi-perangkat.service";
+import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 type GuruTab = "presensi" | "log" | "rekap" | "profil";
 
 export function GuruShell() {
-  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school } = useApp();
+  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
   const [tab, setTab] = useState<GuruTab>("presensi");
   const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
     masuk: false,
@@ -29,6 +31,46 @@ export function GuruShell() {
   }, [guruSessionId]);
 
   useEffect(() => { muatStatus(); }, [muatStatus, tab]);
+
+  // HP guru yang tersambung cloud: kirim absen tertunda, ambil setelan sekolah
+  // terbaru (titik/radius/jam bisa diubah admin), dan tarik koreksi dari admin.
+  const [versiData, setVersiData] = useState(0);
+  useEffect(() => {
+    if (!guruCloud.aktif()) return;
+    const sinkron = async () => {
+      await guruCloud.kirimAntrian();
+      const sekolahBerubah = await guruCloud.perbaruiSekolah().catch(() => false);
+      const absenBerubah = await guruCloud.tarikRiwayat(35).catch(() => 0);
+      if (sekolahBerubah) await refreshSchool();
+      if (absenBerubah > 0) { setVersiData((v) => v + 1); muatStatus(); }
+    };
+    sinkron();
+    window.addEventListener("online", sinkron);
+    return () => window.removeEventListener("online", sinkron);
+  }, [refreshSchool, muatStatus]);
+
+  /** Keluar: di HP guru, pastikan absen tertunda terkirim dulu. */
+  const keluar = useCallback(async () => {
+    if (guruCloud.aktif()) {
+      const sisa = await guruCloud.kirimAntrian();
+      if (sisa > 0) {
+        const tetap = await showConfirmDialog({
+          title: "Absen belum terkirim",
+          message: `${sisa} absen belum terkirim ke sekolah karena belum ada internet. Kalau keluar sekarang, absen itu hilang dari HP ini. Tetap keluar?`,
+          confirmText: "Tetap keluar",
+          cancelText: "Batal",
+          danger: true,
+        });
+        if (!tetap) return;
+      }
+      const dihapus = await guruCloud.keluar();
+      logoutGuru();
+      // Data lokal di HP guru sudah dibersihkan → muat ulang supaya context ikut bersih.
+      if (dihapus) window.location.reload();
+      return;
+    }
+    logoutGuru();
+  }, [logoutGuru]);
 
   const reminder = usePengingatAbsen({
     guru,
@@ -79,13 +121,13 @@ export function GuruShell() {
       </header>
 
       {/* Konten */}
-      <div className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
+      <div key={versiData} className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
         {tab === "presensi" && (
-          <PresensiGuruPage embedded onLogout={logoutGuru} onRiwayat={() => setTab("rekap")} />
+          <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
         )}
         {tab === "log" && <LogAbsenPage />}
         {tab === "rekap" && <LogPresensiPage embedded />}
-        {tab === "profil" && <GuruProfilPage onLogout={logoutGuru} reminder={reminder} />}
+        {tab === "profil" && <GuruProfilPage onLogout={keluar} reminder={reminder} />}
       </div>
 
       {/* Bottom nav guru */}

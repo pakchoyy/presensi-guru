@@ -18,6 +18,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 import { IzinSheet } from "@/components/attendance/IzinSheet";
 import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
+import { guruCloud } from "@/services/multi-perangkat.service";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp } from "@/lib/utils";
@@ -278,6 +279,15 @@ function SelfAbsenPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
   const [showIzin, setShowIzin] = useState(false);
+  // Status kiriman ke sekolah (hanya di HP guru yang tersambung cloud).
+  const [kiriman, setKiriman] = useState<"terkirim" | "tertunda" | null>(() =>
+    guruCloud.aktif() && guruCloud.jumlahAntrian() > 0 ? "tertunda" : null,
+  );
+  const kirimKeSekolah = async () => {
+    if (!guruCloud.aktif()) return;
+    const ok = await guruCloud.kirimAbsen(attendanceIdFrom(guru.id, tanggal));
+    setKiriman(ok && guruCloud.jumlahAntrian() === 0 ? "terkirim" : "tertunda");
+  };
   const [konfirmasi, setKonfirmasi] = useState<
     { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number } } | null
   >(null);
@@ -324,6 +334,7 @@ function SelfAbsenPanel({
     setShowIzin(false);
     toast(jenis === AttendanceStatus.SAKIT ? "Pengajuan sakit tercatat" : "Pengajuan izin tercatat", "success");
     await refresh();
+    await kirimKeSekolah();
   };
 
   const batalkanIzin = async () => {
@@ -340,6 +351,7 @@ function SelfAbsenPanel({
     setShowIzin(false);
     toast("Pengajuan dibatalkan", "info");
     await refresh();
+    await kirimKeSekolah();
   };
 
   const sudahMasuk = !!existing?.jamMasuk;
@@ -419,6 +431,7 @@ function SelfAbsenPanel({
       }
       setKonfirmasi(null);
       await refresh();
+      await kirimKeSekolah();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Gagal menyimpan absen";
       toast(msg, "error");
@@ -501,6 +514,17 @@ function SelfAbsenPanel({
             status={existing?.statusPulang}
             emptyLabel="Belum pulang"
           />
+        </div>
+      )}
+
+      {kiriman && (
+        <div
+          className="mt-2 text-[0.66rem] font-semibold flex items-center justify-center gap-1"
+          style={{ color: kiriman === "terkirim" ? "var(--hadir)" : "#b45309" }}
+        >
+          {kiriman === "terkirim"
+            ? "✓ Tersimpan & terkirim ke sekolah"
+            : "⏳ Belum terkirim ke sekolah — akan dikirim otomatis saat ada internet"}
         </div>
       )}
 

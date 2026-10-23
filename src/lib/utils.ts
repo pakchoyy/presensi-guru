@@ -5,9 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** "YYYY-MM-DD" menurut tanggal LOKAL perangkat (bukan UTC). */
+export function ymdLokal(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+// Dulu memakai toISOString() (UTC): di WIB, absen sebelum 07:00 tercatat di
+// tanggal kemarin.
 export function todayStr(): string {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return ymdLokal(new Date());
 }
 
 export function formatTanggalPendek(iso: string): string {
@@ -65,7 +72,7 @@ export function attendanceIdFrom(guruId: number, tanggal: string): number {
 export function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return ymdLokal(d);
 }
 
 export function getMonthLabel(iso: string): string {
@@ -143,4 +150,15 @@ export function randomPin(len: 4 | 6 = 4): string {
 /** Kode login otomatis untuk guru tanpa NIP. */
 export function randomKode(): string {
   return `G-${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+/**
+ * Password akun cloud guru, diturunkan dari PIN.
+ * Supabase mewajibkan password minimal 6 karakter, sedangkan PIN guru 4-6
+ * digit. PIN tetap yang diketik guru; prefix ini hanya memenuhi syarat panjang
+ * (bukan rahasia — kekuatan tetap setara PIN). HARUS sama dengan Edge Function
+ * create-guru-account, reset-guru-pin, dan register-push.
+ */
+export function passwordDariPin(pin: string): string {
+  return `pyg-${pin.trim()}`;
 }

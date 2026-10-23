@@ -1,7 +1,7 @@
 // Register / unregister Web Push subscription milik guru.
 //
-// Guru tidak login ke Supabase dari aplikasi (login lokal pakai kode + PIN),
-// jadi fungsi ini memverifikasi sendiri: kode+PIN dicocokkan ke akun sintetis
+// Di perangkat bersama (mode kios) guru login lokal tanpa sesi Supabase, jadi
+// fungsi ini memverifikasi sendiri: kode+PIN dicocokkan ke akun sintetis
 // `${kode}@guru.local` yang dibuat create-guru-account. Karena itu
 // verify_jwt = false.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -18,6 +18,11 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   });
+}
+
+/** Sama persis dengan passwordDariPin() di src/lib/utils.ts. */
+function passwordDariPin(pin: string): string {
+  return `pyg-${pin.trim()}`;
 }
 
 Deno.serve(async (req) => {
@@ -44,7 +49,7 @@ Deno.serve(async (req) => {
   const authClient = createClient(url, anonKey, { auth: { persistSession: false } });
   const { data: login, error: loginErr } = await authClient.auth.signInWithPassword({
     email: `${kode}@guru.local`,
-    password: pin,
+    password: passwordDariPin(pin),
   });
   if (loginErr || !login.user) return json({ error: "kode_atau_pin_salah" }, 401);
 

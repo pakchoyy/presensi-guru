@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import type { Teacher } from "@/types/entities";
-import { ClipboardCheck, ShieldCheck, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft, Users } from "lucide-react";
+import { guruCloud } from "@/services/multi-perangkat.service";
+import { ClipboardCheck, ShieldCheck, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   const needle = kode.trim();
@@ -19,7 +20,7 @@ function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
 type Step = "choose" | "guru";
 
 export function EntryGate() {
-  const { teachers, setEntryMode, loginGuru } = useApp();
+  const { teachers, setEntryMode, loginGuru, refreshSchool, refreshTeachers } = useApp();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("choose");
 
@@ -78,7 +79,14 @@ export function EntryGate() {
             teachers={teachers}
             onBack={() => setStep("choose")}
             onSuccess={(g) => { loginGuru(g.id); toast(`Selamat datang, ${g.nama}`, "success"); }}
-            noGuru={teachers.length === 0}
+            onCloudSuccess={async (guruId) => {
+              // Perangkat baru saja diisi dari cloud: muat ulang context dulu,
+              // baru buka sesi guru (kalau tidak, GuruShell belum kenal gurunya).
+              await refreshSchool();
+              await refreshTeachers();
+              loginGuru(guruId);
+              toast("Berhasil masuk — data sekolah sudah tersambung", "success");
+            }}
           />
         )}
 
@@ -96,25 +104,39 @@ function GuruLogin({
   teachers,
   onBack,
   onSuccess,
-  noGuru,
+  onCloudSuccess,
 }: {
   teachers: Teacher[];
   onBack: () => void;
   onSuccess: (g: Teacher) => void;
-  noGuru: boolean;
+  onCloudSuccess: (guruId: number) => Promise<void>;
 }) {
   const [kode, setKode] = useState("");
   const [pin, setPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [err, setErr] = useState("");
+  const [memproses, setMemproses] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
+    if (!kode.trim()) { setErr("Isi nomor / kode dulu"); return; }
+    if (!/^\d{4,6}$/.test(pin.trim())) { setErr("PIN harus 4-6 digit"); return; }
+
+    // 1) Perangkat bersama di sekolah (data guru ada di sini) → cukup lokal.
     const g = matchGuru(teachers, kode);
-    if (!g) { setErr("Nomor / Kode tidak ditemukan. Minta Ops / Kepala Sekolah."); return; }
-    if (g.pin && g.pin !== pin.trim()) { setErr("PIN salah"); return; }
-    onSuccess(g);
+    if (g && (!g.pin || g.pin === pin.trim())) { onSuccess(g); return; }
+
+    // 2) HP guru sendiri → login lewat cloud.
+    setMemproses(true);
+    try {
+      const { guruId } = await guruCloud.masuk(kode, pin);
+      await onCloudSuccess(guruId);
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : "Gagal masuk");
+    } finally {
+      setMemproses(false);
+    }
   };
 
   return (
@@ -124,13 +146,7 @@ function GuruLogin({
       </button>
       <div className="font-extrabold text-gray-800 text-[1.05rem]">Masuk sebagai Guru</div>
 
-      {noGuru ? (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[0.78rem] text-amber-800 flex items-start gap-2">
-          <Users size={15} className="mt-[1px] flex-shrink-0" />
-          <span>Belum ada guru terdaftar. Minta Ops / Kepala Sekolah menambahkan guru lewat menu Admin dulu.</span>
-        </div>
-      ) : (
-        <>
+      <>
           <div>
             <label className="block text-[0.65rem] font-bold text-gray-600 mb-1 uppercase tracking-wide">Nomor NIP / NUPTK / Kode</label>
             <div className="relative">
@@ -167,13 +183,16 @@ function GuruLogin({
 
           <button
             type="submit"
-            className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+            disabled={memproses}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-60"
             style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
           >
-            <LogIn size={16} /> Masuk & Absen
+            <LogIn size={16} /> {memproses ? "Menyambungkan..." : "Masuk & Absen"}
           </button>
-        </>
-      )}
+          <div className="text-[0.62rem] text-gray-400 text-center leading-snug">
+            Kode & PIN diberikan Ops / Kepala Sekolah. Login pertama di HP sendiri butuh internet.
+          </div>
+      </>
     </form>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
+import { adminCloud } from "@/services/multi-perangkat.service";
 import { useToast } from "@/components/shared/Toast";
 import { licenseService } from "@/services/license.service";
 import { licenseRepo } from "@/repositories/dexie/license.repo";
@@ -904,7 +905,7 @@ export function PengaturanPage() {
             }
             setSavingLokasi(true);
             try {
-              await schoolRepo.save({
+              const baru = {
                 ...school,
                 lat,
                 lng,
@@ -913,11 +914,14 @@ export function PengaturanPage() {
                 jamPulangStandar: editJamPulang,
                 toleransiTerlambatMenit: editToleransi,
                 diubahPada: Date.now(),
-              });
+              };
+              await schoolRepo.save(baru);
               // Segarkan context, kalau tidak layar presensi guru masih pakai
               // koordinat lama sampai app di-reload.
               await refreshSchool();
-              toast("✅ Lokasi & jam sekolah disimpan");
+              // HP guru membaca titik/radius/jam dari cloud.
+              const keCloud = await adminCloud.daftarkanSekolah(baru, teacher).catch(() => null);
+              toast(keCloud ? "✅ Disimpan & dikirim ke HP guru" : "✅ Lokasi & jam sekolah disimpan");
             } catch {
               toast("❌ Gagal menyimpan");
             } finally {

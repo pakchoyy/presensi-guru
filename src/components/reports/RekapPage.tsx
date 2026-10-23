@@ -6,6 +6,7 @@ import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.r
 import { db } from "@/repositories/dexie/db";
 import { exportRekapGuruPDF, exportRekapGuruXLSX, periodeLabel } from "@/services/export.service";
 import { isHariEfektif } from "@/lib/utils";
+import { adminCloud } from "@/services/multi-perangkat.service";
 import { CalendarEntryType } from "@/types/enums";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { BarChart3, FileSpreadsheet, FileText, UserCheck } from "lucide-react";
@@ -78,6 +79,16 @@ export function RekapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Absen guru dari HP masing-masing: tarik sebulan dari cloud, lalu baca ulang.
+  const [versiCloud, setVersiCloud] = useState(0);
+  useEffect(() => {
+    const d1 = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
+    const d2 = `${tahun}-${String(bulan).padStart(2, "0")}-${String(daysInMonth(tahun, bulan)).padStart(2, "0")}`;
+    adminCloud.tarikAbsen(d1, d2)
+      .then((berubah) => { if (berubah > 0) setVersiCloud((v) => v + 1); })
+      .catch(() => {});
+  }, [bulan, tahun]);
+
   useEffect(() => {
     if (!selectedGuruId) return;
     setLoading(true);
@@ -88,7 +99,7 @@ export function RekapPage() {
       .getRange(selectedGuruId, d1, d2)
       .then((r) => setRecords(r))
       .finally(() => setLoading(false));
-  }, [selectedGuruId, bulan, tahun]);
+  }, [selectedGuruId, bulan, tahun, versiCloud]);
 
   const selectedGuru = useMemo(
     () => guruList.find((g) => g.id === selectedGuruId) || null,

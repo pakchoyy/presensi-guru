@@ -6,11 +6,13 @@
 // Input (JSON):
 //   { nama: string, kode_login?: string, pin?: string, nip?: string,
 //     jabatan?: string, role?: 'guru'|'admin'|'kepala'|'operator',
-//     sekolah_id: number, local_id?: number }
+//     local_id?: number }   (sekolah_id lama masih diterima tapi diabaikan)
 //
 // Auth:
-//   Header "Authorization: Bearer <access_token>" dari admin. Caller harus
-//   punya baris di cloud_guru_teachers dengan role di {admin,kepala,operator}.
+//   Header "Authorization: Bearer <access_token>" dari admin. Pemanggil harus
+//   pemilik sebuah cloud_guru_sekolah; guru otomatis didaftarkan ke sekolah
+//   itu. sekolah_id dari klien diabaikan — tidak bisa dipercaya karena
+//   nilainya Date.now()+acak dan mudah ditebak.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
@@ -24,7 +26,7 @@ interface Payload {
   nip?: string;
   jabatan?: string;
   role?: Role;
-  sekolah_id: number;
+  sekolah_id?: number; // diabaikan, lihat catatan Auth di atas
   local_id?: number;
 }
 
@@ -50,6 +52,11 @@ function randomPin(len = 4): string {
   let out = "";
   for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10).toString();
   return out;
+}
+
+/** Sama persis dengan passwordDariPin() di src/lib/utils.ts. */
+function passwordDariPin(pin: string): string {
+  return `pyg-${pin.trim()}`;
 }
 
 Deno.serve(async (req: Request) => {
@@ -79,23 +86,17 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json({ error: "bad_json" }, 400);
   }
-  if (!body?.nama || !body?.sekolah_id) {
-    return json({ error: "nama_dan_sekolah_wajib" }, 400);
+  if (!body?.nama) {
+    return json({ error: "nama_wajib" }, 400);
   }
 
-  const { data: callerRow } = await admin
-    .from("cloud_guru_teachers")
-    .select("role, sekolah_id")
-    .eq("user_id", callerId)
+  const { data: sekolah } = await admin
+    .from("cloud_guru_sekolah")
+    .select("id, local_id")
+    .eq("owner_user_id", callerId)
     .maybeSingle();
-
-  const isAdmin = callerRow && ["admin", "kepala", "operator"].includes(callerRow.role);
-  const isOwnerFirstSetup = !callerRow;
-  if (!isAdmin && !isOwnerFirstSetup) {
-    return json({ error: "forbidden_not_admin" }, 403);
-  }
-  if (callerRow && callerRow.sekolah_id !== body.sekolah_id) {
-    return json({ error: "forbidden_wrong_school" }, 403);
+  if (!sekolah) {
+    return json({ error: "sekolah_belum_terdaftar_di_cloud" }, 403);
   }
 
   let kode = (body.kode_login || body.nip || "").trim();
@@ -129,14 +130,14 @@ Deno.serve(async (req: Request) => {
 
   const { data: created, error: createErr } = await admin.auth.admin.createUser({
     email,
-    password: pin,
+    password: passwordDariPin(pin),
     email_confirm: true,
     user_metadata: {
       kode_login: kode,
       nama: body.nama,
       nip: body.nip ?? null,
       role,
-      sekolah_id: body.sekolah_id,
+      sekolah_id: sekolah.local_id,
       tier: "FREE",
     },
   });
@@ -151,7 +152,8 @@ Deno.serve(async (req: Request) => {
     .insert({
       user_id: guruUserId,
       local_id: body.local_id ?? now,
-      sekolah_id: body.sekolah_id,
+      sekolah_id: sekolah.local_id,
+      sekolah_uuid: sekolah.id,
       nama: body.nama,
       email: "",
       tier: "FREE",

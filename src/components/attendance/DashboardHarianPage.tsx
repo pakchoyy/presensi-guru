@@ -12,6 +12,7 @@ import { formatTanggalPanjang, inisial, attendanceIdFrom, timestamp } from "@/li
 import type { AttendanceStatus } from "@/types/enums";
 import { ClockInStatus } from "@/types/enums";
 import { useApp } from "@/contexts/AppContext";
+import { adminCloud } from "@/services/multi-perangkat.service";
 import { StatusSheet } from "./StatusSheet";
 import { useToast } from "@/components/shared/Toast";
 
@@ -86,7 +87,9 @@ export function DashboardHarianPage() {
     }
     setEditGuru(null);
     toast(`Status ${guru.nama} diperbarui`, "success");
-    load(tanggal);
+    const rec = await teacherAttendanceRepo.getById(id);
+    if (rec) await adminCloud.kirimAbsen(guru.id, rec).catch(() => false);
+    load(tanggal, false);
   };
 
   /** Admin mengisi jam masuk/pulang manual (guru lupa absen). */
@@ -124,7 +127,9 @@ export function DashboardHarianPage() {
 
     setEditGuru(null);
     toast(`Jam ${guru.nama} disimpan`, "success");
-    load(tanggal);
+    const rec = await teacherAttendanceRepo.getById(id);
+    if (rec) await adminCloud.kirimAbsen(guru.id, rec).catch(() => false);
+    load(tanggal, false);
   };
 
   const bukaKalender = () => {
@@ -138,7 +143,7 @@ export function DashboardHarianPage() {
     el.click();
   };
 
-  const load = async (tglOverride?: string) => {
+  const load = async (tglOverride?: string, tarikCloud = true) => {
     const tgl = tglOverride || tanggal;
     setLoading(true);
     try {
@@ -155,9 +160,23 @@ export function DashboardHarianPage() {
     } finally {
       setLoading(false);
     }
+    // Tampilkan data lokal dulu, lalu tarik absen dari HP guru (cloud).
+    if (tarikCloud) {
+      const berubah = await adminCloud.tarikAbsen(tgl, tgl).catch(() => 0);
+      if (berubah > 0) await load(tgl, false);
+    }
   };
 
   useEffect(() => { load(tanggal); /* eslint-disable-next-line */ }, [tanggal]);
+
+  // Selama dashboard terbuka, absen guru dari HP masing-masing ikut masuk.
+  useEffect(() => {
+    const segarkan = () => { if (document.visibilityState === "visible") load(tanggal); };
+    const t = setInterval(segarkan, 60_000);
+    document.addEventListener("visibilitychange", segarkan);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", segarkan); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tanggal]);
 
   const counts = useMemo(() => {
     const c: Record<Bucket, number> = { hadir: 0, sakit: 0, izin: 0, alpha: 0, terlambat: 0, belum: 0 };

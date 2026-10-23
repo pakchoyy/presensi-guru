@@ -4,6 +4,7 @@ import { useApp } from "@/contexts/AppContext";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import type { TeacherAttendance } from "@/types/entities";
 import { formatTanggalPanjang } from "@/lib/utils";
+import { guruCloud } from "@/services/multi-perangkat.service";
 
 interface BarisLog {
   kunci: string;
@@ -137,11 +138,7 @@ export function LogAbsenPage() {
                   className="w-12 h-12 rounded-full overflow-hidden border-2 flex-shrink-0 bg-[var(--input-bg)] flex items-center justify-center"
                   style={{ borderColor: b.jenis === "in" ? "var(--brand)" : "#16a34a" }}
                 >
-                  {b.foto ? (
-                    <img src={b.foto} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserRound size={22} className="text-[var(--text-light)]" />
-                  )}
+                  <FotoSelfie nilai={b.foto} />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -174,4 +171,20 @@ export function LogAbsenPage() {
       ))}
     </div>
   );
+}
+
+/** Selfie bisa berupa data URL lokal atau path Storage ("sb:...") dari cloud. */
+function FotoSelfie({ nilai }: { nilai?: string }) {
+  const [src, setSrc] = useState<string | null>(
+    nilai && !nilai.startsWith("sb:") ? nilai : null,
+  );
+  useEffect(() => {
+    let batal = false;
+    if (nilai?.startsWith("sb:")) {
+      guruCloud.urlSelfie(nilai).then((u) => { if (!batal) setSrc(u); }).catch(() => {});
+    }
+    return () => { batal = true; };
+  }, [nilai]);
+  if (!src) return <UserRound size={22} className="text-[var(--text-light)]" />;
+  return <img src={src} alt="" className="w-full h-full object-cover" />;
 }

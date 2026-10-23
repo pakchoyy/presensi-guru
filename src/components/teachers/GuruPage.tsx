@@ -21,6 +21,8 @@ import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tier } from "@/types/enums";
 import { guruCloudService } from "@/services/guru-cloud.service";
+import { adminCloud } from "@/services/multi-perangkat.service";
+import { AkunCloudSekolah } from "@/components/teachers/AkunCloudSekolah";
 
 export function GuruPage() {
   const { school, teacher, refreshTeachers } = useApp();
@@ -82,7 +84,61 @@ export function GuruPage() {
     }
   };
 
+  // Admin login cloud → pastikan sekolah terdaftar, lalu ambil guru mana saja
+  // yang sudah punya akun cloud (bisa absen dari HP sendiri).
+  const muatCloud = async () => {
+    if (!isAuthenticated || !school) { setCloudUserIdMap({}); return; }
+    try {
+      await adminCloud.daftarkanSekolah(school, teacher);
+      const peta = await adminCloud.petaGuru();
+      const rec: Record<number, string> = {};
+      peta.forEach((v, localId) => { if (v.aktif) rec[localId] = v.userId; });
+      setCloudUserIdMap(rec);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast(`Cloud belum bisa dipakai: ${msg}`, "error");
+    }
+  };
+
   useEffect(() => { load(); }, []);
+  useEffect(() => { muatCloud(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [isAuthenticated, school?.id]);
+
+  const [menyambungkan, setMenyambungkan] = useState(false);
+  /** Buatkan akun cloud untuk guru lama yang belum punya (kode & PIN tetap sama). */
+  const sambungkanSemua = async () => {
+    if (!school) return;
+    const belum = guruList.filter((g) => !cloudUserIdMap[g.id] && g.kodeLogin && g.pin);
+    if (belum.length === 0) return;
+    setMenyambungkan(true);
+    let ok = 0;
+    const gagal: string[] = [];
+    try {
+      await adminCloud.daftarkanSekolah(school, teacher);
+      for (const g of belum) {
+        try {
+          await guruCloudService.createAccount({
+            nama: g.nama,
+            sekolah_id: school.id,
+            kode_login: g.kodeLogin,
+            pin: g.pin,
+            nip: g.nip,
+            jabatan: g.jabatan,
+            role: "guru",
+            local_id: g.id,
+          });
+          ok++;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          gagal.push(`${g.nama} (${msg.includes("kode_sudah_dipakai") ? "kode sudah dipakai sekolah lain" : msg})`);
+        }
+      }
+    } finally {
+      setMenyambungkan(false);
+    }
+    await muatCloud();
+    if (gagal.length === 0) toast(`${ok} guru tersambung — kode & PIN tetap sama`, "success");
+    else toast(`${ok} tersambung, ${gagal.length} gagal: ${gagal.join(", ")}`, "error");
+  };
 
   const kodeDipakai = (kode: string, exceptId?: number) =>
     guruList.some((g) => g.id !== exceptId && (g.kodeLogin === kode || g.nip === kode));
@@ -117,6 +173,23 @@ export function GuruPage() {
     if (editId) {
       const existing = guruList.find((g) => g.id === editId);
       if (!existing) return;
+      const akunCloud = cloudUserIdMap[existing.id];
+      if (akunCloud) {
+        // Email akun cloud = <kode>@guru.local, jadi kode tidak bisa diganti.
+        if (existing.kodeLogin && kode !== existing.kodeLogin) {
+          toast(`Kode login ${existing.kodeLogin} sudah dipakai guru di HP-nya, tidak bisa diganti`, "error");
+          return;
+        }
+        if (pin !== (existing.pin || "")) {
+          try {
+            await guruCloudService.resetPin(akunCloud, pin);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast(`PIN baru gagal dikirim ke cloud (${msg}) — perubahan dibatalkan`, "error");
+            return;
+          }
+        }
+      }
       const updated: Teacher = {
         ...existing,
         nama: fNama.trim(),
@@ -139,6 +212,7 @@ export function GuruPage() {
       let pinFinal = pin;
       if (isAuthenticated && navigator.onLine) {
         try {
+          await adminCloud.daftarkanSekolah(school, teacher);
           const res = await guruCloudService.createAccount({
             nama: fNama.trim(),
             sekolah_id: school.id,
@@ -206,6 +280,8 @@ export function GuruPage() {
   const handleDelete = async (g: Teacher) => {
     if (!confirm(`Hapus ${g.nama}?`)) return;
     await db.teachers.update(g.id, { statusAktif: false, diubahPada: timestamp() });
+    // Guru yang dihapus tidak boleh lagi login dari HP-nya.
+    if (cloudUserIdMap[g.id]) await adminCloud.nonaktifkanGuru(g.id).catch(() => {});
     toast(`${g.nama} dihapus`, "info");
     await load();
     await refreshTeachers();
@@ -251,7 +327,10 @@ export function GuruPage() {
       let ok = 0, skip = 0, cloudOk = 0, cloudGagal = 0;
       // Kalau admin login + online, guru hasil import ikut diprovision ke cloud
       // supaya bisa login mandiri dari HP lain.
-      const keCloud = isAuthenticated && navigator.onLine && (await guruCloudService.isReady());
+      let keCloud = isAuthenticated && navigator.onLine && (await guruCloudService.isReady());
+      if (keCloud) {
+        try { await adminCloud.daftarkanSekolah(school, teacher); } catch { keCloud = false; }
+      }
       const cloudIds: Record<number, string> = {};
       const now = timestamp();
       const existingCodes = new Set(guruList.flatMap((g) => [g.kodeLogin, g.nip].filter(Boolean) as string[]));
@@ -366,8 +445,17 @@ export function GuruPage() {
     }
   };
 
+  const jumlahTersambung = guruList.filter((g) => cloudUserIdMap[g.id]).length;
+  const jumlahBelum = guruList.filter((g) => !cloudUserIdMap[g.id] && g.kodeLogin && g.pin).length;
+
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+      <AkunCloudSekolah
+        jumlahTersambung={jumlahTersambung}
+        jumlahBelum={jumlahBelum}
+        menyambungkan={menyambungkan}
+        onSambungkan={sambungkanSemua}
+      />
       <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[14px] mb-3" style={{ boxShadow: "var(--shadow)" }}>
         <div className="flex items-center justify-between">
           <div className="text-[0.9rem] font-extrabold flex items-center gap-[6px] text-[var(--text)]">
@@ -567,6 +655,11 @@ export function GuruPage() {
                   <span className="font-mono bg-[var(--input-bg)] px-[6px] py-[1px] rounded">
                     PIN: {g.pin ? "••••" : "belum"}
                   </span>
+                  {cloudUserIdMap[g.id] && (
+                    <span className="px-[6px] py-[1px] rounded bg-[var(--hadir-bg)] text-[var(--hadir)] font-bold">
+                      HP sendiri ✓
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">

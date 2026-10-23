@@ -39,6 +39,11 @@ async function bumpVersion(admin: SupabaseClient, userId: string): Promise<numbe
   return ((data?.version as number | undefined) ?? 0) + 1;
 }
 
+/** Sama persis dengan passwordDariPin() di src/lib/utils.ts. */
+function passwordDariPin(pin: string): string {
+  return `pyg-${pin.trim()}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -62,22 +67,21 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
   if (!body?.user_id) return json({ error: "user_id_wajib" }, 400);
 
-  const { data: callerRow } = await admin
-    .from("cloud_guru_teachers")
-    .select("role, sekolah_id")
-    .eq("user_id", callerId)
+  // Pemanggil harus pemilik sekolah cloud tempat guru itu terdaftar.
+  const { data: sekolah } = await admin
+    .from("cloud_guru_sekolah")
+    .select("id")
+    .eq("owner_user_id", callerId)
     .maybeSingle();
-  if (!callerRow || !["admin", "kepala", "operator"].includes(callerRow.role)) {
-    return json({ error: "forbidden_not_admin" }, 403);
-  }
+  if (!sekolah) return json({ error: "forbidden_not_admin" }, 403);
 
   const { data: targetRow } = await admin
     .from("cloud_guru_teachers")
-    .select("sekolah_id")
+    .select("sekolah_uuid")
     .eq("user_id", body.user_id)
     .maybeSingle();
   if (!targetRow) return json({ error: "guru_tidak_ditemukan" }, 404);
-  if (targetRow.sekolah_id !== callerRow.sekolah_id) {
+  if (targetRow.sekolah_uuid !== sekolah.id) {
     return json({ error: "forbidden_wrong_school" }, 403);
   }
 
@@ -85,7 +89,7 @@ Deno.serve(async (req: Request) => {
   if (!/^\d{4,6}$/.test(pin)) return json({ error: "pin_harus_4_6_digit" }, 400);
 
   const { error: upErr } = await admin.auth.admin.updateUserById(body.user_id, {
-    password: pin,
+    password: passwordDariPin(pin),
   });
   if (upErr) return json({ error: "update_password_failed", detail: upErr.message }, 500);
 

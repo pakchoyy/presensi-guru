@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import { passwordDariPin } from "@/lib/utils";
 import { syncService } from "@/services/sync.service";
 
 interface User {
@@ -272,7 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const syntheticEmail = `${k.toLowerCase()}@guru.local`;
     const { data, error } = await supabase.auth.signInWithPassword({
       email: syntheticEmail,
-      password: pin.trim(),
+      password: passwordDariPin(pin),
     });
     if (error) {
       if (error.message.includes("Invalid login")) {
