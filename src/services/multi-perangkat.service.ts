@@ -486,7 +486,7 @@ export const adminCloud = {
           lng: n(school.lng),
           radius_meter: school.radiusMeter ?? 100,
           jam_masuk: school.jamMasukStandar ?? "07:00",
-          jam_pulang: school.jamPulangStandar ?? "13:00",
+          jam_pulang: school.jamPulangStandar ?? "15:00",
           toleransi_menit: school.toleransiTerlambatMenit ?? 15,
           mulai_masuk: n(school.mulaiPresensiMasuk),
           batas_pulang: n(school.batasPresensiPulang),

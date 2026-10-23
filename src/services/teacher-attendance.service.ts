@@ -27,7 +27,7 @@ function addMinutes(hhmm: string, mins: number): string {
 /** Jendela presensi sekolah, semua "HH:MM". Presensi bisa diulang di dalam jendela; yang terakhir dihitung. */
 export function jendelaPresensi(school?: School) {
   const jamMasuk = school?.jamMasukStandar ?? "07:00";
-  const jamPulang = school?.jamPulangStandar ?? "13:00";
+  const jamPulang = school?.jamPulangStandar ?? "15:00";
   return {
     mulaiMasuk: school?.mulaiPresensiMasuk ?? addMinutes(jamMasuk, -60),
     batasMasuk: addMinutes(jamMasuk, school?.toleransiTerlambatMenit ?? 15),

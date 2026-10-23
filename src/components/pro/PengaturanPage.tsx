@@ -94,7 +94,7 @@ export function PengaturanPage() {
   const [editLng, setEditLng] = useState<string>(school?.lng?.toString() ?? "");
   const [editRadius, setEditRadius] = useState<number>(school?.radiusMeter ?? 100);
   const [editJamMasuk, setEditJamMasuk] = useState<string>(school?.jamMasukStandar ?? "07:00");
-  const [editJamPulang, setEditJamPulang] = useState<string>(school?.jamPulangStandar ?? "13:00");
+  const [editJamPulang, setEditJamPulang] = useState<string>(school?.jamPulangStandar ?? "15:00");
   const [editToleransi, setEditToleransi] = useState<number>(school?.toleransiTerlambatMenit ?? 15);
   const [editMulaiMasuk, setEditMulaiMasuk] = useState<string>(jendelaPresensi(school ?? undefined).mulaiMasuk);
   const [editBatasPulang, setEditBatasPulang] = useState<string>(jendelaPresensi(school ?? undefined).batasPulang);
@@ -110,7 +110,7 @@ export function PengaturanPage() {
     setEditLng(school.lng?.toString() ?? "");
     setEditRadius(school.radiusMeter ?? 100);
     setEditJamMasuk(school.jamMasukStandar ?? "07:00");
-    setEditJamPulang(school.jamPulangStandar ?? "13:00");
+    setEditJamPulang(school.jamPulangStandar ?? "15:00");
     setEditToleransi(school.toleransiTerlambatMenit ?? 15);
     setEditMulaiMasuk(jendelaPresensi(school).mulaiMasuk);
     setEditBatasPulang(jendelaPresensi(school).batasPulang);

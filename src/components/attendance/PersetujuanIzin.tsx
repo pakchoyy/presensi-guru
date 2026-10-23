@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Check, ChevronDown, FileText, X } from "lucide-react";
+import { Check, ChevronDown, FileText, Plus, X } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { adminCloud } from "@/services/multi-perangkat.service";
-import { bacaJenis } from "@/components/guru/IzinGuruPage";
+import { bacaJenis, IzinGuruPage } from "@/components/guru/IzinGuruPage";
 import type { TeacherAttendance } from "@/types/entities";
 import { addDays, formatTanggalPanjang, timestamp, todayStr } from "@/lib/utils";
 
@@ -16,6 +16,9 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
   const [riwayat, setRiwayat] = useState<TeacherAttendance[]>([]);
   const [buka, setBuka] = useState(false);
   const [lihat, setLihat] = useState<"menunggu" | "riwayat">("menunggu");
+  // Admin mencatat izin sendiri / guru lain: null = tutup, 0 = belum pilih guru.
+  const [catatUntuk, setCatatUntuk] = useState<number | null>(null);
+  const guruAktif = teachers.filter((t) => t.statusAktif !== false);
 
   const muat = useCallback(async () => {
     const dari = addDays(todayStr(), -31);
@@ -86,6 +89,12 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
               </button>
             ))}
           </div>
+          <button
+            onClick={() => setCatatUntuk(0)}
+            className="w-full mb-2 py-[8px] rounded-xl border-[1.5px] border-dashed border-[var(--brand)] text-[var(--brand)] bg-transparent text-[0.78rem] font-bold flex items-center justify-center gap-1 active:scale-95"
+          >
+            <Plus size={14} /> Catat izin (termasuk untuk diri sendiri)
+          </button>
           {tampil.length === 0 && (
             <div className="py-4 text-center text-[0.75rem] text-[var(--text-light)]">
               {lihat === "menunggu" ? "Semua pengajuan sudah diputuskan." : "Belum ada izin yang diputuskan."}
@@ -131,6 +140,41 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
           );
         })}
       </div>
+        </div>
+      )}
+
+      {catatUntuk !== null && (
+        <div className="fixed inset-0 z-[800] bg-[var(--bg)] overflow-y-auto">
+          <div className="max-w-app mx-auto px-[14px] pt-[14px]">
+            <div className="font-extrabold text-[1rem] text-[var(--text)] mb-2">Catat izin</div>
+            <label className="text-[0.78rem] font-bold text-[var(--text)] mb-1 block">Guru</label>
+            <select
+              value={catatUntuk || ""}
+              onChange={(e) => setCatatUntuk(Number(e.target.value) || 0)}
+              className="w-full px-3 py-[10px] rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text)] text-[0.9rem] font-[inherit]"
+            >
+              <option value="">Pilih guru…</option>
+              {guruAktif.map((t) => (
+                <option key={t.id} value={t.id}>{t.nama}{t.role === "admin" ? " (admin)" : ""}</option>
+              ))}
+            </select>
+          </div>
+          {catatUntuk ? (
+            <IzinGuruPage
+              key={catatUntuk}
+              guruId={catatUntuk}
+              onSelesai={() => { setCatatUntuk(null); muat(); onBerubah?.(); }}
+            />
+          ) : (
+            <div className="max-w-app mx-auto px-[14px] pt-3">
+              <button
+                onClick={() => setCatatUntuk(null)}
+                className="w-full py-3 rounded-full bg-[#ef4444] text-white font-bold border-none"
+              >
+                Batal
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

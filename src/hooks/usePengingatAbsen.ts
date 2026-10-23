@@ -60,7 +60,7 @@ export function usePengingatAbsen({
 
   // Satu kali saja, 5 menit sebelum batas absen — bukan diingatkan terus.
   const jamM = (jamMasuk ?? "07:00").slice(0, 5);
-  const jamP = (jamPulang ?? "13:00").slice(0, 5);
+  const jamP = (jamPulang ?? "15:00").slice(0, 5);
   const batasMasuk = geserJam(jamM, toleransiMenit);
   const ingatMasuk = geserJam(batasMasuk, -MENIT_SEBELUM_BATAS);
   const ingatPulang = geserJam(jamP, -MENIT_SEBELUM_BATAS);

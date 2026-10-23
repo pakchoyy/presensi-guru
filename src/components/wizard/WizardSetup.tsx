@@ -26,7 +26,7 @@ export function WizardSetup() {
   const [lng, setLng] = useState<number | undefined>();
   const [radiusMeter, setRadiusMeter] = useState(100);
   const [jamMasuk, setJamMasuk] = useState("07:00");
-  const [jamPulang, setJamPulang] = useState("13:00");
+  const [jamPulang, setJamPulang] = useState("15:00");
   const [toleransi, setToleransi] = useState(15);
   const [gpsLoading, setGpsLoading] = useState(false);
 
@@ -97,7 +97,7 @@ export function WizardSetup() {
       lng: undefined,
       radiusMeter: 100,
       jamMasukStandar: "07:00",
-      jamPulangStandar: "13:00",
+      jamPulangStandar: "15:00",
       toleransiTerlambatMenit: 15,
     };
     try {

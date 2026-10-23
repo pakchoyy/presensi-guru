@@ -69,7 +69,7 @@ export const setupService = {
       lng: data.lng,
       radiusMeter: data.radiusMeter ?? 100,
       jamMasukStandar: data.jamMasukStandar ?? "07:00",
-      jamPulangStandar: data.jamPulangStandar ?? "13:00",
+      jamPulangStandar: data.jamPulangStandar ?? "15:00",
       toleransiTerlambatMenit: data.toleransiTerlambatMenit ?? 15,
       dibuatPada: now,
       diubahPada: now,

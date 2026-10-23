@@ -32,9 +32,15 @@ async function kirim(guruId: number, rec: TeacherAttendance) {
 const kartu = "bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[14px]";
 const label = "text-[0.78rem] font-bold text-[var(--text)] mb-1 block";
 
-/** Form pengajuan izin guru: rentang tanggal, jenis, keterangan. */
-export function IzinGuruPage({ onSelesai }: { onSelesai: () => void }) {
-  const { guruSessionId } = useApp();
+/**
+ * Form izin: rentang tanggal, jenis, keterangan.
+ * Dari HP guru → pengajuan (menunggu persetujuan). Dengan `guruId` (dicatat
+ * admin, termasuk untuk dirinya sendiri) → langsung disetujui.
+ */
+export function IzinGuruPage({ onSelesai, guruId }: { onSelesai: () => void; guruId?: number }) {
+  const { guruSessionId: sesi } = useApp();
+  const olehAdmin = guruId != null;
+  const guruSessionId = guruId ?? sesi;
   const { toast } = useToast();
   const [awal, setAwal] = useState(todayStr());
   const [akhir, setAkhir] = useState(todayStr());
@@ -62,13 +68,18 @@ export function IzinGuruPage({ onSelesai }: { onSelesai: () => void }) {
           tanggal: t,
           statusHari: jenis === "Sakit" ? AttendanceStatus.SAKIT : AttendanceStatus.IZIN,
           catatan: catatan || undefined,
-          statusIzin: "proses",
+          statusIzin: olehAdmin ? "disetujui" : "proses",
           diubahPada: timestamp(),
         } as TeacherAttendance;
         await teacherAttendanceRepo.upsert(rec);
         await kirim(guruSessionId, rec).catch(() => { /* tertunda, dikirim saat online */ });
       }
-      toast(`Pengajuan ${jenis.toLowerCase()} terkirim (${tanggal.length} hari) — menunggu persetujuan`, "success");
+      toast(
+        olehAdmin
+          ? `${jenis} dicatat (${tanggal.length} hari)`
+          : `Pengajuan ${jenis.toLowerCase()} terkirim (${tanggal.length} hari) — menunggu persetujuan`,
+        "success",
+      );
       onSelesai();
     } finally {
       setMenyimpan(false);
