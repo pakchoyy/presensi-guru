@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { Teacher } from "@/types/entities";
 import { Tier } from "@/types/enums";
+import { randomPin, randomKode, timestamp } from "@/lib/utils";
 import { triggerAutoSync } from "@/hooks/useAutoSync";
 
 export const teacherRepo = {
@@ -12,6 +13,34 @@ export const teacherRepo = {
 
   async list(): Promise<Teacher[]> {
     return db.teachers.toArray();
+  },
+
+  /**
+   * Backfill akun lama (mis. admin hasil wizard) yang belum punya kode login
+   * atau PIN, supaya bisa dipakai login mandiri di layar Guru.
+   * Mengembalikan jumlah akun yang dilengkapi.
+   */
+  async ensureLoginCredentials(): Promise<number> {
+    const all = await db.teachers.toArray();
+    const dipakai = new Set(
+      all.flatMap((t) => [t.kodeLogin, t.nip].filter(Boolean) as string[])
+    );
+    let diperbaiki = 0;
+    for (const t of all) {
+      const patch: Partial<Teacher> = {};
+      if (!t.kodeLogin) {
+        let kode = t.nip || randomKode();
+        while (dipakai.has(kode)) kode = randomKode();
+        dipakai.add(kode);
+        patch.kodeLogin = kode;
+      }
+      if (!t.pin) patch.pin = randomPin(4);
+      if (Object.keys(patch).length === 0) continue;
+      patch.diubahPada = timestamp();
+      await db.teachers.update(t.id, patch);
+      diperbaiki++;
+    }
+    return diperbaiki;
   },
 
   async getByToken(token: string): Promise<Teacher | undefined> {

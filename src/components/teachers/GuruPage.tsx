@@ -16,22 +16,11 @@ import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { db } from "@/repositories/dexie/db";
 import type { Teacher } from "@/types/entities";
-import { generateId, timestamp, inisial } from "@/lib/utils";
+import { generateId, timestamp, inisial, randomPin, randomKode } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tier } from "@/types/enums";
 import { guruCloudService } from "@/services/guru-cloud.service";
-
-function randomPin(len: 4 | 6 = 4): string {
-  let out = "";
-  for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10).toString();
-  return out;
-}
-
-function randomKode(): string {
-  const n = Math.floor(1000 + Math.random() * 9000);
-  return `G-${n}`;
-}
 
 export function GuruPage() {
   const { school, teacher, refreshTeachers } = useApp();
@@ -416,7 +405,16 @@ export function GuruPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => { const v = !punyaNip; setPunyaNip(v); if (!v) { setFNip(""); if (!fKode) setFKode(genKodeUnik()); } }}
+                  onClick={() => {
+                    const v = !punyaNip;
+                    setPunyaNip(v);
+                    if (!v) {
+                      // Matikan NIP → kode login HARUS kode otomatis G-XXXX.
+                      // (kalau fKode masih sisa NIP, buat yang baru)
+                      setFNip("");
+                      if (!/^G-\d{4}$/.test(fKode.trim())) setFKode(genKodeUnik());
+                    }
+                  }}
                   className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 border-none cursor-pointer ${punyaNip ? "bg-[var(--brand)]" : "bg-[var(--border)]"}`}
                   aria-label="Toggle punya NIP"
                 >

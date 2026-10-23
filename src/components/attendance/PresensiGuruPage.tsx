@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ClipboardCheck,
+  MapPin,
   LogIn,
   LogOut,
-  MapPin,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -14,6 +14,7 @@ import { useApp } from "@/contexts/AppContext";
 import { PageName } from "@/types/enums";
 import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { formatTanggalPanjang, inisial, todayStr } from "@/lib/utils";
@@ -274,7 +275,7 @@ function SelfAbsenPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showCamera, setShowCamera] = useState<null | "in" | "out">(null);
   const [, setTick] = useState(0);
-  const { request: requestLocation, error: geoError, loading: geoLoading } = useGeolocation();
+  const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
   const pendingLocRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const tanggal = todayStr();
@@ -306,12 +307,26 @@ function SelfAbsenPanel({
     second: "2-digit",
   });
 
+  // Posisi untuk peta: pakai GPS live kalau ada, kalau tidak pakai titik absen masuk.
+  const posisiSaya = useMemo(() => {
+    if (coords) return { lat: coords.lat, lng: coords.lng };
+    if (existing?.lokasiMasukLat != null && existing?.lokasiMasukLng != null) {
+      return { lat: existing.lokasiMasukLat, lng: existing.lokasiMasukLng };
+    }
+    return null;
+  }, [coords, existing]);
+
   const jarakSekolah = useMemo(() => {
-    if (!school?.lat || !school?.lng || !existing?.lokasiMasukLat || !existing?.lokasiMasukLng) return null;
-    return Math.round(
-      haversineDistance(existing.lokasiMasukLat, existing.lokasiMasukLng, school.lat, school.lng)
-    );
-  }, [school, existing]);
+    if (!school?.lat || !school?.lng || !posisiSaya) return null;
+    return Math.round(haversineDistance(posisiSaya.lat, posisiSaya.lng, school.lat, school.lng));
+  }, [school, posisiSaya]);
+
+  // Ambil lokasi sekali saat panel dibuka supaya peta & jarak langsung terisi.
+  useEffect(() => {
+    if (!school?.lat || !school?.lng) return;
+    requestLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [school?.lat, school?.lng]);
 
   const start = async (action: "in" | "out") => {
     const coords = await requestLocation();
@@ -390,23 +405,32 @@ function SelfAbsenPanel({
         <div className="relative text-[0.75rem] opacity-90">{formatTanggalPanjang(tanggal)}</div>
       </div>
 
-      {/* Lokasi sekolah */}
-      {school && (
+      {/* Peta & lokasi sekolah */}
+      {school && (school.lat == null || school.lng == null) && (
         <div className="mt-3 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-strong)] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-strong)] flex items-center justify-center flex-shrink-0">
             <MapPin size={16} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[0.65rem] text-[var(--text-light)]">Lokasi Presensi</div>
             <div className="font-bold text-[var(--text)] text-[0.85rem] truncate">{school.nama}</div>
-          </div>
-          {jarakSekolah != null && (
-            <div className="text-right">
-              <div className="text-[0.6rem] text-[var(--text-light)]">Jarak Anda</div>
-              <div className="font-extrabold text-[var(--text)] text-[0.85rem]">{jarakSekolah} m</div>
+            <div className="text-[0.62rem] text-[var(--text-light)] mt-[2px]">
+              Titik sekolah belum diatur — minta Ops / Kepala Sekolah mengisinya di Pengaturan.
             </div>
-          )}
+          </div>
         </div>
+      )}
+      {school?.lat != null && school?.lng != null && (
+        <PetaLokasi
+          namaSekolah={school.nama}
+          lat={school.lat}
+          lng={school.lng}
+          radiusMeter={school.radiusMeter}
+          posisi={posisiSaya}
+          jarakMeter={jarakSekolah}
+          loading={geoLoading}
+          onRefresh={() => requestLocation()}
+        />
       )}
 
       {/* Status hari ini */}

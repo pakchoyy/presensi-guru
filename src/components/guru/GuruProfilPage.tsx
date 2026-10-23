@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { inisial } from "@/lib/utils";
-import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash } from "lucide-react";
+import { LogOut, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff } from "lucide-react";
 
 export function GuruProfilPage({ onLogout }: { onLogout: () => void }) {
   const { teachers, guruSessionId, school } = useApp();
+  const [lihatPin, setLihatPin] = useState(false);
   const guru = teachers.find((t) => t.id === guruSessionId);
 
   if (!guru) {
@@ -21,8 +22,9 @@ export function GuruProfilPage({ onLogout }: { onLogout: () => void }) {
       >
         <span className="header-orb" style={{ width: 140, height: 140, top: -40, right: -30 }} />
         <div className="relative">
-          <div className="w-20 h-20 mx-auto rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center font-extrabold text-[1.6rem]">
-            {inisial(guru.nama)}
+          {/* Avatar ikon pegawai */}
+          <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
+            <UserRound size={58} strokeWidth={1.6} className="text-[var(--brand)] translate-y-1" />
           </div>
           <div className="text-[1.15rem] font-extrabold mt-3">{guru.nama}</div>
           <div className="text-[0.78rem] opacity-90">{guru.jabatan || "Guru"}</div>
@@ -33,7 +35,23 @@ export function GuruProfilPage({ onLogout }: { onLogout: () => void }) {
       <div className="mt-3 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden" style={{ boxShadow: "var(--shadow)" }}>
         <Row icon={<Hash size={16} />} label="Kode login" value={kode} mono />
         <Row icon={<IdCard size={16} />} label="NIP / NUPTK" value={guru.nip || "—"} mono={!!guru.nip} />
-        <Row icon={<KeyRound size={16} />} label="PIN" value={guru.pin ? "••••" : "belum diset"} />
+        <Row
+          icon={<KeyRound size={16} />}
+          label="PIN"
+          value={guru.pin ? (lihatPin ? guru.pin : "••••") : "belum diset"}
+          mono={!!guru.pin && lihatPin}
+          action={
+            guru.pin ? (
+              <button
+                onClick={() => setLihatPin((v) => !v)}
+                className="text-[var(--text-light)] bg-transparent border-none p-0 flex items-center active:scale-95"
+                aria-label={lihatPin ? "Sembunyikan PIN" : "Lihat PIN"}
+              >
+                {lihatPin ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            ) : undefined
+          }
+        />
         <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator / Kepala Sekolah" : "Guru"} />
         <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} last />
       </div>
@@ -58,18 +76,21 @@ function Row({
   value,
   mono,
   last,
+  action,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   mono?: boolean;
   last?: boolean;
+  action?: React.ReactNode;
 }) {
   return (
     <div className={`flex items-center gap-3 px-4 py-3 ${last ? "" : "border-b border-[var(--border)]"}`}>
       <span className="text-[var(--brand)] flex-shrink-0">{icon}</span>
       <span className="text-[0.75rem] text-[var(--text-light)] flex-1">{label}</span>
       <span className={`font-bold text-[var(--text)] text-[0.85rem] ${mono ? "font-mono" : ""}`}>{value}</span>
+      {action}
     </div>
   );
 }

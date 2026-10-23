@@ -82,6 +82,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async function init() {
       const sudah = await setupService.sudahSetup();
       if (sudah) {
+        // Lengkapi akun lama yang belum punya kode login / PIN.
+        await teacherRepo.ensureLoginCredentials();
         const [school, teacher, teachers] = await Promise.all([
           schoolRepo.get(),
           teacherRepo.get(),

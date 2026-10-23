@@ -132,3 +132,15 @@ export function getMonthsInRange(start: string, end: string): string[] {
   }
   return months;
 }
+
+/** PIN acak untuk akun guru (4 atau 6 digit). */
+export function randomPin(len: 4 | 6 = 4): string {
+  let s = "";
+  for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
+  return s;
+}
+
+/** Kode login otomatis untuk guru tanpa NIP. */
+export function randomKode(): string {
+  return `G-${Math.floor(1000 + Math.random() * 9000)}`;
+}

@@ -7,7 +7,7 @@ import { db } from "@/repositories/dexie/db";
 import { generateDefaultCalendar } from "@/data/kalender-akademik";
 import { Tier, Jenjang, Semester } from "@/types/enums";
 import type { School, Teacher, AcademicYear } from "@/types/entities";
-import { timestamp, generateId } from "@/lib/utils";
+import { timestamp, generateId, randomPin, randomKode } from "@/lib/utils";
 
 const ADMIN_EMAILS = ["pulsachoy@gmail.com", "choiruddin2410@gmail.com"];
 
@@ -85,6 +85,9 @@ export const setupService = {
       tier: defaultTier,
       role: "admin",
       jabatan: "Admin / Kepala Sekolah",
+      // Admin juga ikut presensi, jadi dia butuh kode login + PIN sejak awal.
+      kodeLogin: randomKode(),
+      pin: randomPin(4),
       absenToken: crypto.randomUUID(),
       statusAktif: true,
       dibuatPada: now,

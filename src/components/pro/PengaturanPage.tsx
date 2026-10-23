@@ -64,7 +64,7 @@ const getAutoHadir = (): boolean => {
 };
 
 export function PengaturanPage() {
-  const { teacher, school, refreshTeacher, setActivePage } = useApp();
+  const { teacher, school, refreshTeacher, refreshSchool, setActivePage } = useApp();
   const { toast } = useToast();
   const { isCloudConnected, cloudUser, setCloudEmail, clearCloudEmail } = useCloudAuth();
 
@@ -914,6 +914,9 @@ export function PengaturanPage() {
                 toleransiTerlambatMenit: editToleransi,
                 diubahPada: Date.now(),
               });
+              // Segarkan context, kalau tidak layar presensi guru masih pakai
+              // koordinat lama sampai app di-reload.
+              await refreshSchool();
               toast("✅ Lokasi & jam sekolah disimpan");
             } catch {
               toast("❌ Gagal menyimpan");
