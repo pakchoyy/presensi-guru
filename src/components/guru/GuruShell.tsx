@@ -4,10 +4,11 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
 import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
 import { PetunjukPage } from "@/components/guide/PetunjukPage";
+import { TentangKontak } from "@/components/about/TentangKontak";
 import { pasangAplikasi } from "@/components/layout/DropdownMenu";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
@@ -16,7 +17,7 @@ import { todayStr } from "@/lib/utils";
 import { guruCloud } from "@/services/multi-perangkat.service";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
 
-type GuruTab = "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk";
+type GuruTab = "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk" | "tentang";
 
 export function GuruShell() {
   const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
@@ -142,6 +143,7 @@ export function GuruShell() {
               >
                 {[
                   { ikon: <BookOpen size={16} />, teks: "Petunjuk", aksi: () => setTab("petunjuk") },
+                  { ikon: <Info size={16} />, teks: "Tentang & Kontak", aksi: () => setTab("tentang") },
                   { ikon: <Download size={16} />, teks: "Install Presensi Yuk", aksi: () => pasangAplikasi(toast) },
                 ].map((m) => (
                   <button
@@ -190,6 +192,7 @@ export function GuruShell() {
           </>
         )}
         {tab === "petunjuk" && <PetunjukPage />}
+        {tab === "tentang" && <TentangKontak />}
         {tab === "rekap" && <LogPresensiPage embedded />}
         {tab === "profil" && <GuruProfilPage onLogout={keluar} reminder={reminder} />}
       </div>

@@ -1,3 +1,4 @@
+import { labelPeran } from "@/lib/utils";
 import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -308,7 +309,7 @@ export function DashboardHarianPage() {
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-[var(--text)] text-[0.9rem] truncate">{guru.nama}</div>
                 <div className="text-[0.68rem] text-[var(--text-light)] truncate">
-                  {guru.jabatan || "—"}{guru.nip ? ` • ${guru.nip}` : ""}
+                  {labelPeran(guru) && <span className="inline-block mr-1 px-[6px] py-[1px] rounded-md bg-[var(--brand-soft)] text-[var(--brand-strong)] text-[0.6rem] font-bold">{labelPeran(guru)}</span>}{guru.jabatan || "—"}{guru.nip ? ` • ${guru.nip}` : ""}
                 </div>
               </div>
               <div className="text-right flex-shrink-0">

@@ -171,3 +171,8 @@ export function zonaWaktu(): string {
   const off = -new Date().getTimezoneOffset();
   return off === 420 ? "WIB" : off === 480 ? "WITA" : off === 540 ? "WIT" : "";
 }
+
+/** Label peran untuk ditampilkan; guru biasa tidak diberi label. */
+export function labelPeran(t: { role?: string }): string | null {
+  return t.role === "ks" ? "Kepala Sekolah" : t.role === "admin" ? "Operator" : null;
+}
