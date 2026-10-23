@@ -10,7 +10,6 @@ import {
   Settings,
   Database,
   ArrowUpCircle,
-  ClipboardCheck,
   School,
   GraduationCap,
   type LucideIcon,
@@ -24,9 +23,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { page: PageName.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
-  { page: PageName.PRESENSI, label: "Presensi", icon: ClipboardCheck },
-  { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
   { page: PageName.GURU, label: "Daftar Guru", icon: Users },
+  { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
   { page: PageName.KALENDER, label: "Kalender", icon: Calendar },
   { page: PageName.UPGRADE, label: "Upgrade PRO", icon: ArrowUpCircle },
   { page: PageName.PETUNJUK, label: "Petunjuk", icon: BookOpen },

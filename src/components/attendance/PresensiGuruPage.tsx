@@ -65,11 +65,39 @@ function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   );
 }
 
-export function PresensiGuruPage() {
-  const { teachers, school } = useApp();
+export function PresensiGuruPage({
+  embedded = false,
+  onLogout: onLogoutProp,
+  onRiwayat,
+}: {
+  embedded?: boolean;
+  onLogout?: () => void;
+  onRiwayat?: () => void;
+} = {}) {
+  const { teachers, school, guruSessionId, logoutGuru } = useApp();
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>("pick");
   const [guru, setGuru] = useState<Teacher | null>(null);
+
+  // Mode embedded (dalam GuruShell): guru sudah login lewat EntryGate.
+  if (embedded) {
+    const g = teachers.find((t) => t.id === guruSessionId && t.statusAktif !== false);
+    if (!g) {
+      return (
+        <div className="flex-1 p-8 text-center text-[var(--text-light)]">
+          Sesi berakhir. Silakan masuk ulang.
+        </div>
+      );
+    }
+    return (
+      <SelfAbsenPanel
+        guru={g}
+        school={school}
+        onLogout={onLogoutProp ?? logoutGuru}
+        onRiwayat={onRiwayat}
+      />
+    );
+  }
 
   // init: cek sesi tersimpan
   useEffect(() => {
@@ -232,10 +260,12 @@ function SelfAbsenPanel({
   guru,
   school,
   onLogout,
+  onRiwayat,
 }: {
   guru: Teacher;
   school: ReturnType<typeof useApp>["school"];
   onLogout: () => void;
+  onRiwayat?: () => void;
 }) {
   const { toast } = useToast();
   const { setActivePage } = useApp();
@@ -429,7 +459,7 @@ function SelfAbsenPanel({
 
         {/* Riwayat presensi guru ybs */}
         <button
-          onClick={() => setActivePage(PageName.LOG_PRESENSI)}
+          onClick={() => (onRiwayat ? onRiwayat() : setActivePage(PageName.LOG_PRESENSI))}
           className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"
         >
           <History size={16} /> Riwayat Presensi Saya

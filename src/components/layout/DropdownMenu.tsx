@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
-import { Home, BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar } from "lucide-react";
+import { Home, BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function DropdownMenu({ isOpen, onClose }: Props) {
-  const { setActivePage, setupSelesai, teacher } = useApp();
+  const { setActivePage, setupSelesai, teacher, setEntryMode } = useApp();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -94,6 +94,15 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
           <Download size={16} /> Install Presensi Yuk
+        </button>
+
+        <div className="h-px bg-[var(--border)] mx-0" />
+
+        <button
+          onClick={() => { onClose(); setEntryMode("choose"); }}
+          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
+        >
+          <Repeat size={16} /> Ganti Peran (Admin / Guru)
         </button>
 
         {!isPRO && (

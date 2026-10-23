@@ -24,26 +24,27 @@ function monthRange(year: number, monthIdx: number): { start: string; end: strin
 
 type Mode = "pick" | "list";
 
-export function LogPresensiPage() {
-  const { teachers } = useApp();
+export function LogPresensiPage({ embedded = false }: { embedded?: boolean } = {}) {
+  const { teachers, guruSessionId } = useApp();
   const [guru, setGuru] = useState<Teacher | null>(null);
   const [mode, setMode] = useState<Mode>("pick");
 
   // auto-pick kalau sesi presensi lagi aktif
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("bgy_presensi_guru_session");
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      const t = teachers.find((x) => x.id === s.guruId);
-      if (t) {
-        setGuru(t);
-        setMode("list");
-      }
-    } catch { /* ignore */ }
-  }, [teachers]);
+    const sid = guruSessionId ?? (() => {
+      try { return JSON.parse(localStorage.getItem("bgy_presensi_guru_session") || "null")?.guruId ?? null; } catch { return null; }
+    })();
+    if (sid != null) {
+      const t = teachers.find((x) => x.id === sid);
+      if (t) { setGuru(t); setMode("list"); }
+    }
+  }, [teachers, guruSessionId]);
 
   if (mode === "pick" || !guru) {
+    // Embedded (guru shell): tidak ada picker/ganti — kalau sesi hilang, minta login ulang.
+    if (embedded) {
+      return <div className="flex-1 p-8 text-center text-[var(--text-light)]">Sesi berakhir. Silakan masuk ulang.</div>;
+    }
     return (
       <GuruPicker
         teachers={teachers}
@@ -51,7 +52,7 @@ export function LogPresensiPage() {
       />
     );
   }
-  return <LogList guru={guru} onChangeGuru={() => setMode("pick")} />;
+  return <LogList guru={guru} onChangeGuru={embedded ? undefined : () => setMode("pick")} />;
 }
 
 function GuruPicker({
@@ -117,7 +118,7 @@ function GuruPicker({
   );
 }
 
-function LogList({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru: () => void }) {
+function LogList({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru?: () => void }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [monthIdx, setMonthIdx] = useState(today.getMonth());
@@ -173,12 +174,14 @@ function LogList({ guru, onChangeGuru }: { guru: Teacher; onChangeGuru: () => vo
             {guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
           </div>
         </div>
-        <button
-          onClick={onChangeGuru}
-          className="h-9 px-3 rounded-xl bg-white/15 border border-white/30 text-[0.72rem] font-bold active:scale-95 relative"
-        >
-          Ganti
-        </button>
+        {onChangeGuru && (
+          <button
+            onClick={onChangeGuru}
+            className="h-9 px-3 rounded-xl bg-white/15 border border-white/30 text-[0.72rem] font-bold active:scale-95 relative"
+          >
+            Ganti
+          </button>
+        )}
       </div>
 
       {/* Pager bulan */}

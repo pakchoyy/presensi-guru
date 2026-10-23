@@ -1,0 +1,98 @@
+import { useState } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
+import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
+import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
+import { ClipboardCheck, History, User, Moon, Sun } from "lucide-react";
+
+type GuruTab = "presensi" | "riwayat" | "profil";
+
+export function GuruShell() {
+  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId } = useApp();
+  const [tab, setTab] = useState<GuruTab>("presensi");
+
+  const guru = teachers.find((t) => t.id === guruSessionId);
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Header guru */}
+      <header
+        className="sticky top-0 z-[300] px-3 relative"
+        style={{ background: "var(--grad)", boxShadow: "0 4px 18px rgba(37,99,235,.25)" }}
+      >
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <span className="header-orb" style={{ width: 110, height: 110, top: -40, right: -30 }} />
+          <span className="header-orb" style={{ width: 60, height: 60, bottom: -20, left: 60, background: "rgba(255,255,255,.08)" }} />
+        </div>
+        <div className="flex items-center justify-between h-[58px] relative">
+          <div className="flex items-center gap-[8px] flex-1 min-w-0">
+            <div className="flex-shrink-0 w-[42px] h-[42px] rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden p-[3px]">
+              <img src="/logo-presensiyuk.png" alt="Presensi Yuk" className="w-full h-full object-contain" />
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="text-[1rem] font-extrabold text-white whitespace-nowrap">
+                <span className="italic">Presensi Yuk</span> <span className="opacity-95">| Guru</span>
+              </div>
+              {guru?.nama && (
+                <div className="text-[0.62rem] text-white/80 truncate flex items-center gap-1 mt-[1px]">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-300" />
+                  {guru.nama}
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={toggleDarkMode}
+            className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25"
+            title="Mode gelap/terang"
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
+      </header>
+
+      {/* Konten */}
+      <div className="flex-1 flex flex-col w-full max-w-full lg:max-w-[560px] lg:mx-auto overflow-x-hidden">
+        {tab === "presensi" && (
+          <PresensiGuruPage embedded onLogout={logoutGuru} onRiwayat={() => setTab("riwayat")} />
+        )}
+        {tab === "riwayat" && <LogPresensiPage embedded />}
+        {tab === "profil" && <GuruProfilPage onLogout={logoutGuru} />}
+      </div>
+
+      {/* Bottom nav guru */}
+      <nav
+        className="fixed left-1/2 bottom-0 -translate-x-1/2 w-full max-w-app bg-[var(--card-bg)] border-t border-[var(--border)] flex items-stretch z-[300] py-[6px] px-1"
+        style={{ boxShadow: "0 -4px 16px rgba(37,99,235,.10)" }}
+      >
+        <NavBtn active={tab === "presensi"} onClick={() => setTab("presensi")} icon={<ClipboardCheck size={20} />} label="Presensi" />
+        <NavBtn active={tab === "riwayat"} onClick={() => setTab("riwayat")} icon={<History size={20} />} label="Riwayat" />
+        <NavBtn active={tab === "profil"} onClick={() => setTab("profil")} icon={<User size={20} />} label="Profil" />
+      </nav>
+    </div>
+  );
+}
+
+function NavBtn({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex flex-col items-center gap-[2px] py-[6px] rounded-[10px] bg-transparent border-none font-[inherit] ${
+        active ? "text-[var(--brand)]" : "text-[var(--text-light)]"
+      }`}
+    >
+      {icon}
+      <span className="text-[10px] font-bold">{label}</span>
+    </button>
+  );
+}

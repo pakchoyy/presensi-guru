@@ -15,6 +15,27 @@ import { licenseService } from "@/services/license.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { todayStr } from "@/lib/utils";
 
+export type EntryMode = "choose" | "admin" | "guru";
+
+const ENTRY_KEY = "bgy_entry_mode";
+const GURU_SESSION_KEY = "bgy_presensi_guru_session";
+
+function readEntryMode(): EntryMode {
+  const v = localStorage.getItem(ENTRY_KEY);
+  if (v === "admin" || v === "guru") return v;
+  return "choose";
+}
+
+function readGuruSessionId(): number | null {
+  try {
+    const raw = localStorage.getItem(GURU_SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (s?.expires && s.expires < Date.now()) { localStorage.removeItem(GURU_SESSION_KEY); return null; }
+    return typeof s?.guruId === "number" ? s.guruId : null;
+  } catch { return null; }
+}
+
 interface AppState {
   setupSelesai: boolean;
   school: School | null;
@@ -24,6 +45,8 @@ interface AppState {
   tanggalAktif: string;
   darkMode: boolean;
   loading: boolean;
+  entryMode: EntryMode;
+  guruSessionId: number | null;
 }
 
 interface AppContextType extends AppState {
@@ -33,6 +56,9 @@ interface AppContextType extends AppState {
   refreshTeachers: () => Promise<void>;
   refreshTeacher: () => Promise<void>;
   refreshSchool: () => Promise<void>;
+  setEntryMode: (mode: EntryMode) => void;
+  loginGuru: (guruId: number) => void;
+  logoutGuru: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -48,6 +74,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     tanggalAktif: todayStr(),
     darkMode: localStorage.getItem("bgy_presensi_dark") === "1",
     loading: true,
+    entryMode: readEntryMode(),
+    guruSessionId: readGuruSessionId(),
   });
 
   useEffect(() => {
@@ -120,6 +148,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, school: school || null }));
   }, []);
 
+  const setEntryMode = useCallback((mode: EntryMode) => {
+    if (mode === "choose") localStorage.removeItem(ENTRY_KEY);
+    else localStorage.setItem(ENTRY_KEY, mode);
+    setState((prev) => ({ ...prev, entryMode: mode }));
+  }, []);
+
+  const loginGuru = useCallback((guruId: number) => {
+    localStorage.setItem(GURU_SESSION_KEY, JSON.stringify({ guruId, expires: Date.now() + 12 * 3600_000 }));
+    localStorage.setItem(ENTRY_KEY, "guru");
+    setState((prev) => ({ ...prev, entryMode: "guru", guruSessionId: guruId, activePage: PageName.PRESENSI }));
+  }, []);
+
+  const logoutGuru = useCallback(() => {
+    localStorage.removeItem(GURU_SESSION_KEY);
+    localStorage.removeItem(ENTRY_KEY);
+    setState((prev) => ({ ...prev, entryMode: "choose", guruSessionId: null }));
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -130,6 +176,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         refreshTeachers,
         refreshTeacher,
         refreshSchool,
+        setEntryMode,
+        loginGuru,
+        logoutGuru,
       }}
     >
       {children}

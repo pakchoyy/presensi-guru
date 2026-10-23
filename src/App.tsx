@@ -1,5 +1,5 @@
 import { AppProvider, useApp } from "@/contexts/AppContext";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { CloudAuthProvider } from "@/contexts/CloudAuthContext";
 import { ToastProvider } from "@/components/shared/Toast";
 import { ConfirmDialogProvider } from "@/components/shared/ConfirmDialog";
@@ -27,6 +27,8 @@ import { CloudSettingsPage } from "@/components/pro/CloudSettingsPage";
 
 import { PageName } from "@/types/enums";
 import { AbsenGuruPage } from "@/components/attendance/AbsenGuruPage";
+import { EntryGate } from "@/components/entry/EntryGate";
+import { GuruShell } from "@/components/guru/GuruShell";
 
 function getAbsenToken(): string | null {
   const m = window.location.pathname.match(/^\/g\/([^/]+)/);
@@ -95,11 +97,27 @@ function PageContent() {
 }
 
 function AppContent() {
-  const { setupSelesai } = useApp();
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { setupSelesai, loading, entryMode } = useApp();
 
   useAutoSync();
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-screen">
+        <div className="text-center text-[var(--text-light)]">
+          <div className="text-lg font-bold mb-2">Memuat...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Layar awal: pilih peran Admin / Guru
+  if (entryMode === "choose") return <EntryGate />;
+
+  // Mode guru: shell sendiri (Presensi / Riwayat / Profil)
+  if (entryMode === "guru") return <GuruShell />;
+
+  // Mode admin: aplikasi lengkap (wizard bila belum setup)
   return (
     <>
       <Header />
