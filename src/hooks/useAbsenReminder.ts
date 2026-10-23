@@ -116,7 +116,7 @@ export function useAbsenReminder({
         if (!sudahDitampilkan(tanda)) {
           new Notification("Presensi Yuk | Guru", {
             body: teksMasuk ?? "Batas absen masuk sebentar lagi — jangan lupa absen datang.",
-            icon: "/logo-presensiyuk.png?v=2",
+            icon: "/icons/pg-192-v1.png",
             tag: tanda,
           });
           tandaiDitampilkan(tanda);
@@ -128,7 +128,7 @@ export function useAbsenReminder({
         if (!sudahDitampilkan(tanda)) {
           new Notification("Presensi Yuk | Guru", {
             body: teksPulang ?? "Jangan lupa absen pulang.",
-            icon: "/logo-presensiyuk.png?v=2",
+            icon: "/icons/pg-192-v1.png",
             tag: tanda,
           });
           tandaiDitampilkan(tanda);

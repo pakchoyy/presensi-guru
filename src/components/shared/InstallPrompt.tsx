@@ -1,124 +1,119 @@
-import { useState, useEffect } from "react";
-import { Download, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, Share, SquarePlus, X } from "lucide-react";
+
+// Tawarkan install setiap kali dibuka di browser (bukan dari aplikasi terpasang).
+// "Nanti" hanya berlaku untuk sesi ini (sessionStorage), kunjungan berikutnya muncul lagi.
+const DISMISS_KEY = "bgy_install_later";
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+}
+
+function isIosSafari() {
+  const ua = navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return ios && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+}
+
+function dismissedThisSession() {
+  try { return sessionStorage.getItem(DISMISS_KEY) === "1"; } catch { return false; }
+}
 
 export function InstallPrompt() {
-  const [show, setShow] = useState(false);
+  const [mode, setMode] = useState<"android" | "ios" | null>(null);
 
   useEffect(() => {
-    // Check if already installed (standalone mode)
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-    if (isStandalone) {
-      setShow(false);
-      return;
-    }
+    if (isStandalone() || dismissedThisSession()) return;
 
-    // Check if beforeinstallprompt is available
-    const checkPrompt = () => {
-      const canInstall = !!(window as any).__bgy_deferredPrompt;
-      if (canInstall) {
-        setShow(true);
-      }
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tryShow = () => {
+      if (isStandalone() || dismissedThisSession()) return;
+      if ((window as any).__bgy_deferredPrompt) setMode("android");
+      else if (isIosSafari()) setMode("ios");
     };
+    timer = setTimeout(tryShow, 2500);
 
-    // Check immediately and after a short delay (in case prompt fires late)
-    checkPrompt();
-    const timer = setTimeout(checkPrompt, 1000);
-
-    // Listen for beforeinstallprompt event
-    const handleBeforeInstall = () => {
-      setTimeout(checkPrompt, 100);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-
-    // Listen for appinstalled event
-    const handleAppInstalled = () => {
-      setShow(false);
-      localStorage.removeItem("bgy_install_dismissed");
-    };
-
-    window.addEventListener("appinstalled", handleAppInstalled);
-
+    const onReady = () => { clearTimeout(timer); timer = setTimeout(tryShow, 800); };
+    const onInstalled = () => setMode(null);
+    window.addEventListener("bgy_install_ready", onReady);
+    window.addEventListener("appinstalled", onInstalled);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("bgy_install_ready", onReady);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
 
-  const handleInstall = async () => {
-    const promptEv = (window as any).__bgy_deferredPrompt;
-    if (!promptEv) return;
+  const later = () => {
+    try { sessionStorage.setItem(DISMISS_KEY, "1"); } catch { /* ignore */ }
+    setMode(null);
+  };
 
+  const install = async () => {
+    const promptEv = (window as any).__bgy_deferredPrompt;
+    if (!promptEv) return later();
     promptEv.prompt();
     const { outcome } = await promptEv.userChoice;
-
-    if (outcome === "accepted") {
-      setShow(false);
-      localStorage.removeItem("bgy_install_dismissed");
-    }
-
     (window as any).__bgy_deferredPrompt = null;
+    if (outcome === "accepted") setMode(null);
+    else later();
   };
 
-  const handleDismiss = () => {
-    setShow(false);
-    localStorage.setItem("bgy_install_dismissed", Date.now().toString());
-  };
-
-  if (!show) return null;
+  if (!mode) return null;
 
   return (
     <>
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-black/40 z-[500]" onClick={handleDismiss} />
+      <div className="fixed inset-0 bg-black/40 z-[500]" onClick={later} />
+      <div
+        role="dialog"
+        aria-label="Install Presensi Yuk | Guru"
+        className="fixed left-0 right-0 bottom-0 z-[501] mx-auto w-full max-w-[440px] bg-[var(--card-bg)] rounded-t-3xl border border-[var(--border)] px-5 pt-5"
+        style={{ boxShadow: "0 -8px 32px rgba(0,0,0,0.18)", paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
+      >
+        <button
+          onClick={later}
+          aria-label="Tutup"
+          className="absolute top-3 right-3 w-11 h-11 flex items-center justify-center text-[var(--text-light)] cursor-pointer bg-transparent border-none"
+        >
+          <X size={20} />
+        </button>
 
-      {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[501] w-[calc(100%-32px)] max-w-[360px]">
-        <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-5 relative" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-          {/* Close button */}
-          <button
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 p-1 text-[var(--text-light)] hover:text-[var(--text)] cursor-pointer bg-transparent border-none"
-          >
-            <X size={18} />
-          </button>
-
-          {/* Icon */}
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}>
-              <Download size={32} className="text-white" />
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="text-center mb-5">
-            <h3 className="text-[1.1rem] font-extrabold text-[var(--text)] mb-2">
-              Install Presensi Yuk | Guru
+        <div className="flex items-center gap-3 mb-4 pr-10">
+          <img src="/icons/pg-192-v1.png" alt="" className="w-14 h-14 rounded-2xl flex-shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-[1.02rem] font-extrabold text-[var(--text)] leading-tight">
+              Pasang <i>Presensi Yuk</i> | Guru
             </h3>
-            <p className="text-[0.8rem] text-[var(--text-light)] leading-relaxed">
-              Install aplikasi di HP untuk akses lebih cepat dan bisa dipakai offline
+            <p className="text-[0.78rem] text-[var(--text-light)] leading-snug mt-1">
+              Buka langsung dari layar utama, lebih cepat, dan pengingat absen bisa jalan.
             </p>
           </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={handleInstall}
-              className="w-full py-3 rounded-xl text-white font-bold text-[0.9rem] cursor-pointer border-none flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
-            >
-              <Download size={18} />
-              Install Sekarang
-            </button>
-            <button
-              onClick={handleDismiss}
-              className="w-full py-2 rounded-xl text-[var(--text-light)] font-semibold text-[0.8rem] cursor-pointer border-none bg-transparent hover:bg-[var(--input-bg)]"
-            >
-              Nanti Saja
-            </button>
-          </div>
         </div>
+
+        {mode === "android" ? (
+          <button
+            onClick={install}
+            className="w-full min-h-[48px] rounded-xl text-white font-bold text-[0.92rem] cursor-pointer border-none flex items-center justify-center gap-2"
+            style={{ background: "var(--grad)" }}
+          >
+            <Download size={18} /> Install Sekarang
+          </button>
+        ) : (
+          <ol className="text-[0.82rem] text-[var(--text)] leading-relaxed bg-[var(--input-bg)] rounded-xl px-4 py-3 m-0 list-none flex flex-col gap-2">
+            <li className="flex items-center gap-2">
+              <span className="font-bold">1.</span> Ketuk <Share size={16} className="inline text-[#2563eb]" /> <b>Bagikan</b> di bawah layar Safari
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="font-bold">2.</span> Pilih <SquarePlus size={16} className="inline text-[#2563eb]" /> <b>Tambah ke Layar Utama</b>
+            </li>
+          </ol>
+        )}
+        <button
+          onClick={later}
+          className="w-full min-h-[44px] mt-2 rounded-xl text-[var(--text-light)] font-semibold text-[0.82rem] cursor-pointer border-none bg-transparent"
+        >
+          Nanti saja
+        </button>
       </div>
     </>
   );

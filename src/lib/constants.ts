@@ -36,3 +36,9 @@ export const MAX_STUDENTS_FREE = 12;
 
 export const APP_URL = "https://presiswa.bantuguruyuk.web.id";
 export const MAIN_SITE_URL = "https://bantuguruyuk.web.id";
+
+// Logo bawaan aplikasi. Logo bawaan lama yang tersimpan di data sekolah dianggap sama dengan bawaan.
+export const DEFAULT_LOGO = "/icons/pg-192-v1.png";
+const LEGACY_DEFAULT_LOGOS = ["/logo-presensiyuk.png", "/logo-presensiyuk.png?v=2", "/guru-presguru.png", "/guru-cibisd2.png"];
+export const resolveLogo = (url?: string | null) =>
+  !url || LEGACY_DEFAULT_LOGOS.includes(url) || /^\/icons\/pg-\d+-v\d+\.png$/.test(url) ? DEFAULT_LOGO : url;
