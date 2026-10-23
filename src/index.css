@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  /* Palette teal lembut — "Presensi Yuk | Guru" */
-  --grad: linear-gradient(135deg, #14b8a6, #0d9488, #0f766e);
-  --grad-soft: linear-gradient(135deg, #2dd4bf, #14b8a6);
-  --brand: #0d9488;
-  --brand-strong: #0f766e;
-  --brand-soft: #ccfbf1;
-  --bg: #f0fdfa;
+  /* Palette biru medium — "Presensi Yuk | Guru" (tidak terlalu gelap) */
+  --grad: linear-gradient(135deg, #3b82f6, #2563eb, #1d4ed8);
+  --grad-soft: linear-gradient(135deg, #60a5fa, #3b82f6);
+  --brand: #2563eb;
+  --brand-strong: #1d4ed8;
+  --brand-soft: #dbeafe;
+  --bg: #eff6ff;
   --card-bg: #ffffff;
   --text: #0f172a;
   --text-light: #64748b;
-  --border: #d1fae5;
+  --border: #dbe6f5;
   --input-bg: #f8fafc;
-  --shadow: 0 2px 12px rgba(13, 148, 136, 0.07);
-  --shadow-lg: 0 8px 32px rgba(13, 148, 136, 0.15);
+  --shadow: 0 2px 12px rgba(37, 99, 235, 0.07);
+  --shadow-lg: 0 8px 32px rgba(37, 99, 235, 0.15);
   --radius: 14px;
   --hadir: #16a34a;
   --hadir-bg: #dcfce7;
@@ -31,11 +31,11 @@
 }
 
 .dark {
-  --grad: linear-gradient(135deg, #0d4a47, #113a3a, #0f2e2e);
-  --grad-soft: linear-gradient(135deg, #0f766e, #115e59);
-  --brand: #2dd4bf;
-  --brand-strong: #14b8a6;
-  --brand-soft: #134e4a;
+  --grad: linear-gradient(135deg, #1e3a5f, #1e2f4d, #172b45);
+  --grad-soft: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --brand: #60a5fa;
+  --brand-strong: #3b82f6;
+  --brand-soft: #1e3a5f;
   --bg: #0f172a;
   --card-bg: #1e293b;
   --text: #f1f5f9;

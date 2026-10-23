@@ -91,6 +91,21 @@ export function isDayActive(day: number, teacher?: { hariAktifMode?: string; har
   return getActiveDays(teacher).includes(day);
 }
 
+/**
+ * Apakah suatu tanggal (YYYY-MM-DD) termasuk HARI EFEKTIF / hari masuk?
+ * Yaitu: hari aktif menurut setting (Senin-Jumat/Sabtu/Kustom) DAN bukan
+ * hari libur di kalender akademik. `liburSet` = Set tanggal ISO yang libur.
+ */
+export function isHariEfektif(
+  tanggalISO: string,
+  teacher?: { hariAktifMode?: string; hariAktifCustom?: string },
+  liburSet?: Set<string>
+): boolean {
+  if (liburSet && liburSet.has(tanggalISO)) return false;
+  const dow = new Date(tanggalISO + "T00:00:00").getDay();
+  return isDayActive(dow, teacher);
+}
+
 export function getHariAktifLabel(teacher?: { hariAktifMode?: string; hariAktifCustom?: string }): string {
   const mode = teacher?.hariAktifMode || localStorage.getItem("bgy_hari_aktif") || "Senin-Sabtu";
   if (mode !== "Kustom") {

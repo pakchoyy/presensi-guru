@@ -121,7 +121,7 @@ export function BackupRestorePage() {
           Simpan data kamu sebagai file backup yang bisa dipulihkan kapan saja. Cocok untuk pindah HP atau jaga-jaga.
         </p>
         <button onClick={handleBackup} disabled={backingUp} className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 mb-2"
-          style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
+          style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}>
           <Download size={15} /> {backingUp ? "Membuat backup..." : "Buat Backup Lokal"}
         </button>
       </div>
@@ -130,13 +130,13 @@ export function BackupRestorePage() {
       {isPRO ? (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3" style={{ borderColor: "rgba(14,165,160,.3)" }}>
           <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-            <Cloud size={15} className="text-[#0d9488]" /> Backup Cloud (PRO)
+            <Cloud size={15} className="text-[#2563eb]" /> Backup Cloud (PRO)
           </div>
           <p className="text-[var(--text-light)] text-[0.75rem] mb-3">
             Simpan backup langsung ke cloud. Bisa dipulihkan dari device lain dengan akun yang sama.
           </p>
           <button onClick={handleCloudBackup} disabled={cloudBackingUp} className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 mb-3"
-            style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
+            style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}>
             <Cloud size={15} /> {cloudBackingUp ? "Mengunggah..." : "Buat Backup Cloud"}
           </button>
 
@@ -145,7 +145,7 @@ export function BackupRestorePage() {
               <div className="text-[0.7rem] font-bold text-[var(--text)] mb-2">Riwayat Backup Cloud</div>
               {cloudBackups.map((b) => (
                 <div key={b._id} className="flex items-center gap-2 bg-[var(--input-bg)] rounded-lg p-2 mb-2">
-                  <Cloud size={14} className="text-[#0d9488] flex-shrink-0" />
+                  <Cloud size={14} className="text-[#2563eb] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-[0.7rem] font-semibold">{b.label}</div>
                     <div className="text-[0.62rem] text-[var(--text-light)]">{b.totalEntitas} data</div>
@@ -153,7 +153,7 @@ export function BackupRestorePage() {
                   <button
                     onClick={() => handleCloudRestore(b)}
                     disabled={cloudRestoring === b._id}
-                    className="px-3 py-[6px] rounded-[8px] bg-[#0d9488] text-white text-[0.68rem] font-bold cursor-pointer disabled:opacity-50"
+                    className="px-3 py-[6px] rounded-[8px] bg-[#2563eb] text-white text-[0.68rem] font-bold cursor-pointer disabled:opacity-50"
                   >
                     {cloudRestoring === b._id ? "..." : "Pulihkan"}
                   </button>

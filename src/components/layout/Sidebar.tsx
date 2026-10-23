@@ -11,7 +11,6 @@ import {
   Database,
   ArrowUpCircle,
   ClipboardCheck,
-  History,
   School,
   GraduationCap,
   type LucideIcon,
@@ -26,7 +25,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { page: PageName.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
   { page: PageName.PRESENSI, label: "Presensi", icon: ClipboardCheck },
-  { page: PageName.LOG_PRESENSI, label: "Log Presensi", icon: History },
   { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
   { page: PageName.GURU, label: "Daftar Guru", icon: Users },
   { page: PageName.KALENDER, label: "Kalender", icon: Calendar },
@@ -91,7 +89,7 @@ export function Sidebar() {
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--brand-soft)]">
             <div
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[0.6rem] font-bold"
-              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}
+              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
             >
               PRO
             </div>
@@ -101,7 +99,7 @@ export function Sidebar() {
           <button
             onClick={() => setActivePage(PageName.UPGRADE)}
             className="w-full flex items-center gap-2 px-3 py-[8px] rounded-lg text-[0.78rem] font-bold text-white"
-            style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
+            style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
           >
             <ArrowUpCircle size={16} />
             <span>Upgrade PRO</span>

@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   BarChart3,
   ClipboardCheck,
-  History,
+  Users,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -15,10 +15,11 @@ interface NavItemData {
   icon: LucideIcon;
 }
 
-// Nav final — 5 slot, Presensi di tengah sebagai action utama guru.
+// Nav admin — 5 slot, Presensi tombol tengah. Log Presensi dikeluarkan
+// (alur guru dikerjakan terpisah nanti).
 const NAV_ITEMS: NavItemData[] = [
   { page: PageName.DASHBOARD, label: "Dashboard", icon: LayoutDashboard },
-  { page: PageName.LOG_PRESENSI, label: "Log", icon: History },
+  { page: PageName.GURU, label: "Guru", icon: Users },
   { page: PageName.PRESENSI, label: "Presensi", icon: ClipboardCheck },
   { page: PageName.REKAP, label: "Rekap", icon: BarChart3 },
   { page: PageName.PENGATURAN, label: "Pengaturan", icon: Settings },

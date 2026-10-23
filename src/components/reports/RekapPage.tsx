@@ -3,7 +3,10 @@ import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
+import { db } from "@/repositories/dexie/db";
 import { exportRekapGuruPDF, exportRekapGuruXLSX, periodeLabel } from "@/services/export.service";
+import { isHariEfektif } from "@/lib/utils";
+import { CalendarEntryType } from "@/types/enums";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { BarChart3, FileSpreadsheet, FileText, UserCheck } from "lucide-react";
 
@@ -48,8 +51,21 @@ export function RekapPage() {
   const [bulan, setBulan] = useState<number>(now.getMonth() + 1);
   const [tahun, setTahun] = useState<number>(now.getFullYear());
   const [records, setRecords] = useState<TeacherAttendance[]>([]);
+  const [liburSet, setLiburSet] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+
+  // Muat tanggal libur dari kalender akademik sekali (dipakai filter hari efektif).
+  useEffect(() => {
+    db.calendarEntries.toArray().then((entries) => {
+      const libur = new Set(
+        entries
+          .filter((e) => e.jenis === CalendarEntryType.HARI_LIBUR)
+          .map((e) => e.tanggal)
+      );
+      setLiburSet(libur);
+    });
+  }, []);
 
   useEffect(() => {
     teacherRepo.list().then((list) => {
@@ -95,17 +111,20 @@ export function RekapPage() {
     return { totalMasuk, ontime, late, far, sakit, izin, alpha };
   }, [records]);
 
+  // Hanya HARI EFEKTIF (ikuti setting hari aktif + exclude libur). Minggu/libur
+  // tidak ditampilkan sebagai baris.
   const previewRows = useMemo(() => {
     const dMax = daysInMonth(tahun, bulan);
     const byDate = new Map(records.map((r) => [r.tanggal, r]));
     const rows: Array<{ tgl: string; hari: string; rec?: TeacherAttendance }> = [];
     for (let d = 1; d <= dMax; d++) {
       const date = `${tahun}-${String(bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (!isHariEfektif(date, selectedGuru ?? undefined, liburSet)) continue;
       const dow = new Date(tahun, bulan - 1, d).getDay();
       rows.push({ tgl: String(d), hari: HARI[dow], rec: byDate.get(date) });
     }
     return rows;
-  }, [records, bulan, tahun]);
+  }, [records, bulan, tahun, selectedGuru, liburSet]);
 
   const handleExport = async (jenis: "pdf" | "xlsx") => {
     if (!selectedGuru) { toast("Pilih guru dulu"); return; }
@@ -119,6 +138,7 @@ export function RekapPage() {
         tahun,
         records,
         periode: periodeLabel(bulan, tahun),
+        liburSet,
       };
       if (jenis === "pdf") await exportRekapGuruPDF(ctx);
       else await exportRekapGuruXLSX(ctx);
@@ -145,7 +165,7 @@ export function RekapPage() {
         <select
           value={selectedGuruId ?? ""}
           onChange={(e) => setSelectedGuruId(Number(e.target.value) || null)}
-          className="w-full px-[10px] py-[9px] mb-3 border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
+          className="w-full px-[10px] py-[9px] mb-3 border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
         >
           {guruList.length === 0 && <option value="">— Belum ada guru —</option>}
           {guruList.map((g) => (
@@ -161,7 +181,7 @@ export function RekapPage() {
             <select
               value={bulan}
               onChange={(e) => setBulan(Number(e.target.value))}
-              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
             >
               {MONTHS.map((m, i) => (
                 <option key={i} value={i + 1}>{m}</option>
@@ -174,7 +194,7 @@ export function RekapPage() {
               type="number"
               value={tahun}
               onChange={(e) => setTahun(Number(e.target.value))}
-              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#0d9488] font-[inherit]"
+              className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.85rem] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
             />
           </div>
         </div>
@@ -183,7 +203,7 @@ export function RekapPage() {
           <button
             onClick={() => handleExport("pdf")}
             disabled={exporting || !selectedGuru}
-            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#0d9488] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
+            className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
           >
             <FileText size={14} /> Export PDF
           </button>
@@ -204,7 +224,7 @@ export function RekapPage() {
             Ringkasan {periodeLabel(bulan, tahun)}
           </div>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <StatBox label="Masuk" value={stats.totalMasuk} color="#0d9488" />
+            <StatBox label="Masuk" value={stats.totalMasuk} color="#2563eb" />
             <StatBox label="Tepat" value={stats.ontime} color="#16a34a" />
             <StatBox label="Terlambat" value={stats.late} color="#f59e0b" />
             <StatBox label="Luar Area" value={stats.far} color="#dc2626" />

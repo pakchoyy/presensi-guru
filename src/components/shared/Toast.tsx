@@ -35,13 +35,13 @@ const TOAST_STYLE: Record<
     icon: <Info size={20} className="text-white" />,
     iconBg: "bg-[var(--brand)]",
     accent: "bg-[var(--brand)]",
-    ring: "border-teal-100 dark:border-teal-900/60",
+    ring: "border-blue-100 dark:border-blue-900/60",
   },
   loading: {
     icon: <Loader2 size={20} className="text-white animate-spin" />,
     iconBg: "bg-[var(--brand)]",
     accent: "bg-[var(--brand)]",
-    ring: "border-teal-100 dark:border-teal-900/60",
+    ring: "border-blue-100 dark:border-blue-900/60",
   },
 };
 

@@ -145,7 +145,7 @@ export function DashboardHarianPage() {
 
       {/* Total ringkas */}
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="rounded-2xl p-3 text-center" style={{ background: "linear-gradient(135deg,#ccfbf1,#ffffff)", border: "1px solid var(--border)" }}>
+        <div className="rounded-2xl p-3 text-center" style={{ background: "linear-gradient(135deg,#dbeafe,#ffffff)", border: "1px solid var(--border)" }}>
           <div className="text-[0.65rem] text-[var(--text-light)] font-semibold">Total Guru</div>
           <div className="font-extrabold text-[var(--brand-strong)] text-[1.25rem] leading-none mt-1">{total}</div>
         </div>

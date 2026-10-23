@@ -57,7 +57,7 @@ export function PWAInstallPopup() {
         style={{ boxShadow: "0 4px 24px rgba(0,0,0,.15)" }}
       >
         <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-white text-[1.2rem]"
-          style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}>
+          style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}>
           <Download size={18} />
         </div>
         <div className="flex-1 min-w-0">
@@ -67,7 +67,7 @@ export function PWAInstallPopup() {
         <button
           onClick={handleInstall}
           className="px-3 py-[7px] rounded-lg text-white font-bold text-[0.72rem] cursor-pointer border-none flex-shrink-0"
-          style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488,#0f766e)" }}
+          style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
         >
           Install
         </button>

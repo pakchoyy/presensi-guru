@@ -74,7 +74,7 @@ export function Header() {
             </div>
             {setupSelesai && teacher?.nama && (
               <div className="text-[0.62rem] text-white/80 truncate flex items-center gap-1 mt-[1px]">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-300" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-300" />
                 {teacher.nama}{teacher.nip ? ` · ${teacher.nip}` : ""}
               </div>
             )}

@@ -86,7 +86,7 @@ export function InstallPrompt() {
 
           {/* Icon */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}>
               <Download size={32} className="text-white" />
             </div>
           </div>
@@ -106,7 +106,7 @@ export function InstallPrompt() {
             <button
               onClick={handleInstall}
               className="w-full py-3 rounded-xl text-white font-bold text-[0.9rem] cursor-pointer border-none flex items-center justify-center gap-2"
-              style={{ background: "linear-gradient(135deg,#14b8a6,#0d9488)" }}
+              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
             >
               <Download size={18} />
               Install Sekarang

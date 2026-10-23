@@ -84,14 +84,14 @@ export function LoginPage() {
   const guruValid = kode.trim().length > 0 && /^\d{4,6}$/.test(pin.trim());
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488, #0f766e)" }}>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden" style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}>
       <span className="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-white/10 blur-2xl" />
       <span className="absolute -bottom-20 -left-16 w-80 h-80 rounded-full bg-white/8 blur-3xl" />
       <div className="w-full max-w-md relative">
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-7">
           {/* Hero */}
           <div className="text-center mb-5">
-            <div className="w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488)" }}>
+            <div className="w-20 h-20 mx-auto mb-3 rounded-2xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}>
               <span className="text-2xl text-white font-extrabold italic">PY</span>
             </div>
             <h1 className="text-xl font-extrabold text-gray-800">
@@ -121,7 +121,7 @@ export function LoginPage() {
                     value={kode}
                     onChange={(e) => setKode(e.target.value)}
                     placeholder="Mis. 1998… atau G-1234"
-                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
                     autoComplete="off"
                     required
                   />
@@ -136,14 +136,14 @@ export function LoginPage() {
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="4-6 digit"
                     inputMode="numeric"
-                    className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors tracking-widest"
+                    className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors tracking-widest"
                     required
                   />
                   <KeyRound size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0d9488]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2563eb]"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -157,7 +157,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={!guruValid || submitting || loading}
                 className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
-                style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488)" }}
+                style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
               >
                 {submitting ? "Memproses..." : (<><LogIn size={16} /> Masuk sebagai Guru</>)}
               </button>
@@ -172,7 +172,7 @@ export function LoginPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Nama Anda"
-                      className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
+                      className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
                       required
                     />
                     <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -186,7 +186,7 @@ export function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nama@email.com"
-                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
                     required
                   />
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -199,7 +199,7 @@ export function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Minimal 6 karakter"
-                    className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#0d9488] focus:bg-white transition-colors"
+                    className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
                     required
                     minLength={6}
                   />
@@ -207,7 +207,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0d9488]"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2563eb]"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -218,7 +218,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={!adminValid || submitting || loading}
                 className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
-                style={{ background: "linear-gradient(135deg, #14b8a6, #0d9488)" }}
+                style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
               >
                 {submitting ? "Memproses..." : mode === "login"
                   ? (<><LogIn size={16} /> Masuk sebagai Admin</>)
@@ -228,7 +228,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-                  className="text-xs text-gray-600 hover:text-[#0d9488] transition-colors"
+                  className="text-xs text-gray-600 hover:text-[#2563eb] transition-colors"
                 >
                   {mode === "login"
                     ? (<>Belum punya akun admin? <b>Daftar</b></>)
@@ -243,7 +243,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={handleSkip}
-              className="w-full flex items-center justify-center gap-2 text-[0.78rem] font-bold text-gray-600 hover:text-[#0d9488]"
+              className="w-full flex items-center justify-center gap-2 text-[0.78rem] font-bold text-gray-600 hover:text-[#2563eb]"
             >
               <SkipForward size={14} /> Coba Dulu / Lewati Login
             </button>
@@ -291,7 +291,7 @@ function TabBtn({
       type="button"
       onClick={onClick}
       className={`flex-1 py-[9px] rounded-lg text-[0.78rem] font-bold transition-all ${
-        active ? "bg-white text-[#0d9488] shadow-sm" : "text-gray-600 hover:text-gray-900"
+        active ? "bg-white text-[#2563eb] shadow-sm" : "text-gray-600 hover:text-gray-900"
       }`}
     >
       {children}

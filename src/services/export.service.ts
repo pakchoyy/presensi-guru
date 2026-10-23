@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
+import { isHariEfektif } from "@/lib/utils";
 
 export interface RekapGuruCtx {
   school: School | null;
@@ -11,6 +12,7 @@ export interface RekapGuruCtx {
   tahun: number;
   records: TeacherAttendance[];
   periode: string;           // e.g. "Oktober 2026"
+  liburSet?: Set<string>;    // tanggal libur (YYYY-MM-DD) dari kalender akademik
 }
 
 const MONTHS = [
@@ -90,6 +92,8 @@ function buildRowsAndSummary(ctx: RekapGuruCtx): { rows: Row[]; summary: Summary
 
   for (let d = 1; d <= dMax; d++) {
     const dateStr = `${ctx.tahun}-${String(ctx.bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    // Lewati hari non-efektif (bukan hari masuk / libur) agar rekap konsisten.
+    if (!isHariEfektif(dateStr, ctx.guru, ctx.liburSet)) continue;
     const dow = new Date(ctx.tahun, ctx.bulan - 1, d).getDay();
     const rec = byDate.get(dateStr);
     const sh = rec?.statusHari;
