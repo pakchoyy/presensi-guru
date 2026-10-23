@@ -61,7 +61,7 @@ export function GuruProfilPage({
             ) : undefined
           }
         />
-        <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator / Kepala Sekolah" : "Guru"} />
+        <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator" : guru.role === "ks" ? "Kepala Sekolah" : "Guru"} />
         <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} />
         <Row icon={<Clock size={16} />} label="Jam masuk" value={(school?.jamMasukStandar || "07:00").slice(0, 5)} />
         <Row icon={<Clock size={16} />} label="Jam pulang" value={(school?.jamPulangStandar || "15:00").slice(0, 5)} last />

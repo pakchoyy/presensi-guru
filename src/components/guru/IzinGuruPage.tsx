@@ -18,7 +18,7 @@ type StatusIzin = NonNullable<TeacherAttendance["statusIzin"]>;
 export const LABEL_STATUS: Record<StatusIzin, string> = { proses: "Proses", disetujui: "Disetujui", ditolak: "Ditolak" };
 export const WARNA_STATUS: Record<StatusIzin, string> = { proses: "#f59e0b", disetujui: "#16a34a", ditolak: "#dc2626" };
 
-export function bacaJenis(r: TeacherAttendance): { jenis: Jenis; keterangan: string } {
+export function bacaJenis(r: Pick<TeacherAttendance, "catatan" | "statusHari">): { jenis: Jenis; keterangan: string } {
   const m = /^\[(.+?)\]\s?(.*)$/s.exec(r.catatan ?? "");
   if (m && (JENIS as readonly string[]).includes(m[1])) return { jenis: m[1] as Jenis, keterangan: m[2] };
   return { jenis: r.statusHari === AttendanceStatus.SAKIT ? "Sakit" : "Izin", keterangan: r.catatan ?? "" };

@@ -66,6 +66,25 @@ interface BarisGuru {
   status_aktif: boolean;
 }
 
+interface BarisIzin {
+  id: number | string;
+  user_id: string;
+  tanggal: string;
+  status_hari: string | null;
+  status_izin: "proses" | "disetujui" | "ditolak";
+  catatan: string | null;
+}
+
+/** Satu pengajuan izin seperti terlihat oleh verifikator. */
+export interface IzinSekolah {
+  kunci: string;
+  nama: string;
+  tanggal: string;
+  statusHari?: TeacherAttendance["statusHari"];
+  statusIzin: "proses" | "disetujui" | "ditolak";
+  catatan?: string;
+}
+
 interface BarisAbsen {
   user_id: string;
   sekolah_uuid: string;
@@ -330,6 +349,53 @@ export const guruCloud = {
   },
 
   /** Tarik riwayat absen guru ini dari cloud ke Dexie. */
+  /** Apakah guru ini ditunjuk admin sebagai verifikator izin (mis. Kepala Sekolah)? */
+  async cekVerifikator(): Promise<boolean> {
+    const info = this.info();
+    if (!info || !navigator.onLine) return false;
+    const { data } = await supabaseGuru
+      .from("cloud_guru_teachers")
+      .select("verifikator")
+      .eq("user_id", info.uid)
+      .maybeSingle<{ verifikator: boolean }>();
+    return !!data?.verifikator;
+  },
+
+  /**
+   * Pengajuan izin di sekolah (untuk verifikator), 31 hari terakhir ke depan.
+   * RLS hanya meloloskan baris izin; izin milik verifikator sendiri diputuskan admin.
+   */
+  async daftarIzinSekolah(): Promise<IzinSekolah[]> {
+    const info = this.info();
+    if (!info) return [];
+    const [{ data: baris }, { data: guru }] = await Promise.all([
+      supabaseGuru
+        .from("cloud_guru_attendance")
+        .select("id, user_id, tanggal, status_hari, status_izin, catatan")
+        .not("status_izin", "is", null)
+        .neq("user_id", info.uid)
+        .gte("tanggal", addDays(todayStr(), -31)),
+      supabaseGuru.from("cloud_guru_teachers").select("user_id, nama"),
+    ]);
+    const nama = new Map(((guru ?? []) as { user_id: string; nama: string }[]).map((g) => [g.user_id, g.nama]));
+    return ((baris ?? []) as BarisIzin[]).map((b) => ({
+      kunci: String(b.id),
+      nama: nama.get(b.user_id) ?? "Guru",
+      tanggal: b.tanggal,
+      statusHari: u(b.status_hari) as TeacherAttendance["statusHari"],
+      statusIzin: b.status_izin,
+      catatan: u(b.catatan),
+    }));
+  },
+
+  async putuskanIzin(kunci: string, statusIzin: "disetujui" | "ditolak"): Promise<void> {
+    const { error } = await supabaseGuru
+      .from("cloud_guru_attendance")
+      .update({ status_izin: statusIzin, diubah_pada: timestamp() })
+      .eq("id", kunci);
+    if (error) throw new Error(error.message);
+  },
+
   async tarikRiwayat(hari = 35): Promise<number> {
     const info = this.info();
     if (!info) return 0;
@@ -611,6 +677,18 @@ export const adminCloud = {
       if (!rec) { this.lepasAntrian(x.id); continue; }
       await this.kirimAbsen(x.guruId, rec);
     }
+  },
+
+  /** Tunjuk / cabut guru sebagai verifikator izin. false = guru belum punya akun cloud. */
+  async aturVerifikator(guruLocalId: number, verifikator: boolean): Promise<boolean> {
+    if (!(await this.siap())) return false;
+    const { data, error } = await supabase
+      .from("cloud_guru_teachers")
+      .update({ verifikator, diubah_pada: timestamp() })
+      .eq("local_id", guruLocalId)
+      .select("user_id");
+    if (error) throw new Error(error.message);
+    return (data ?? []).length > 0;
   },
 
   /** Nonaktifkan akun cloud guru (dipanggil saat guru dihapus). */

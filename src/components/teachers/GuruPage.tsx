@@ -40,7 +40,7 @@ export function GuruPage() {
   const [fKode, setFKode] = useState("");   // kode login G-XXXX saat tanpa NIP
   const [fPin, setFPin] = useState("");
   const [fJabatan, setFJabatan] = useState("");
-  const [fRole, setFRole] = useState<"guru" | "admin">("guru");
+  const [fRole, setFRole] = useState<"guru" | "admin" | "ks">("guru");
   const [punyaNip, setPunyaNip] = useState(false);
 
   const [shareDialog, setShareDialog] = useState<{ nama: string; kode: string; pin: string; nip?: string } | null>(null);
@@ -212,6 +212,10 @@ export function GuruPage() {
         diubahPada: now,
       };
       await db.teachers.put(updated);
+      if ((existing.role === "ks") !== (fRole === "ks")) {
+        const ok = await adminCloud.aturVerifikator(existing.id, fRole === "ks").catch(() => false);
+        if (!ok) toast("Peran Kepala Sekolah baru aktif setelah guru ini punya akun cloud", "info");
+      }
       toast(`Guru ${updated.nama} diperbarui`, "success");
     } else {
       const localId = generateId();
@@ -231,7 +235,7 @@ export function GuruPage() {
             pin,
             nip: nipInput || undefined,
             jabatan: fJabatan.trim() || undefined,
-            role: fRole,
+            role: fRole === "ks" ? "guru" : fRole,
             local_id: localId,
           });
           cloudUserId = res.user_id;
@@ -263,6 +267,7 @@ export function GuruPage() {
       await db.teachers.put(g);
       if (cloudUserId) {
         setCloudUserIdMap((m) => ({ ...m, [g.id]: cloudUserId! }));
+        if (fRole === "ks") await adminCloud.aturVerifikator(g.id, true).catch(() => false);
       }
       toast(`${g.nama} ditambahkan`, "success");
       setShareDialog({ nama: g.nama, kode: kodeFinal, pin: pinFinal, nip: g.nip });
@@ -282,7 +287,7 @@ export function GuruPage() {
     setFKode(g.kodeLogin || g.nip || genKodeUnik());
     setFPin(g.pin || "");
     setFJabatan(g.jabatan || "");
-    setFRole((g.role as "guru" | "admin") || "guru");
+    setFRole(g.role || "guru");
     setShowAdd(true);
     // scroll ke atas supaya form kelihatan
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -611,12 +616,18 @@ export function GuruPage() {
             <Field label="Peran">
               <select
                 value={fRole}
-                onChange={(e) => setFRole(e.target.value as "guru" | "admin")}
+                onChange={(e) => setFRole(e.target.value as "guru" | "admin" | "ks")}
                 className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
               >
                 <option value="guru">Guru</option>
-                <option value="admin">Operator / Kepala Sekolah</option>
+                <option value="ks">Kepala Sekolah (menyetujui izin)</option>
+                <option value="admin">Operator (admin)</option>
               </select>
+              {fRole === "ks" && (
+                <div className="text-[0.66rem] text-[var(--text-light)] mt-1">
+                  Kepala Sekolah masuk sebagai Guru dengan kode + PIN-nya, lalu bisa menyetujui / menolak izin di tab Izin. Pengaturan sistem tetap di Operator.
+                </div>
+              )}
             </Field>
 
             <div className="flex gap-2 pt-1">

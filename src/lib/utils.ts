@@ -166,19 +166,6 @@ export function passwordDariPin(pin: string): string {
   return `pyg-${pin.trim()}`;
 }
 
-// SEMENTARA (uji coba): ketuk judul header 3x → reset absen hari ini.
-// Hapus fungsi ini + pemanggilnya (Header, GuruShell, PresensiGuruPage) setelah uji selesai.
-export const EVENT_RESET_UJI = "bgy-reset-absen-uji";
-let ketukan: number[] = [];
-export function ketukResetUji(): void {
-  const now = Date.now();
-  ketukan = [...ketukan.filter((t) => now - t < 800), now];
-  if (ketukan.length >= 3) {
-    ketukan = [];
-    window.dispatchEvent(new Event(EVENT_RESET_UJI));
-  }
-}
-
 /** Zona waktu Indonesia dari jam HP (WIB/WITA/WIT); kosong kalau di luar ketiganya. */
 export function zonaWaktu(): string {
   const off = -new Date().getTimezoneOffset();

@@ -1,4 +1,3 @@
-import { ketukResetUji } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
@@ -7,6 +6,7 @@ import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
 import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
+import { PersetujuanIzin } from "@/components/attendance/PersetujuanIzin";
 import { PetunjukPage } from "@/components/guide/PetunjukPage";
 import { pasangAplikasi } from "@/components/layout/DropdownMenu";
 import { useToast } from "@/components/shared/Toast";
@@ -23,6 +23,9 @@ export function GuruShell() {
   const [tab, setTab] = useState<GuruTab>("presensi");
   const [logJenis, setLogJenis] = useState<"presensi" | "izin">("presensi");
   const [menuBuka, setMenuBuka] = useState(false);
+  // Kepala Sekolah / verifikator yang ditunjuk admin: bisa memutuskan izin guru lain.
+  const [verifikator, setVerifikator] = useState(false);
+  useEffect(() => { guruCloud.cekVerifikator().then(setVerifikator).catch(() => {}); }, []);
   const { toast } = useToast();
   const [absenHariIni, setAbsenHariIni] = useState<{ masuk: boolean; pulang: boolean }>({
     masuk: false,
@@ -105,7 +108,7 @@ export function GuruShell() {
           <div className="flex items-center gap-[8px] flex-1 min-w-0">
             <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
             <div className="min-w-0 leading-tight">
-              <div className="text-[1rem] font-extrabold text-white whitespace-nowrap" onClick={ketukResetUji}>
+              <div className="text-[1rem] font-extrabold text-white whitespace-nowrap">
                 <span className="italic">Presensi Yuk</span> <span className="opacity-95">| Guru</span>
               </div>
               {guru?.nama && (
@@ -160,7 +163,12 @@ export function GuruShell() {
         {tab === "presensi" && (
           <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
         )}
-        {tab === "izin" && <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />}
+        {tab === "izin" && (
+          <>
+            {verifikator && <div className="px-[14px] pt-[14px] -mb-[14px]"><PersetujuanIzin mode="ks" /></div>}
+            <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />
+          </>
+        )}
         {tab === "log" && (
           <>
             <div className="px-[14px] pt-[14px] -mb-[6px]">

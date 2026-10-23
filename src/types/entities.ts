@@ -29,7 +29,8 @@ export interface Teacher {
   tier: Tier;
   // Guru-specific fields
   absenToken?: string;
-  role?: "admin" | "guru";
+  /** "ks" = Kepala Sekolah: presensi seperti guru + bisa memutuskan izin (verifikator). */
+  role?: "admin" | "guru" | "ks";
   jabatan?: string;
   nip?: string;
   /** Kode login guru (opsional) — bisa NIP, NUPTK, atau kode auto-generate `G-XXXX`. Dipakai untuk login mandiri guru lewat halaman Presensi. */

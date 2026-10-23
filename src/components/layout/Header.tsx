@@ -1,4 +1,3 @@
-import { ketukResetUji } from "@/lib/utils";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Tier } from "@/types/enums";
@@ -33,7 +32,7 @@ export function Header() {
           {/* Logo sama dengan tampilan guru */}
           <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
           <div className="min-w-0 leading-tight">
-            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis" onClick={ketukResetUji}>
+            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
               <span className="italic">Presensi Yuk</span>{" "}
               <span className="font-bold opacity-95">| Guru</span>
             </div>
