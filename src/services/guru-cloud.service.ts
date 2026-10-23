@@ -76,6 +76,11 @@ export const guruCloudService = {
     return callFn<{ ok: true; new_pin: string }>("reset-guru-pin", { user_id, new_pin });
   },
 
+  /** Ganti kode login guru yang sudah punya akun cloud (email akun ikut diganti). */
+  async ubahKode(user_id: string, kode_baru: string): Promise<{ ok: true; kode_login: string }> {
+    return callFn<{ ok: true; kode_login: string }>("ubah-kode-guru", { user_id, kode_baru });
+  },
+
   /** Cek cepat apakah session cloud siap (admin sudah login). */
   async isReady(): Promise<boolean> {
     try {

@@ -70,7 +70,7 @@ export function GuruPage() {
   const openTambah = () => {
     resetForm();
     setFKode(genKodeUnik());
-    setFPin(randomPin(4));
+    setFPin(randomPin());
     setShowAdd(true);
   };
 
@@ -164,7 +164,7 @@ export function GuruPage() {
     }
 
     // PIN: kalau kosong → generate 4 digit
-    const pin = fPin.trim() || randomPin(4);
+    const pin = fPin.trim() || randomPin();
     if (!/^\d{4,6}$/.test(pin)) {
       toast("PIN harus 4-6 digit angka", "error");
       return;
@@ -175,10 +175,21 @@ export function GuruPage() {
       if (!existing) return;
       const akunCloud = cloudUserIdMap[existing.id];
       if (akunCloud) {
-        // Email akun cloud = <kode>@guru.local, jadi kode tidak bisa diganti.
+        // Email akun cloud = <kode>@guru.local → ganti lewat server dulu.
         if (existing.kodeLogin && kode !== existing.kodeLogin) {
-          toast(`Kode login ${existing.kodeLogin} sudah dipakai guru di HP-nya, tidak bisa diganti`, "error");
-          return;
+          try {
+            await guruCloudService.ubahKode(akunCloud, kode);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast(
+              msg.includes("kode_sudah_dipakai")
+                ? "Kode itu sudah dipakai guru lain"
+                : `Kode baru gagal dikirim ke cloud (${msg}) — perubahan dibatalkan`,
+              "error",
+            );
+            return;
+          }
+          toast(`Kode login diganti — beri tahu ${existing.nama}: kode baru ${kode}`, "info");
         }
         if (pin !== (existing.pin || "")) {
           try {
@@ -351,7 +362,7 @@ export function GuruPage() {
         let kode = nipRaw;
         if (!kode) kode = genUnik();
         else existingCodes.add(kode);
-        const pin = /^\d{4,6}$/.test(pinRaw) ? pinRaw : randomPin(4);
+        const pin = /^\d{4,6}$/.test(pinRaw) ? pinRaw : randomPin();
 
         const localId = generateId();
         let cloudUserId: string | undefined;
@@ -415,7 +426,7 @@ export function GuruPage() {
   };
 
   const handleResetPin = async (g: Teacher) => {
-    let pin = randomPin(4);
+    let pin = randomPin();
     // Reset di cloud dulu kalau online + ada user_id cloud yang dikenal.
     const cloudUserId = cloudUserIdMap[g.id];
     if (isAuthenticated && navigator.onLine && cloudUserId) {
@@ -576,7 +587,7 @@ export function GuruPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setFPin(randomPin(4))}
+                    onClick={() => setFPin(randomPin())}
                     className="px-3 rounded-xl text-white text-[0.75rem] font-bold flex items-center gap-1 active:scale-95"
                     style={{ background: "var(--grad)" }}
                   >

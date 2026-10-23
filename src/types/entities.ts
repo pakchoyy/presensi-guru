@@ -56,6 +56,9 @@ export interface TeacherAttendance {
   jamPulang?: string;
   selfieMasukUrl?: string;
   selfiePulangUrl?: string;
+  /** true = selfie lolos deteksi wajah + gerak kepala; false = foto biasa. */
+  verifikasiWajahMasuk?: boolean;
+  verifikasiWajahPulang?: boolean;
   lokasiMasukLat?: number;
   lokasiMasukLng?: number;
   lokasiPulangLat?: number;

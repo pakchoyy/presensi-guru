@@ -21,6 +21,7 @@ import type { School, Teacher, TeacherAttendance } from "@/types/entities";
 const KUNCI_PERANGKAT = "bgy_perangkat_guru";
 const KUNCI_ANTRIAN = "bgy_antrian_absen_cloud";
 const KUNCI_TERUNGGAH = "bgy_selfie_terunggah";
+const KUNCI_ANTRIAN_ADMIN = "bgy_antrian_absen_kios";
 const BUCKET = "selfie-guru";
 /** Penanda selfie yang tersimpan di Storage (bukan data URL lokal). */
 export const PREFIX_STORAGE = "sb:";
@@ -73,6 +74,8 @@ interface BarisAbsen {
   jam_pulang: string | null;
   selfie_masuk_url: string | null;
   selfie_pulang_url: string | null;
+  verifikasi_masuk: boolean | null;
+  verifikasi_pulang: boolean | null;
   lokasi_masuk_lat: number | null;
   lokasi_masuk_lng: number | null;
   lokasi_pulang_lat: number | null;
@@ -125,6 +128,8 @@ function keBarisAbsen(
     jam_pulang: n(rec.jamPulang),
     selfie_masuk_url: selfie.masuk,
     selfie_pulang_url: selfie.pulang,
+    verifikasi_masuk: n(rec.verifikasiWajahMasuk),
+    verifikasi_pulang: n(rec.verifikasiWajahPulang),
     lokasi_masuk_lat: n(rec.lokasiMasukLat),
     lokasi_masuk_lng: n(rec.lokasiMasukLng),
     lokasi_pulang_lat: n(rec.lokasiPulangLat),
@@ -150,6 +155,8 @@ function dariBarisAbsen(row: BarisAbsen, guruId: number): TeacherAttendance {
     jamPulang: u(row.jam_pulang),
     selfieMasukUrl: selfie(row.selfie_masuk_url),
     selfiePulangUrl: selfie(row.selfie_pulang_url),
+    verifikasiWajahMasuk: u(row.verifikasi_masuk),
+    verifikasiWajahPulang: u(row.verifikasi_pulang),
     lokasiMasukLat: u(row.lokasi_masuk_lat),
     lokasiMasukLng: u(row.lokasi_masuk_lng),
     lokasiPulangLat: u(row.lokasi_pulang_lat),
@@ -522,31 +529,78 @@ export const adminCloud = {
   },
 
   /** Kirim perubahan absen yang dibuat admin (status / jam manual) ke cloud. */
-  async kirimAbsen(guruLocalId: number, rec: TeacherAttendance): Promise<boolean> {
-    if (!(await this.siap())) return false;
+  /**
+   * Kirim absen dari perangkat admin/bersama ke cloud.
+   * "lokal" = sekolah atau guru ini memang tidak memakai cloud.
+   */
+  async kirimAbsen(guruLocalId: number, rec: TeacherAttendance): Promise<"terkirim" | "tertunda" | "lokal"> {
+    // Sekolah tanpa akun cloud: cukup lokal, jangan menumpuk antrean.
+    const uid = await uidAdmin();
+    if (!uid) return "lokal";
+    if (!navigator.onLine) {
+      this.antrekan(guruLocalId, rec.id);
+      return "tertunda";
+    }
     const peta = await this.petaGuru();
     const akun = peta.get(guruLocalId);
-    if (!akun) return false; // guru belum punya akun cloud — cukup lokal
-    const uid = await uidAdmin();
+    if (!akun) return "lokal"; // guru belum punya akun cloud
     const { data: sekolah } = await supabase
       .from("cloud_guru_sekolah")
       .select("id")
       .eq("owner_user_id", uid)
       .maybeSingle();
-    if (!sekolah) return false;
+    if (!sekolah) return "lokal";
 
-    // Selfie: admin tidak mengubah foto; pertahankan path Storage yang ada.
-    const path = (v?: string) => (v?.startsWith(PREFIX_STORAGE) ? v.slice(PREFIX_STORAGE.length) : null);
-    const { error } = await supabase
-      .from("cloud_guru_attendance")
-      .upsert(
-        keBarisAbsen(rec, akun.userId, sekolah.id, {
-          masuk: path(rec.selfieMasukUrl),
-          pulang: path(rec.selfiePulangUrl),
-        }),
-        { onConflict: "user_id,tanggal" },
-      );
-    return !error;
+    try {
+      // Selfie dari perangkat bersama masih data URL → unggah atas nama admin.
+      const unggah = async (v: string | undefined, jenis: "masuk" | "pulang") => {
+        if (!v) return null;
+        if (v.startsWith(PREFIX_STORAGE)) return v.slice(PREFIX_STORAGE.length);
+        if (!v.startsWith("data:")) return null;
+        const path = `${sekolah.id}/${akun.userId}/${rec.tanggal}-${jenis}.jpg`;
+        const { error } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, await dataUrlKeBlob(v), { upsert: true, contentType: "image/jpeg" });
+        if (error) throw error;
+        return path;
+      };
+      const masuk = await unggah(rec.selfieMasukUrl, "masuk");
+      const pulang = await unggah(rec.selfiePulangUrl, "pulang");
+
+      const { error } = await supabase
+        .from("cloud_guru_attendance")
+        .upsert(keBarisAbsen(rec, akun.userId, sekolah.id, { masuk, pulang }), {
+          onConflict: "user_id,tanggal",
+        });
+      if (error) throw error;
+      this.lepasAntrian(rec.id);
+      return "terkirim";
+    } catch {
+      this.antrekan(guruLocalId, rec.id);
+      return "tertunda";
+    }
+  },
+
+  /** Antrean absen dari perangkat bersama yang belum terkirim (admin offline). */
+  antrekan(guruLocalId: number, recordId: number) {
+    const a = bacaJson<{ guruId: number; id: number }[]>(KUNCI_ANTRIAN_ADMIN, []);
+    if (!a.some((x) => x.id === recordId)) tulisJson(KUNCI_ANTRIAN_ADMIN, [...a, { guruId: guruLocalId, id: recordId }]);
+  },
+
+  lepasAntrian(recordId: number) {
+    const a = bacaJson<{ guruId: number; id: number }[]>(KUNCI_ANTRIAN_ADMIN, []);
+    tulisJson(KUNCI_ANTRIAN_ADMIN, a.filter((x) => x.id !== recordId));
+  },
+
+  /** Kirim ulang antrean perangkat bersama. Dipanggil saat Dashboard dibuka. */
+  async kirimAntrian(): Promise<void> {
+    if (!(await this.siap())) return;
+    const a = bacaJson<{ guruId: number; id: number }[]>(KUNCI_ANTRIAN_ADMIN, []);
+    for (const x of a) {
+      const rec = await db.teacherAttendance.get(x.id);
+      if (!rec) { this.lepasAntrian(x.id); continue; }
+      await this.kirimAbsen(x.guruId, rec);
+    }
   },
 
   /** Nonaktifkan akun cloud guru (dipanggil saat guru dihapus). */

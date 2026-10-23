@@ -54,7 +54,8 @@ export const teacherAttendanceService = {
     guruId: number,
     lat: number,
     lng: number,
-    selfieUrl?: string
+    selfieUrl?: string,
+    verifikasiWajah?: boolean
   ): Promise<ClockInResult> {
     const school = await this.getSchool();
     const tanggal = todayStr();
@@ -82,6 +83,7 @@ export const teacherAttendanceService = {
       tanggal,
       jamMasuk: jam,
       selfieMasukUrl: selfieUrl ?? existing?.selfieMasukUrl,
+      verifikasiWajahMasuk: verifikasiWajah ?? existing?.verifikasiWajahMasuk,
       lokasiMasukLat: lat,
       lokasiMasukLng: lng,
       jarakMasukMeter: Math.round(jarakMeter),
@@ -97,7 +99,8 @@ export const teacherAttendanceService = {
     guruId: number,
     lat: number,
     lng: number,
-    selfieUrl?: string
+    selfieUrl?: string,
+    verifikasiWajah?: boolean
   ): Promise<{ record: TeacherAttendance; jarakMeter: number; statusPulang: ClockInStatus }> {
     const school = await this.getSchool();
     const tanggal = todayStr();
@@ -120,6 +123,7 @@ export const teacherAttendanceService = {
       tanggal,
       jamPulang: jam,
       selfiePulangUrl: selfieUrl ?? existing?.selfiePulangUrl,
+      verifikasiWajahPulang: verifikasiWajah ?? existing?.verifikasiWajahPulang,
       lokasiPulangLat: lat,
       lokasiPulangLng: lng,
       jarakPulangMeter: Math.round(jarakMeter),

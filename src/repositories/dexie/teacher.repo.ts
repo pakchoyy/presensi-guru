@@ -34,7 +34,7 @@ export const teacherRepo = {
         dipakai.add(kode);
         patch.kodeLogin = kode;
       }
-      if (!t.pin) patch.pin = randomPin(4);
+      if (!t.pin) patch.pin = randomPin();
       if (Object.keys(patch).length === 0) continue;
       patch.diubahPada = timestamp();
       await db.teachers.update(t.id, patch);

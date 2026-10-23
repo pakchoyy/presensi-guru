@@ -87,7 +87,7 @@ export const setupService = {
       jabatan: "Admin / Kepala Sekolah",
       // Admin juga ikut presensi, jadi dia butuh kode login + PIN sejak awal.
       kodeLogin: randomKode(),
-      pin: randomPin(4),
+      pin: randomPin(),
       absenToken: crypto.randomUUID(),
       statusAktif: true,
       dibuatPada: now,

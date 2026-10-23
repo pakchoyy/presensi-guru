@@ -48,7 +48,7 @@ function randomKode(): string {
   return `G-${n}`;
 }
 
-function randomPin(len = 4): string {
+function randomPin(len = 6): string {
   let out = "";
   for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10).toString();
   return out;
@@ -120,7 +120,7 @@ Deno.serve(async (req: Request) => {
     if (dup) return json({ error: "kode_sudah_dipakai" }, 409);
   }
 
-  const pin = (body.pin || "").trim() || randomPin(4);
+  const pin = (body.pin || "").trim() || randomPin();
   if (!/^\d{4,6}$/.test(pin)) {
     return json({ error: "pin_harus_4_6_digit" }, 400);
   }

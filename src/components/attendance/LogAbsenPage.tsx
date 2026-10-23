@@ -14,6 +14,7 @@ interface BarisLog {
   foto?: string;
   jarak?: number;
   status?: string;
+  verifikasi?: boolean;
 }
 
 function statusLabel(s?: string) {
@@ -65,6 +66,7 @@ export function LogAbsenPage() {
           foto: r.selfieMasukUrl,
           jarak: r.jarakMasukMeter,
           status: r.statusMasuk,
+          verifikasi: r.verifikasiWajahMasuk,
         });
       }
       if (r.jamPulang) {
@@ -76,6 +78,7 @@ export function LogAbsenPage() {
           foto: r.selfiePulangUrl,
           jarak: r.jarakPulangMeter,
           status: r.statusPulang,
+          verifikasi: r.verifikasiWajahPulang,
         });
       }
     }
@@ -153,6 +156,9 @@ export function LogAbsenPage() {
                     <div className="text-[0.62rem] text-[var(--text-light)] flex items-center gap-1 mt-[2px]">
                       <MapPin size={9} /> {b.jarak} m dari sekolah
                     </div>
+                  )}
+                  {b.verifikasi === false && (
+                    <div className="text-[0.6rem] font-bold text-[#b45309] mt-[2px]">Foto tanpa verifikasi wajah</div>
                   )}
                 </div>
 

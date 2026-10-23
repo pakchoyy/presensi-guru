@@ -18,12 +18,12 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 import { IzinSheet } from "@/components/attendance/IzinSheet";
 import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
-import { guruCloud } from "@/services/multi-perangkat.service";
+import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
 import { teacherAttendanceService } from "@/services/teacher-attendance.service";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { formatTanggalPanjang, inisial, todayStr, attendanceIdFrom, timestamp } from "@/lib/utils";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
-import { SelfieCamera } from "./SelfieCamera";
+import { SelfieCamera, type InfoSelfie } from "./SelfieCamera";
 import { haversineDistance } from "@/lib/geo";
 
 type Mode = "pick" | "session";
@@ -284,12 +284,22 @@ function SelfAbsenPanel({
     guruCloud.aktif() && guruCloud.jumlahAntrian() > 0 ? "tertunda" : null,
   );
   const kirimKeSekolah = async () => {
-    if (!guruCloud.aktif()) return;
-    const ok = await guruCloud.kirimAbsen(attendanceIdFrom(guru.id, tanggal));
-    setKiriman(ok && guruCloud.jumlahAntrian() === 0 ? "terkirim" : "tertunda");
+    const id = attendanceIdFrom(guru.id, tanggal);
+    if (guruCloud.aktif()) {
+      // HP guru sendiri.
+      const ok = await guruCloud.kirimAbsen(id);
+      setKiriman(ok && guruCloud.jumlahAntrian() === 0 ? "terkirim" : "tertunda");
+      return;
+    }
+    // Perangkat bersama di sekolah: kirim lewat sesi cloud admin (kalau ada),
+    // supaya absen ini juga terlihat di HP guru.
+    const rec = await teacherAttendanceRepo.getById(id);
+    if (!rec) return;
+    const hasil = await adminCloud.kirimAbsen(guru.id, rec).catch(() => "tertunda" as const);
+    setKiriman(hasil === "lokal" ? null : hasil);
   };
   const [konfirmasi, setKonfirmasi] = useState<
-    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number } } | null
+    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number }; verifikasiWajah: boolean } | null
   >(null);
   const [, setTick] = useState(0);
   const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
@@ -396,22 +406,22 @@ function SelfAbsenPanel({
   };
 
   // Selfie selesai → tampilkan layar konfirmasi dulu (foto, lokasi, jarak, peta).
-  const onCapture = async (blob: Blob) => {
+  const onCapture = async (blob: Blob, info?: InfoSelfie) => {
     const action = showCamera;
     const loc = pendingLocRef.current;
     setShowCamera(null);
     if (!action || !loc) return;
     const fotoUrl = await blobToDataUrl(blob);
-    setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc });
+    setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc, verifikasiWajah: !!info?.verifikasiWajah });
   };
 
   const simpanPresensi = async () => {
     if (!konfirmasi) return;
-    const { aksi: action, fotoUrl: selfieUrl, lokasi: loc } = konfirmasi;
+    const { aksi: action, fotoUrl: selfieUrl, lokasi: loc, verifikasiWajah } = konfirmasi;
     setSubmitting(true);
     try {
       if (action === "in") {
-        const res = await teacherAttendanceService.clockIn(guru.id, loc.lat, loc.lng, selfieUrl);
+        const res = await teacherAttendanceService.clockIn(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
         toast(
           res.statusMasuk === "ONTIME"
             ? "Absen masuk tersimpan — tepat waktu"
@@ -421,7 +431,7 @@ function SelfAbsenPanel({
           res.statusMasuk === "ONTIME" ? "success" : "info"
         );
       } else {
-        const res = await teacherAttendanceService.clockOut(guru.id, loc.lat, loc.lng, selfieUrl);
+        const res = await teacherAttendanceService.clockOut(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
         toast(
           res.statusPulang === "FAR"
             ? `Absen pulang: di luar radius (${Math.round(res.jarakMeter)}m)`
@@ -613,6 +623,7 @@ function SelfAbsenPanel({
         <KonfirmasiPresensi
           aksi={konfirmasi.aksi}
           fotoUrl={konfirmasi.fotoUrl}
+          verifikasiWajah={konfirmasi.verifikasiWajah}
           namaSekolah={school?.nama ?? "Sekolah"}
           lat={school?.lat}
           lng={school?.lng}

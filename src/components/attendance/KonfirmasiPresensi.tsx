@@ -8,6 +8,7 @@ import { PetaLokasi } from "@/components/attendance/PetaLokasi";
 export function KonfirmasiPresensi({
   aksi,
   fotoUrl,
+  verifikasiWajah,
   namaSekolah,
   lat,
   lng,
@@ -20,6 +21,7 @@ export function KonfirmasiPresensi({
 }: {
   aksi: "in" | "out";
   fotoUrl: string;
+  verifikasiWajah?: boolean;
   namaSekolah: string;
   lat?: number;
   lng?: number;
@@ -65,6 +67,18 @@ export function KonfirmasiPresensi({
           >
             <img src={fotoUrl} alt="Selfie presensi" className="w-full h-full object-cover" />
           </div>
+        </div>
+        <div className="flex justify-center mt-2">
+          <span
+            className="px-3 py-[3px] rounded-full text-[0.66rem] font-extrabold"
+            style={
+              verifikasiWajah
+                ? { background: "var(--hadir-bg)", color: "var(--hadir)" }
+                : { background: "#fef3c7", color: "#b45309" }
+            }
+          >
+            {verifikasiWajah ? "✓ Wajah terverifikasi" : "Foto tanpa verifikasi wajah"}
+          </span>
         </div>
 
         {/* Info lokasi */}

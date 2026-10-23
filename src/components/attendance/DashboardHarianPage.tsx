@@ -162,6 +162,7 @@ export function DashboardHarianPage() {
     }
     // Tampilkan data lokal dulu, lalu tarik absen dari HP guru (cloud).
     if (tarikCloud) {
+      await adminCloud.kirimAntrian().catch(() => {});
       const berubah = await adminCloud.tarikAbsen(tgl, tgl).catch(() => 0);
       if (berubah > 0) await load(tgl, false);
     }
@@ -315,6 +316,9 @@ export function DashboardHarianPage() {
                   <div className="text-[0.65rem] text-[var(--text-light)] mt-1 tabular-nums">
                     masuk {jam}{attendance?.jamPulang ? ` · pulang ${attendance.jamPulang.slice(0, 5)}` : ""}
                   </div>
+                )}
+                {(attendance?.verifikasiWajahMasuk === false || attendance?.verifikasiWajahPulang === false) && (
+                  <div className="text-[0.6rem] font-bold text-[#b45309] mt-[2px]">foto tanpa verifikasi wajah</div>
                 )}
               </div>
             </div>

@@ -140,8 +140,11 @@ export function getMonthsInRange(start: string, end: string): string[] {
   return months;
 }
 
-/** PIN acak untuk akun guru (4 atau 6 digit). */
-export function randomPin(len: 4 | 6 = 4): string {
+/**
+ * PIN acak untuk akun guru. Bawaan 6 digit (1 juta kombinasi, jauh lebih
+ * sulit ditebak daripada 4 digit); PIN 4 digit lama tetap diterima.
+ */
+export function randomPin(len: 4 | 6 = 6): string {
   let s = "";
   for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
   return s;

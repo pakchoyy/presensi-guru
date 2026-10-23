@@ -4,7 +4,7 @@
 // halaman Daftar Guru.
 //
 // Input (JSON): { user_id: string, new_pin?: string }
-//   Jika new_pin kosong → generate 4 digit random.
+//   Jika new_pin kosong → generate 6 digit random.
 //
 // Return: { ok, new_pin }
 
@@ -24,7 +24,7 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function randomPin(len = 4): string {
+function randomPin(len = 6): string {
   let out = "";
   for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10).toString();
   return out;
@@ -85,7 +85,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: "forbidden_wrong_school" }, 403);
   }
 
-  const pin = (body.new_pin || "").trim() || randomPin(4);
+  const pin = (body.new_pin || "").trim() || randomPin();
   if (!/^\d{4,6}$/.test(pin)) return json({ error: "pin_harus_4_6_digit" }, 400);
 
   const { error: upErr } = await admin.auth.admin.updateUserById(body.user_id, {
