@@ -887,44 +887,6 @@ export function PengaturanPage() {
           </div>
         </div>
       )}
-      {/* Perbandingan Gratis vs PRO (khusus FREE) */}
-      {!isPRO && (
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
-          <div className="text-[0.75rem] font-bold text-[var(--text)] mb-2">
-            Perbandingan Gratis vs PRO
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[0.7rem] border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 px-2 text-left text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Fitur</th>
-                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Gratis</th>
-                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[#2563eb] font-bold">PRO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { fitur: "Bisa kelola kelas", free: "1 Kelas", pro: "Semua Kelas" },
-                  { fitur: "Jumlah siswa per kelas", free: `${MAX_STUDENTS_FREE} siswa`, pro: "Unlimited" },
-                  { fitur: "Buka di HP & laptop", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Data aman di internet", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Atur kalender sendiri", free: "Lihat saja", pro: "Bisa atur" },
-                  { fitur: "Backup ke internet", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Logo di laporan", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Update data Excel", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Harga", free: "Gratis", pro: PRO_PRICE },
-                ].map((row, i) => (
-                  <tr key={i} className="border-b border-[var(--border)] last:border-0">
-                    <td className="py-2 px-2 font-semibold">{row.fitur}</td>
-                    <td className="py-2 px-2 text-center text-[var(--text-light)]">{row.free}</td>
-                    <td className="py-2 px-2 text-center text-[#2563eb] font-bold">{row.pro}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
       <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Sekolah</div>
       {editSekolah && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#f59e0b] p-[14px] mb-3">
