@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useCloudAuth } from "@/contexts/CloudAuthContext";
@@ -14,7 +15,7 @@ export function BackupRestorePage() {
   const { refreshTeachers, teacher } = useApp();
   const { cloudEmail } = useCloudAuth();
   const { toast } = useToast();
-  const isPRO = teacher?.tier === Tier.PRO;
+  const isPRO = isPaid(teacher?.tier);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [restoreData, setRestoreData] = useState<any>(null);

@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useState, useEffect, useCallback } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
@@ -16,7 +17,7 @@ const MONTHS = [
 export function KalenderPage() {
   const { teacher } = useApp();
   const { toast } = useToast();
-  const isPRO = teacher?.tier === Tier.PRO;
+  const isPRO = isPaid(teacher?.tier);
 
   const [entries, setEntries] = useState<AcademicCalendarEntry[]>([]);
   const [ay, setAy] = useState<{ id: number; label: string } | null>(null);

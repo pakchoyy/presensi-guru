@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 // Batas perangkat dicek di server: PRO Guru aktif 3 perangkat, selain itu 1.
 // Tabel profiles/devices dipakai bersama Presensi Siswa: perangkat Guru diberi awalan "guru:" supaya
 // jatahnya terpisah, dan paket di profiles (milik Siswa) tidak diubah dari sini.
-const DEVICE_LIMIT = { FREE: 1, PRO: 3 };
+const DEVICE_LIMIT = { FREE: 1, PLUS: 1, PRO: 3 };
 const PREFIX = "guru:";
 const ALLOWED = (o) => o === "https://preguru.bantuguruyuk.web.id" || /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(o) || /^http:\/\/localhost(:\d+)?$/.test(o);
 
@@ -20,7 +20,7 @@ const clean = (v, n) => String(v || "").trim().slice(0, n);
 async function activeGuruLicense(supabase, email) {
   const { data, error } = await supabase
     .from("licenses")
-    .select("tanggal_berakhir")
+    .select("tanggal_berakhir, tier")
     .eq("email", email)
     .eq("status", "digunakan")
     .eq("product", "guru")
@@ -29,7 +29,7 @@ async function activeGuruLicense(supabase, email) {
     .maybeSingle();
   if (error) throw error;
   if (!data || (data.tanggal_berakhir && data.tanggal_berakhir < Date.now())) return null;
-  return { tanggalBerakhir: data.tanggal_berakhir };
+  return { tanggalBerakhir: data.tanggal_berakhir, tier: data.tier || "PRO" };
 }
 
 // Profile milik user ini; tautkan profile lama (berdasarkan email) saat login pertama.
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
     }
 
     const lic = await activeGuruLicense(supabase, email);
-    const tier = lic ? "PRO" : "FREE";
+    const tier = lic ? lic.tier : "FREE";
     const profileId = await linkProfile(supabase, authId, email);
     const limit = DEVICE_LIMIT[tier];
 
@@ -109,8 +109,8 @@ export default async function handler(req, res) {
         tier,
         limit,
         error:
-          tier === "PRO"
-            ? `Akun ini sudah dipakai di ${devices.length} perangkat lain (batas PRO). Keluarkan salah satu perangkat lama.`
+          tier !== "FREE"
+            ? `Akun ini sudah dipakai di ${devices.length} perangkat lain (batas ${tier}). Keluarkan salah satu perangkat lama.`
             : `Akun ini sudah dipakai di perangkat lain (paket FREE: 1 perangkat). Keluarkan perangkat lama, atau upgrade ke PRO untuk 3 perangkat.`,
         devices: devices.map((d) => ({ id: d.id, name: d.device_name, lastActiveAt: d.last_active_at })),
       });

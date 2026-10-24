@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { readAktivasiLink, clearAktivasiLink } from "@/lib/aktivasi-link";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
@@ -10,7 +11,7 @@ import { syncService } from "@/services/sync.service";
 import { getSyncLog, type SyncLogEntry } from "@/services/sync.service";
 import { Tier, Jenjang, PageName } from "@/types/enums";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { MAX_STUDENTS_FREE, PRO_PRICE } from "@/lib/constants";
+import { MAX_STUDENTS_FREE, PRO_PRICE, PLUS_PRICE, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
 import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
 import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
@@ -71,7 +72,7 @@ export function PengaturanPage() {
   const { toast } = useToast();
   const { isCloudConnected, cloudUser, setCloudEmail, clearCloudEmail } = useCloudAuth();
 
-  const isPRO = teacher?.tier === Tier.PRO;
+  const isPRO = isPaid(teacher?.tier);
 
   const [email, setEmail] = useState(() => readAktivasiLink()?.email || "");
   const [kode, setKode] = useState(() => readAktivasiLink()?.kode || "");
@@ -173,7 +174,7 @@ export function PengaturanPage() {
         if (cancelled) return;
 
         // If PRO but no local license record, auto-fetch from Supabase
-        if (!status.aktif && teacherTier === Tier.PRO && teacherEmail) {
+        if (!status.aktif && isPaid(teacherTier) && teacherEmail) {
           try {
             const lookup = await licenseService.lookupByEmail(teacherEmail.toLowerCase().trim());
             const licenseData = lookup.found ? { tanggal_berakhir: lookup.tanggalBerakhir } : null;
@@ -526,8 +527,8 @@ export function PengaturanPage() {
   const finishDeviceLogin = async (result: { tier: Tier; tanggalBerakhir: number | null }, emailAddress: string) => {
     setOtpEmail(null);
     if (!teacher?.id) return;
-    if (result.tier !== Tier.PRO) {
-      toast("❌ Email ini belum punya lisensi PRO Presensi Guru.");
+    if (!isPaid(result.tier)) {
+      toast("❌ Email ini belum punya lisensi PLUS/PRO Presensi Guru.");
       return;
     }
     setConnecting(true);
@@ -548,12 +549,12 @@ export function PengaturanPage() {
           emailAktivasi: emailAddress,
           kodeLisensi: "DEVICE-CONNECTED",
           tanggalAktivasi: now,
-          tanggalBerakhir: result.tanggalBerakhir || now + 365 * 24 * 60 * 60 * 1000,
+          tanggalBerakhir: result.tanggalBerakhir || now + LICENSE_DURATION_DAYS * DAY_MS,
           statusLisensi: "Aktif",
         };
         await licenseRepo.save(license);
       }
-      await teacherRepo.update(teacher.id, { ...teacher, tier: Tier.PRO, email: emailAddress });
+      await teacherRepo.update(teacher.id, { ...teacher, tier: result.tier, email: emailAddress });
       await refreshTeacher();
       setTimeout(() => window.location.reload(), 1500);
     } catch (error) {
@@ -1310,10 +1311,10 @@ export function PengaturanPage() {
               Kelola semua kelas, cloud sync, backup otomatis & banyak lagi
             </div>
             <div className="text-[1.6rem] font-black text-[#2563eb] leading-tight">
-              {PRO_PRICE}
+              PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
             </div>
             <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-              per tahun
+              per semester (6 bulan) — PLUS maks 15 guru, PRO tanpa batas
             </div>
           </div>
 
@@ -1328,7 +1329,7 @@ export function PengaturanPage() {
 
           <div className="mb-3">
             <a
-              href="https://kreacy.my.id/produk/8nonq6ro"
+              href={KREACY_PRO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer no-underline"

@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useApp } from "@/contexts/AppContext";
 import { PageName } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
@@ -37,7 +38,7 @@ export function Sidebar() {
 
   if (!setupSelesai) return null;
 
-  const isPRO = teacher?.tier === "PRO";
+  const isPRO = isPaid(teacher?.tier);
 
   return (
     <aside className="hidden lg:flex flex-col w-64 flex-shrink-0 min-h-[calc(100vh-3.5rem)] border-r border-[var(--border)] bg-[var(--card-bg)] sticky top-14">

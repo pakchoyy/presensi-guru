@@ -29,7 +29,12 @@ export const APP_BRAND = "Bantu Guru Yuk";
 
 export const WIZARD_TOTAL_STEPS = 6;
 
-export const PRO_PRICE = "Rp15.000/tahun";
+export const PLUS_PRICE = "Rp27.000/semester";
+export const PRO_PRICE = "Rp51.000/semester";
+export const DAY_MS = 24 * 60 * 60 * 1000;
+export const LICENSE_DURATION_DAYS = 180;
+export const KREACY_PLUS_URL = "https://kreacy.my.id/produk/rj99kg07";
+export const KREACY_PRO_URL = "https://kreacy.my.id/produk/cynjla94";
 
 export const MAX_KELAS_FREE = 1;
 export const MAX_STUDENTS_FREE = 12;

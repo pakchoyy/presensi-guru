@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
@@ -22,7 +23,7 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
 
   if (!isOpen || !setupSelesai) return null;
 
-  const isPRO = teacher?.tier === Tier.PRO;
+  const isPRO = isPaid(teacher?.tier);
 
   const handleInstall = () => { pasangAplikasi(toast); onClose(); };
 

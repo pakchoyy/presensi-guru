@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useState, useEffect } from "react";
 import { useOnlineStatus } from "./useOnlineStatus";
 import { useCloudAuth } from "@/contexts/CloudAuthContext";
@@ -53,7 +54,7 @@ export function useSyncStatus() {
     };
   }, []);
 
-  const isPRO = setupSelesai && teacher?.tier === Tier.PRO;
+  const isPRO = setupSelesai && isPaid(teacher?.tier);
 
   if (!isPRO) return { status: "not-connected" as SyncStatus, lastSync: 0 };
 

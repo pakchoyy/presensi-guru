@@ -33,7 +33,7 @@ export function AnnouncementCard() {
   const [acked, setAcked] = useState<number[]>(() => readList(ACK_KEY));
 
   useEffect(() => {
-    const group = realTier === Tier.PRO ? "pro" : "free";
+    const group = realTier === Tier.PRO ? "pro" : realTier === Tier.PLUS ? "plus" : "free";
     const seen = readSeen();
     fetchAnnouncements().then((items) => {
       setAnn(items.find((a) => (a.target === "all" || a.target === group) && !seen.includes(a.id)) || null);

@@ -1,3 +1,4 @@
+import { isPaid } from "@/lib/features";
 import { useApp } from "@/contexts/AppContext";
 import { licenseService } from "@/services/license.service";
 import { Tier } from "@/types/enums";
@@ -9,7 +10,7 @@ export function LicenseExpiryBadge() {
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!teacher || teacher.tier !== Tier.PRO) {
+    if (!teacher || !isPaid(teacher.tier)) {
       setDaysRemaining(null);
       return;
     }

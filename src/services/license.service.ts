@@ -3,6 +3,7 @@ import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import type { License } from "@/types/entities";
 import { Tier } from "@/types/enums";
 import { generateId, timestamp } from "@/lib/utils";
+import { asTier } from "@/lib/features";
 
 export interface ActivationResult {
   success: boolean;
@@ -25,10 +26,10 @@ async function callLicenseApi(body: Record<string, unknown>): Promise<{ ok: bool
 
 export const licenseService = {
   /** Cek lisensi aktif milik email lewat server (tabel licenses tidak dibaca langsung dari browser). */
-  async lookupByEmail(email: string): Promise<{ found: boolean; tanggalBerakhir: number | null }> {
+  async lookupByEmail(email: string): Promise<{ found: boolean; tanggalBerakhir: number | null; tier: string | null }> {
     const { ok, data } = await callLicenseApi({ action: "status", email });
     if (!ok) throw new Error(data.error || "Gagal cek lisensi");
-    return { found: !!data.found, tanggalBerakhir: data.tanggalBerakhir ?? null };
+    return { found: !!data.found, tanggalBerakhir: data.tanggalBerakhir ?? null, tier: data.tier ?? null };
   },
 
   async validateKode(email: string, kode: string): Promise<ActivationResult> {
@@ -51,7 +52,7 @@ export const licenseService = {
 
     const existing = await licenseRepo.getActive(guruId);
     if (existing) {
-      return { success: false, message: "Kamu sudah memiliki lisensi PRO aktif" };
+      return { success: false, message: "Kamu sudah memiliki lisensi aktif" };
     }
 
     const upperKode = kode.toUpperCase().trim();
@@ -76,7 +77,8 @@ export const licenseService = {
       };
 
       await licenseRepo.save(license_);
-      await teacherRepo.updateTier(guruId, Tier.PRO);
+      const tier = asTier(data.tier);
+      await teacherRepo.updateTier(guruId, tier);
 
       const teacher = await teacherRepo.get();
       if (teacher) {
@@ -87,7 +89,7 @@ export const licenseService = {
 
       return {
         success: true,
-        message: "✅ Lisensi PRO berhasil diaktivasi!",
+        message: `✅ Lisensi ${tier} berhasil diaktivasi!`,
         cloudEmail: normalizedEmail,
         tanggalBerakhir,
       };
@@ -162,8 +164,9 @@ export const licenseService = {
           kodeLisensi: upperKode,
         });
       }
+      if (data.tier) await teacherRepo.updateTier(guruId, asTier(data.tier));
 
-      return { success: true, message: "✅ Lisensi berhasil diperpanjang 1 tahun!", tanggalBerakhir: newExpiry };
+      return { success: true, message: "✅ Lisensi berhasil diperpanjang 1 semester!", tanggalBerakhir: newExpiry };
     } catch {
       return { success: false, message: "Gagal terhubung. Periksa internet." };
     }

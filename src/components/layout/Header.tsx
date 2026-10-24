@@ -47,11 +47,11 @@ export function Header() {
 
         {setupSelesai && (
           <span className={`text-[0.65rem] px-[8px] py-[3px] rounded-full font-bold flex-shrink-0 mr-1 ${
-            teacher?.tier === Tier.PRO
+            teacher?.tier && teacher.tier !== Tier.FREE
               ? "bg-[#f59e0b]/25 text-[#fef3c7] border border-[#f59e0b]/40"
               : "bg-white/15 text-white/85 border border-white/25"
           }`}>
-            {teacher?.tier === Tier.PRO ? "PRO" : "FREE"}
+            {teacher?.tier || "FREE"}
           </span>
         )}
 

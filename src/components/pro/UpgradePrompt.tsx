@@ -1,5 +1,5 @@
 import { useApp } from "@/contexts/AppContext";
-import { PRO_PRICE } from "@/lib/constants";
+import { PLUS_PRICE, PRO_PRICE } from "@/lib/constants";
 import { ArrowUpCircle } from "lucide-react";
 
 interface Props {
@@ -22,7 +22,7 @@ export function UpgradePrompt({
       </div>
       <div className="text-[0.82rem] font-bold text-[var(--text)] mb-1">{title}</div>
       <div className="text-[0.72rem] text-[var(--text-light)] mb-3">{description}</div>
-      <div className="text-[0.78rem] font-bold text-[#2563eb] mb-3">{PRO_PRICE}</div>
+      <div className="text-[0.78rem] font-bold text-[#2563eb] mb-3">PLUS {PLUS_PRICE} · PRO {PRO_PRICE}</div>
       <button
         onClick={() => setActivePage("pengaturan" as any)}
         className="inline-flex items-center gap-[6px] py-[8px] px-[16px] rounded-[10px] text-white font-bold text-[0.8rem] cursor-pointer"

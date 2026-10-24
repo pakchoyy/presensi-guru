@@ -16,6 +16,7 @@ export enum ClockInStatus {
 
 export enum Tier {
   FREE = "FREE",
+  PLUS = "PLUS",
   PRO = "PRO",
 }
 

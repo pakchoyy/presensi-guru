@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const SEMESTER_MS = 180 * 24 * 60 * 60 * 1000;
 
 function getSupabase() {
   const url = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -11,13 +11,6 @@ function getSupabase() {
 
 const normEmail = (e) => String(e || "").toLowerCase().trim();
 const normKode = (k) => String(k || "").toUpperCase().trim();
-
-async function markPro(supabase, email) {
-  const { data: profile } = await supabase.from("profiles").select("id, tier").eq("email", email).maybeSingle();
-  if (profile && profile.tier !== "PRO") {
-    await supabase.from("profiles").update({ tier: "PRO", updated_at: new Date().toISOString() }).eq("id", profile.id);
-  }
-}
 
 // Produk aplikasi ini (shared Supabase project dengan Presensi Siswa).
 const PRODUCT = "guru";
@@ -30,10 +23,10 @@ async function claimKode(supabase, kode, fields) {
     .eq("kode", kode)
     .eq("status", "tersedia")
     .eq("product", PRODUCT)
-    .select("id")
+    .select("id, tier")
     .limit(1);
   if (error) throw error;
-  return data && data.length > 0;
+  return data && data[0] ? data[0].tier || "PRO" : null;
 }
 
 async function kodeError(supabase, kode) {
@@ -50,7 +43,7 @@ async function activate(supabase, body) {
   if (kode.length < 8) return [400, { error: "Format kode: BGY-PG-XXXX" }];
 
   const now = Date.now();
-  const tanggalBerakhir = now + YEAR_MS;
+  const tanggalBerakhir = now + SEMESTER_MS;
   const ok = await claimKode(supabase, kode, {
     email,
     guru_id: body.guruId ?? null,
@@ -59,8 +52,7 @@ async function activate(supabase, body) {
   });
   if (!ok) return [409, { error: await kodeError(supabase, kode) }];
 
-  await markPro(supabase, email);
-  return [200, { ok: true, tanggalBerakhir }];
+  return [200, { ok: true, tanggalBerakhir, tier: ok }];
 }
 
 async function renew(supabase, body) {
@@ -71,7 +63,7 @@ async function renew(supabase, body) {
 
   const { data: current } = await supabase
     .from("licenses")
-    .select("id, tanggal_berakhir")
+    .select("id, tanggal_berakhir, tier")
     .eq("email", email)
     .eq("product", PRODUCT)
     .eq("status", "digunakan")
@@ -81,13 +73,16 @@ async function renew(supabase, body) {
 
   const now = Date.now();
   const base = current?.tanggal_berakhir ? Math.max(now, current.tanggal_berakhir) : now;
-  const newExpiry = base + YEAR_MS;
+  const newExpiry = base + SEMESTER_MS;
 
-  const ok = await claimKode(supabase, kode, { email, tanggal_aktivasi: now, tanggal_berakhir: newExpiry });
-  if (!ok) return [409, { error: "Kode perpanjangan tidak valid atau sudah digunakan" }];
+  if (current?.tier === "PRO" && current.tanggal_berakhir > now && /-PLUS-/.test(kode)) {
+    return [409, { error: `Paket PRO masih aktif sampai ${new Date(current.tanggal_berakhir).toLocaleDateString("id-ID")}. Pakai kode PRO untuk memperpanjang.` }];
+  }
+  const tier = await claimKode(supabase, kode, { email, tanggal_aktivasi: now, tanggal_berakhir: newExpiry });
+  if (!tier) return [409, { error: "Kode perpanjangan tidak valid atau sudah digunakan" }];
 
-  if (current) await supabase.from("licenses").update({ tanggal_berakhir: newExpiry }).eq("id", current.id);
-  return [200, { ok: true, tanggalBerakhir: newExpiry }];
+  if (current) await supabase.from("licenses").update({ tanggal_berakhir: newExpiry, tier }).eq("id", current.id);
+  return [200, { ok: true, tanggalBerakhir: newExpiry, tier }];
 }
 
 // Cek lisensi aktif milik sebuah email (menggantikan query langsung ke tabel dari browser).
@@ -96,7 +91,7 @@ async function status(supabase, body) {
   if (!email.includes("@")) return [400, { error: "Email tidak valid" }];
   const { data, error } = await supabase
     .from("licenses")
-    .select("tanggal_berakhir")
+    .select("tanggal_berakhir, tier")
     .eq("email", email)
     .eq("product", PRODUCT)
     .eq("status", "digunakan")
@@ -104,7 +99,7 @@ async function status(supabase, body) {
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  return [200, { found: !!data, tanggalBerakhir: data?.tanggal_berakhir ?? null }];
+  return [200, { found: !!data, tanggalBerakhir: data?.tanggal_berakhir ?? null, tier: data ? data.tier || "PRO" : null }];
 }
 
 const ACTIONS = { activate, renew, status };

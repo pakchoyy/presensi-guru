@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { PRO_PRICE } from "@/lib/constants";
+import { PRO_PRICE, PLUS_PRICE, KREACY_PLUS_URL, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
+import { isPro, asTier } from "@/lib/features";
 import { licenseService } from "@/services/license.service";
 import { licenseRepo } from "@/repositories/dexie/license.repo";
 import { syncService } from "@/services/sync.service";
@@ -8,9 +9,7 @@ import type { License } from "@/types/entities";
 import { ArrowUpCircle, Check, MessageCircle, Crown, ShieldCheck, Mail, Loader2 } from "lucide-react";
 import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
-import { Tier } from "@/types/enums";
 import { generateId } from "@/lib/utils";
-import { supabase } from "@/lib/supabase";
 // react-confetti dropped untuk mengurangi deps — kalau mau nyalakan lagi, re-install
 const Confetti: React.FC<any> = () => null;
 import { PageName } from "@/types/enums";
@@ -18,7 +17,7 @@ import { PageName } from "@/types/enums";
 export function UpgradePage() {
   const { teacher, refreshTeacher, setActivePage } = useApp();
   const { toast } = useToast();
-  const isPRO = teacher?.tier === "PRO";
+  const isPRO = isPro(teacher?.tier);
   const manfaat = licenseService.getManfaat();
 
   const [email, setEmail] = useState("");
@@ -67,10 +66,11 @@ export function UpgradePage() {
 
       const lookup = await licenseService.lookupByEmail(normalizedEmail);
       const licenseData = lookup.found ? { tanggal_berakhir: lookup.tanggalBerakhir } : null;
+      const tier = asTier(lookup.tier);
 
       if (licenseData) {
         const now = Date.now();
-        const expiry = licenseData.tanggal_berakhir || (now + 365 * 24 * 60 * 60 * 1000);
+        const expiry = licenseData.tanggal_berakhir || (now + LICENSE_DURATION_DAYS * DAY_MS);
         const license: License = {
           id: generateId(),
           guruId: teacher.id,
@@ -84,7 +84,7 @@ export function UpgradePage() {
 
         await teacherRepo.update(teacher.id, {
           ...teacher,
-          tier: Tier.PRO,
+          tier,
           email: normalizedEmail,
         });
 
@@ -92,7 +92,7 @@ export function UpgradePage() {
 
         localStorage.setItem("presensi_cloud_email", normalizedEmail);
 
-        toast("✅ Email terverifikasi! Kamu sekarang PRO 🎉");
+        toast(`✅ Email terverifikasi! Kamu sekarang ${tier} 🎉`);
         setErrorMessage("");
         setShowConfetti(true);
 
@@ -105,41 +105,7 @@ export function UpgradePage() {
           window.location.reload();
         }, 3000);
       } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("tier")
-          .eq("email", normalizedEmail)
-          .maybeSingle();
-
-        if (profile && profile.tier === "PRO") {
-          const now = Date.now();
-          const license: License = {
-            id: generateId(),
-            guruId: teacher.id,
-            emailAktivasi: normalizedEmail,
-            kodeLisensi: "EMAIL-VERIFIED",
-            tanggalAktivasi: now,
-            tanggalBerakhir: now + 365 * 24 * 60 * 60 * 1000,
-            statusLisensi: "Aktif",
-          };
-          await licenseRepo.save(license);
-          await teacherRepo.update(teacher.id, { ...teacher, tier: Tier.PRO, email: normalizedEmail });
-          await refreshTeacher();
-
-          localStorage.setItem("presensi_cloud_email", normalizedEmail);
-
-          toast("✅ Email terverifikasi! Kamu sekarang PRO 🎉");
-          setShowConfetti(true);
-
-          syncService.initialUpload(normalizedEmail).catch(() => {});
-
-          setTimeout(() => {
-            setShowConfetti(false);
-            window.location.reload();
-          }, 3000);
-        } else {
-          setErrorMessage("Email belum terdaftar sebagai PRO. Silakan hubungi admin via WhatsApp.");
-        }
+        setErrorMessage("Email belum terdaftar sebagai PLUS/PRO. Silakan hubungi admin via WhatsApp.");
       }
     } catch (error) {
       console.error("Check email error:", error);
@@ -167,19 +133,26 @@ export function UpgradePage() {
     <div className="flex-1 px-[14px] pt-[14px] pb-[130px] lg:pb-4">
       <div className="bg-gradient-to-br from-[#2563eb] to-[#1e40af] rounded-2xl p-6 mb-3 text-white text-center">
         <ArrowUpCircle size={48} className="mx-auto mb-3 opacity-90" />
-        <h2 className="text-[1.3rem] font-extrabold mb-2">Upgrade ke PRO</h2>
-        <p className="text-[0.85rem] opacity-90 mb-3">
-          Semua fitur premium, selamanya
-        </p>
-        <div className="text-[2.5rem] font-extrabold mb-4">{PRO_PRICE}</div>
-        <a
-          href="https://kreacy.my.id/produk/8nonq6ro"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block w-full max-w-[280px] py-3 rounded-xl bg-white text-[#2563eb] font-extrabold text-[0.95rem] no-underline hover:bg-white/90 transition-all"
-        >
-          🛒 Beli Sekarang
-        </a>
+        <h2 className="text-[1.3rem] font-extrabold mb-2">Pilih Paket</h2>
+        <p className="text-[0.8rem] opacity-90 mb-3">Lisensi berlaku 1 semester (6 bulan)</p>
+        <div className="grid grid-cols-2 gap-2 mb-2 text-left">
+          {[
+            { nama: "PLUS", harga: PLUS_PRICE, url: KREACY_PLUS_URL, fitur: ["Maks 15 guru", "1 HP admin", "Absen GPS + selfie", "Rekap & pengingat"] },
+            { nama: "PRO", harga: PRO_PRICE, url: KREACY_PRO_URL, fitur: ["Guru tanpa batas", "3 HP admin", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate"] },
+          ].map((p) => (
+            <div key={p.nama} className="bg-white/10 rounded-xl p-3 flex flex-col">
+              <div className="font-extrabold text-[1rem]">{p.nama}</div>
+              <div className="font-extrabold text-[1.05rem] mb-2">{p.harga.split("/")[0]}</div>
+              <ul className="text-[0.72rem] mb-3 flex-1 space-y-1">
+                {p.fitur.map((f) => <li key={f}>✓ {f}</li>)}
+              </ul>
+              <a href={p.url} target="_blank" rel="noopener noreferrer"
+                className="block text-center py-2 rounded-lg bg-white text-[#2563eb] font-extrabold text-[0.8rem] no-underline">
+                🛒 Beli {p.nama}
+              </a>
+            </div>
+          ))}
+        </div>
         <button
           onClick={handleWA}
           className="w-full max-w-[280px] mt-2 flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-white/30 text-white font-bold text-[0.85rem] hover:bg-white/10 transition-all bg-transparent cursor-pointer mx-auto"

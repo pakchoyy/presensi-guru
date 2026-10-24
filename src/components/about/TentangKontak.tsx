@@ -31,7 +31,7 @@ export function TentangKontak() {
         </div>
           <div className="flex gap-2">
             <span className="font-semibold text-[#2563eb]">PRO:</span>
-            <span>Unlimited kelas, cloud sync, multi-device — Rp15.000/tahun</span>
+            <span>PLUS Rp27.000 (maks 15 guru) · PRO Rp51.000 (guru tanpa batas) — per semester</span>
           </div>
         </div>
       </div>

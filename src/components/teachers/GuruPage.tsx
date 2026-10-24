@@ -21,6 +21,7 @@ import { generateId, timestamp, inisial, randomPin, randomKode } from "@/lib/uti
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tier } from "@/types/enums";
+import { isPro, maxGuru } from "@/lib/features";
 import { guruCloudService } from "@/services/guru-cloud.service";
 import { adminCloud } from "@/services/multi-perangkat.service";
 import { AkunCloudSekolah } from "@/components/teachers/AkunCloudSekolah";
@@ -144,9 +145,22 @@ export function GuruPage() {
   const kodeDipakai = (kode: string, exceptId?: number) =>
     guruList.some((g) => g.id !== exceptId && (g.kodeLogin === kode || g.nip === kode));
 
+  // Batas jumlah guru per paket (FREE 5, PLUS 15, PRO tanpa batas).
+  const cekBatas = (tambah: number) => {
+    const maks = maxGuru(teacher?.tier);
+    if (guruList.length + tambah <= maks) return true;
+    toast(`Paket ${teacher?.tier || "FREE"} maksimal ${maks} guru. Upgrade ke PRO untuk guru tanpa batas.`, "error");
+    return false;
+  };
+
   const handleSave = async () => {
     if (!fNama.trim() || !school) {
       toast("Nama guru wajib", "error");
+      return;
+    }
+    if (!editId && !cekBatas(1)) return;
+    if (fRole === "ks" && !isPro(teacher?.tier)) {
+      toast("Peran Kepala Sekolah hanya untuk paket PRO", "error");
       return;
     }
     const now = timestamp();
@@ -332,6 +346,7 @@ export function GuruPage() {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
       if (data.length === 0) { toast("File kosong", "error"); return; }
+      if (!cekBatas(data.length)) return;
 
       // ambil kolom fleksibel (case-insensitive)
       const pick = (row: Record<string, unknown>, keys: string[]): string => {
@@ -621,7 +636,7 @@ export function GuruPage() {
                 className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
               >
                 <option value="guru">Guru</option>
-                <option value="ks">Kepala Sekolah (menyetujui izin)</option>
+                <option value="ks">Kepala Sekolah (menyetujui izin){isPro(teacher?.tier) ? "" : " — PRO"}</option>
                 <option value="admin">Operator (admin)</option>
               </select>
               {fRole === "ks" && (
