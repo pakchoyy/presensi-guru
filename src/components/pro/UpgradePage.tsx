@@ -1,24 +1,34 @@
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { PRO_PRICE, PLUS_PRICE, KREACY_PLUS_URL, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
-import { isPro, asTier } from "@/lib/features";
+import { isPro, asTier, isOnTrial, trialDaysRemaining } from "@/lib/features";
 import { licenseService } from "@/services/license.service";
 import { licenseRepo } from "@/repositories/dexie/license.repo";
 import { syncService } from "@/services/sync.service";
 import type { License } from "@/types/entities";
-import { ArrowUpCircle, Check, MessageCircle, Crown, ShieldCheck, Mail, Loader2 } from "lucide-react";
+import { Check, MessageCircle, Crown, ShieldCheck, Mail, Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { generateId } from "@/lib/utils";
 // react-confetti dropped untuk mengurangi deps — kalau mau nyalakan lagi, re-install
 const Confetti: React.FC<any> = () => null;
-import { PageName } from "@/types/enums";
+import { PageName, Tier } from "@/types/enums";
+
+const COMPARE_ROWS: [string, string, string, string][] = [
+  ["Jumlah guru", "5", "15", "∞"],
+  ["HP admin (cloud)", "—", "1", "3"],
+  ["Absen GPS + selfie", "✓", "✓", "✓"],
+  ["Rekap & pengingat", "✓", "✓", "✓"],
+  ["Kepala Sekolah verifikasi izin", "—", "—", "✓"],
+  ["Logo sekolah di laporan", "—", "—", "✓"],
+  ["Program Affiliate", "—", "—", "✓"],
+  ["Bebas iklan", "—", "—", "✓"],
+];
 
 export function UpgradePage() {
   const { teacher, refreshTeacher, setActivePage } = useApp();
   const { toast } = useToast();
   const isPRO = isPro(teacher?.tier);
-  const manfaat = licenseService.getManfaat();
 
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -115,6 +125,8 @@ export function UpgradePage() {
     }
   };
 
+  const tier = isPro(teacher?.tier) ? Tier.PRO : teacher?.tier === Tier.PLUS ? Tier.PLUS : Tier.FREE;
+
   if (isPRO) {
     return (
       <div className="flex-1 px-[14px] pt-[14px] pb-[calc(130px+var(--ticker-h,0px))] lg:pb-4">
@@ -131,36 +143,104 @@ export function UpgradePage() {
 
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[calc(130px+var(--ticker-h,0px))] lg:pb-4">
-      <div className="bg-gradient-to-br from-[#2563eb] to-[#1e40af] rounded-2xl p-6 mb-3 text-white text-center">
-        <ArrowUpCircle size={48} className="mx-auto mb-3 opacity-90" />
-        <h2 className="text-[1.3rem] font-extrabold mb-2">Pilih Paket</h2>
-        <p className="text-[0.8rem] opacity-90 mb-3">Lisensi berlaku 1 semester (6 bulan)</p>
-        <div className="grid grid-cols-2 gap-2 mb-2 text-left">
-          {[
-            { nama: "PLUS", harga: PLUS_PRICE, url: KREACY_PLUS_URL, fitur: ["Maks 15 guru", "1 HP admin", "Absen GPS + selfie", "Rekap & pengingat"] },
-            { nama: "PRO", harga: PRO_PRICE, url: KREACY_PRO_URL, fitur: ["Guru tanpa batas", "3 HP admin", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate"] },
-          ].map((p) => (
-            <div key={p.nama} className="bg-white/10 rounded-xl p-3 flex flex-col">
-              <div className="font-extrabold text-[1rem]">{p.nama}</div>
-              <div className="font-extrabold text-[1.05rem] mb-2">{p.harga.split("/")[0]}</div>
-              <ul className="text-[0.72rem] mb-3 flex-1 space-y-1">
-                {p.fitur.map((f) => <li key={f}>✓ {f}</li>)}
-              </ul>
-              <a href={p.url} target="_blank" rel="noopener noreferrer"
-                className="block text-center py-2 rounded-lg bg-white text-[#2563eb] font-extrabold text-[0.8rem] no-underline">
-                🛒 Beli {p.nama}
-              </a>
-            </div>
-          ))}
+      {/* Hero */}
+      <div className="rounded-2xl p-5 mb-3 text-white" style={{ background: "var(--grad)" }}>
+        <h2 className="text-[1.35rem] font-extrabold leading-tight mb-1">Pilih paket yang pas buat sekolahmu</h2>
+        <p className="text-[0.78rem] opacity-85 leading-relaxed mb-3">Bayar per semester (6 bulan). Tidak ada tagihan otomatis.</p>
+        <div className="inline-flex items-center gap-[6px] px-[10px] py-[5px] rounded-full text-[0.72rem] font-bold border border-white/30 bg-white/15">
+          Kamu sekarang: {tier}
+          {isOnTrial(teacher?.tier) && <span className="opacity-80">· Coba PRO {trialDaysRemaining()} hari lagi</span>}
         </div>
-        <button
-          onClick={handleWA}
-          className="w-full max-w-[280px] mt-2 flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-white/30 text-white font-bold text-[0.85rem] hover:bg-white/10 transition-all bg-transparent cursor-pointer mx-auto"
-        >
-          <MessageCircle size={16} />
-          <span>Atau Chat WhatsApp</span>
-        </button>
       </div>
+
+      {/* Tabel pembanding */}
+      <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-xl mb-3 overflow-hidden">
+        <table className="w-full text-[0.7rem] text-[var(--text)]">
+          <thead>
+            <tr className="bg-[var(--input-bg)]">
+              <th className="text-left font-bold px-3 py-2">Fitur</th>
+              <th className="font-bold px-1 py-2 text-[#64748b]">FREE</th>
+              <th className="font-bold px-1 py-2 text-[#2563eb]">PLUS</th>
+              <th className="font-bold px-1 py-2 text-[#d97706]">PRO</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARE_ROWS.map(([label, f, p, r]) => (
+              <tr key={label} className="border-t border-[var(--border)]">
+                <td className="px-3 py-[6px] text-[var(--text-light)]">{label}</td>
+                <td className="text-center px-1">{f}</td>
+                <td className="text-center px-1">{p}</td>
+                <td className="text-center px-1 font-semibold">{r}</td>
+              </tr>
+            ))}
+            <tr className="border-t border-[var(--border)] bg-[var(--input-bg)]">
+              <td className="px-3 py-[6px] font-bold">Harga / semester</td>
+              <td className="text-center px-1">Gratis</td>
+              <td className="text-center px-1">{PLUS_PRICE.replace("/semester", "")}</td>
+              <td className="text-center px-1 font-bold">{PRO_PRICE.replace("/semester", "")}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <TierCard
+        name="FREE"
+        tagline="Gratis selamanya — 30 hari pertama coba PRO"
+        price={null}
+        bullets={["Maks 5 guru", "Absen GPS + selfie", "Rekap & pengingat"]}
+        accentColor="#64748b"
+        isCurrent={tier === Tier.FREE}
+        muted={tier !== Tier.FREE}
+        cta={null}
+      />
+      <TierCard
+        name="PLUS"
+        tagline="Buat sekolah kecil"
+        price={PLUS_PRICE}
+        perMonth="cuma ±Rp4.500/bulan"
+        bullets={["Maks 15 guru", "1 HP admin (data aman di cloud)", "Absen GPS + selfie", "Rekap & pengingat"]}
+        accentColor="#2563eb"
+        isCurrent={tier === Tier.PLUS}
+        muted={false}
+        cta={tier === Tier.PLUS
+          ? { label: "Sedang Dipakai ✓", href: null, disabled: true, color: "#2563eb" }
+          : { label: `Beli PLUS ${PLUS_PRICE.replace("/semester", "")}`, href: KREACY_PLUS_URL, disabled: false, color: "#2563eb" }}
+      />
+      <TierCard
+        name="PRO"
+        tagline="Semua di PLUS, plus:"
+        price={PRO_PRICE}
+        perMonth="cuma ±Rp8.500/bulan"
+        bullets={["Guru tanpa batas", "3 HP admin", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate", "Bebas iklan"]}
+        accentColor="#f59e0b"
+        isCurrent={false}
+        muted={false}
+        recommended
+        cta={{ label: `Beli PRO ${PRO_PRICE.replace("/semester", "")}`, href: KREACY_PRO_URL, disabled: false, color: "#f59e0b" }}
+        showCrown
+      />
+
+      <div className="rounded-xl p-4 mb-3 border border-[#f59e0b]/40 bg-[rgba(245,158,11,0.08)]">
+        <div className="text-[0.9rem] font-extrabold text-[var(--text)] mb-1">
+          Cuma ±Rp8.500 sebulan untuk semua guru tanpa batas.
+        </div>
+        <p className="text-[0.74rem] text-[var(--text-light)] leading-relaxed">
+          Absen guru tercatat rapi dengan GPS + selfie, izin disetujui Kepala Sekolah dari HP, dan data aman di cloud
+          (tidak hilang kalau HP rusak). Bayar sekali per semester.
+        </p>
+      </div>
+
+      <div className="flex items-start gap-2 bg-[var(--input-bg)] rounded-xl p-3 mb-3 text-[0.7rem] text-[var(--text-light)] leading-relaxed">
+        <ShieldCheck size={15} className="text-[#2563eb] flex-shrink-0 mt-[1px]" />
+        <div>Pembayaran satu kali per semester, tidak auto-renew.</div>
+      </div>
+
+      <button
+        onClick={handleWA}
+        className="w-full mb-3 flex items-center justify-center gap-2 py-3 rounded-xl border border-[var(--border)] text-[var(--text)] font-bold text-[0.85rem] bg-[var(--card-bg)] cursor-pointer"
+      >
+        <MessageCircle size={16} /> Tanya dulu via WhatsApp
+      </button>
 
       <div className="bg-[rgba(14,165,160,0.08)] border-2 border-[#2563eb] rounded-xl p-4 mb-3">
         <div className="flex items-center gap-2 mb-3">
@@ -169,7 +249,7 @@ export function UpgradePage() {
           </div>
           <div>
             <div className="text-[0.9rem] font-extrabold text-[var(--text)]">
-              Sudah Beli PRO?
+              Sudah beli PLUS/PRO?
             </div>
             <div className="text-[0.7rem] text-[var(--text-light)]">
               Verifikasi email untuk aktivasi
@@ -221,44 +301,6 @@ export function UpgradePage() {
         )}
       </div>
 
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4 mb-3">
-        <div className="text-[0.85rem] font-bold mb-3 flex items-center gap-2">
-          <Crown size={16} className="text-[#f59e0b]" />
-          Fitur PRO
-        </div>
-        
-        <div className="space-y-2">
-          {manfaat.map((m, i) => (
-            <div key={i} className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--input-bg)] transition-colors">
-              <div className="w-6 h-6 rounded-full bg-[#16a34a]/10 flex items-center justify-center flex-shrink-0 mt-[1px]">
-                <Check size={14} className="text-[#16a34a]" />
-              </div>
-              <span className="text-[0.78rem] text-[var(--text)] leading-relaxed">{m}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
-        <div className="text-[0.78rem] font-bold flex items-center gap-[6px] mb-2">
-          <ShieldCheck size={14} className="text-[#2563eb]" /> Perbandingan
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-[0.7rem]">
-          <div className="bg-[var(--input-bg)] rounded-lg p-2">
-            <div className="font-bold mb-1">FREE</div>
-            <div className="text-[var(--text-light)] leading-[1.6]">
-              • 1 kelas<br />• 12 siswa<br />• Offline<br />• Rekap & export
-            </div>
-          </div>
-          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 border border-[#2563eb]/20">
-            <div className="font-bold text-[#2563eb] mb-1">PRO</div>
-            <div className="text-[var(--text-light)] leading-[1.6]">
-              • Unlimited kelas<br />• Unlimited siswa<br />• Cloud sync<br />• Multi device
-            </div>
-          </div>
-        </div>
-      </div>
-      
       {showConfetti && (
         <Confetti
           width={window.innerWidth}
@@ -267,6 +309,82 @@ export function UpgradePage() {
           numberOfPieces={500}
         />
       )}
+    </div>
+  );
+}
+
+interface CTA {
+  label: string;
+  href: string | null;
+  disabled: boolean;
+  color: string;
+}
+
+function TierCard(props: {
+  name: string;
+  tagline: string;
+  price: string | null;
+  perMonth?: string;
+  bullets: string[];
+  accentColor: string;
+  isCurrent: boolean;
+  muted: boolean;
+  recommended?: boolean;
+  cta: CTA | null;
+  showCrown?: boolean;
+}) {
+  const { name, tagline, price, perMonth, bullets, accentColor, isCurrent, muted, recommended, cta, showCrown } = props;
+  return (
+    <div
+      className="relative rounded-2xl p-4 mb-3"
+      style={{
+        background: "var(--card-bg)",
+        border: recommended ? `2px solid ${accentColor}` : "1px solid var(--border)",
+        opacity: muted ? 0.6 : 1,
+        boxShadow: recommended ? `0 4px 20px ${accentColor}30` : "none",
+      }}
+    >
+      {(recommended || isCurrent) && (
+        <div
+          className="absolute -top-[11px] left-4 flex items-center gap-[4px] px-[10px] py-[3px] rounded-full text-[0.65rem] font-extrabold text-white"
+          style={{ background: recommended ? `linear-gradient(135deg, ${accentColor}, #d97706)` : accentColor }}
+        >
+          {recommended ? <><Sparkles size={11} /> Rekomendasi</> : "Paket Kamu"}
+        </div>
+      )}
+      <div className="flex items-center gap-2 mb-1">
+        {showCrown && <Crown size={16} style={{ color: accentColor }} />}
+        <div className="text-[1.1rem] font-extrabold" style={{ color: accentColor }}>{name}</div>
+      </div>
+      <p className="text-[0.74rem] text-[var(--text-light)] mb-3 leading-snug">{tagline}</p>
+      {price && (
+        <div className="flex items-baseline gap-2 mb-1">
+          <span className="text-[1.75rem] font-extrabold text-[var(--text)]">{price.split("/")[0]}</span>
+          <span className="text-[0.78rem] text-[var(--text-light)]">/semester</span>
+        </div>
+      )}
+      {perMonth && <p className="text-[0.7rem] font-bold mb-3" style={{ color: accentColor }}>{perMonth}</p>}
+      {!price && <div className="mb-3" />}
+      <ul className="space-y-[7px] mb-4">
+        {bullets.map((b) => (
+          <li key={b} className="flex items-start gap-2 text-[0.78rem] text-[var(--text)] leading-snug">
+            <Check size={15} className="flex-shrink-0 mt-[2px]" style={{ color: accentColor }} />
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+      {cta && (cta.disabled ? (
+        <button disabled className="w-full py-[11px] rounded-xl font-bold text-[0.85rem] border-[1.5px] cursor-not-allowed opacity-70"
+          style={{ borderColor: cta.color, color: cta.color, background: "transparent" }}>
+          {cta.label}
+        </button>
+      ) : (
+        <a href={cta.href!} target="_blank" rel="noopener noreferrer"
+          className="block w-full text-center py-[11px] rounded-xl font-bold text-[0.85rem] text-white no-underline"
+          style={{ background: `linear-gradient(135deg, ${cta.color}, ${cta.color}dd)` }}>
+          {cta.label}
+        </a>
+      ))}
     </div>
   );
 }
