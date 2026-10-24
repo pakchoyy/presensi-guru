@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import { isPaid } from "@/lib/features";
+import { licenseService } from "@/services/license.service";
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
-import { PRO_PRICE } from "@/lib/constants";
 import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat, Gift } from "lucide-react";
 
 interface Props {
@@ -20,6 +21,15 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
   const { setActivePage, setupSelesai, teacher, setEntryMode } = useApp();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [lic, setLic] = useState<{ berakhir: string; daysRemaining: number } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !teacher || !isPaid(teacher.tier)) { setLic(null); return; }
+    licenseService.getStatus(teacher.id).then((st) => {
+      setLic(st.aktif && st.berakhir && st.daysRemaining !== undefined
+        ? { berakhir: st.berakhir, daysRemaining: st.daysRemaining } : null);
+    }).catch(() => setLic(null));
+  }, [isOpen, teacher]);
 
   if (!isOpen || !setupSelesai) return null;
 
@@ -97,17 +107,32 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           <Gift size={16} /> Program Affiliate
         </button>
 
-        {!isPRO && (
-          <>
-            <div className="h-px bg-[var(--border)] mx-0" />
-            <button
-              onClick={() => { setActivePage(PageName.UPGRADE); onClose(); }}
-              className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--brand)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
-            >
-              <ArrowUpCircle size={16} /> Upgrade PRO
-              <span className="ml-auto text-[0.65rem] text-[var(--text-light)]">{PRO_PRICE}</span>
-            </button>
-          </>
+        <div className="h-px bg-[var(--border)] mx-0" />
+
+        {/* Paling bawah: tanda pelanggan / tombol upgrade */}
+        {isPRO && lic ? (
+          <div className="px-4 py-[11px] bg-[rgba(37,99,235,0.08)]">
+            <div className="text-[0.8rem] font-extrabold text-[var(--brand)]">Pelanggan {teacher?.tier} ✓</div>
+            <div className="text-[0.68rem] text-[var(--text-light)] mt-[2px]">
+              Aktif sampai {lic.berakhir} ({lic.daysRemaining} hari lagi)
+            </div>
+            {teacher?.tier === Tier.PLUS && (
+              <button
+                onClick={() => { setActivePage(PageName.UPGRADE); onClose(); }}
+                className="mt-[6px] text-[0.7rem] font-bold text-[#d97706] bg-transparent border-none p-0 cursor-pointer"
+              >
+                Upgrade ke PRO →
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => { setActivePage(PageName.UPGRADE); onClose(); }}
+            className="w-full flex items-center gap-3 px-4 py-[12px] text-[0.85rem] font-bold text-white border-none cursor-pointer text-left"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+          >
+            <ArrowUpCircle size={17} /> Upgrade paket
+          </button>
         )}
       </div>
     </>
