@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { effectiveTier } from "@/lib/features";
 import { DEFAULT_LOGO, resolveLogo } from "@/lib/constants";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
@@ -15,7 +16,7 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const isPRO = teacher?.tier === Tier.PRO;
+  const isPRO = effectiveTier(teacher?.tier) === Tier.PRO;
 
   const logoUrl = resolveLogo(school?.logoUrl);
   const isCustomLogo = logoUrl !== DEFAULT_LOGO;

@@ -21,7 +21,7 @@ import { generateId, timestamp, inisial, randomPin, randomKode } from "@/lib/uti
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tier } from "@/types/enums";
-import { isPro, maxGuru } from "@/lib/features";
+import { effectiveTier, isPro, maxGuru } from "@/lib/features";
 import { guruCloudService } from "@/services/guru-cloud.service";
 import { adminCloud } from "@/services/multi-perangkat.service";
 import { AkunCloudSekolah } from "@/components/teachers/AkunCloudSekolah";
@@ -147,7 +147,7 @@ export function GuruPage() {
 
   // Batas jumlah guru per paket (FREE 5, PLUS 15, PRO tanpa batas).
   const cekBatas = (tambah: number) => {
-    const maks = maxGuru(teacher?.tier);
+    const maks = maxGuru(effectiveTier(teacher?.tier));
     if (guruList.length + tambah <= maks) return true;
     toast(`Paket ${teacher?.tier || "FREE"} maksimal ${maks} guru. Upgrade ke PRO untuk guru tanpa batas.`, "error");
     return false;
@@ -159,7 +159,7 @@ export function GuruPage() {
       return;
     }
     if (!editId && !cekBatas(1)) return;
-    if (fRole === "ks" && !isPro(teacher?.tier)) {
+    if (fRole === "ks" && !isPro(effectiveTier(teacher?.tier))) {
       toast("Peran Kepala Sekolah hanya untuk paket PRO", "error");
       return;
     }
@@ -636,7 +636,7 @@ export function GuruPage() {
                 className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[0.88rem] outline-none focus:border-[var(--brand)]"
               >
                 <option value="guru">Guru</option>
-                <option value="ks">Kepala Sekolah (menyetujui izin){isPro(teacher?.tier) ? "" : " — PRO"}</option>
+                <option value="ks">Kepala Sekolah (menyetujui izin){isPro(effectiveTier(teacher?.tier)) ? "" : " — PRO"}</option>
                 <option value="admin">Operator (admin)</option>
               </select>
               {fRole === "ks" && (

@@ -7,6 +7,8 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
+import { TrialEndedModal } from "@/components/pro/TrialEndedModal";
+import { isPaid, trialDaysRemaining, TRIAL_END_SEEN_KEY } from "@/lib/features";
 import { Marquee } from "@/components/layout/Marquee";
 import { InstallPrompt } from "@/components/shared/InstallPrompt";
 import { useAutoSync } from "@/hooks/useAutoSync";
@@ -146,6 +148,9 @@ function AppContent() {
         </div>
       )}
       <BottomNav />
+      {setupSelesai && !isPaid(teacher?.tier) && trialDaysRemaining() <= 0 && localStorage.getItem(TRIAL_END_SEEN_KEY) !== "1" && (
+        <TrialEndedModal onLihatPaket={() => setActivePage(PageName.UPGRADE)} />
+      )}
     </>
   );
 }

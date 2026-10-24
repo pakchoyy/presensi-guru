@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isOnTrial, trialDaysRemaining } from "@/lib/features";
 import { useApp } from "@/contexts/AppContext";
 import { Tier } from "@/types/enums";
 import { DropdownMenu } from "@/components/layout/DropdownMenu";
@@ -47,11 +48,11 @@ export function Header() {
 
         {setupSelesai && (
           <span className={`text-[0.65rem] px-[8px] py-[3px] rounded-full font-bold flex-shrink-0 mr-1 ${
-            teacher?.tier && teacher.tier !== Tier.FREE
+            isOnTrial(teacher?.tier) || (teacher?.tier && teacher.tier !== Tier.FREE)
               ? "bg-[#f59e0b]/25 text-[#fef3c7] border border-[#f59e0b]/40"
               : "bg-white/15 text-white/85 border border-white/25"
           }`}>
-            {teacher?.tier || "FREE"}
+            {isOnTrial(teacher?.tier) ? `PRO · Trial ${trialDaysRemaining()}h` : teacher?.tier || "FREE"}
           </span>
         )}
 
