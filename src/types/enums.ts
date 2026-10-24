@@ -61,6 +61,7 @@ export enum PageName {
   CLOUD_SETTINGS = "cloud-settings",
   PRESENSI = "presensi",
   LOG_PRESENSI = "log-presensi",
+  AFFILIATE = "affiliate",
 }
 
 export enum WizStep {

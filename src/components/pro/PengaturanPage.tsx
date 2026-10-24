@@ -1,5 +1,5 @@
 import { isPaid } from "@/lib/features";
-import { readAktivasiLink, clearAktivasiLink } from "@/lib/aktivasi-link";
+import { readAktivasiLink, readRef, clearRef, clearAktivasiLink } from "@/lib/aktivasi-link";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { adminCloud } from "@/services/multi-perangkat.service";
@@ -76,6 +76,7 @@ export function PengaturanPage() {
 
   const [email, setEmail] = useState(() => readAktivasiLink()?.email || "");
   const [kode, setKode] = useState(() => readAktivasiLink()?.kode || "");
+  const [refCode, setRefCode] = useState(() => readRef());
   const [activating, setActivating] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -304,10 +305,11 @@ export function PengaturanPage() {
     if (!teacher) return;
     if (!email.trim()) { toast("Masukkan email dulu"); setActivating(false); return; }
     setActivating(true);
-    const result: any = await licenseService.activate(email.trim(), kode.trim(), teacher.id);
+    const result: any = await licenseService.activate(email.trim(), kode.trim(), teacher.id, refCode);
     setActivating(false);
 
     if (result.success) {
+      clearRef();
       toast(result.message);
       setKode("");
       clearAktivasiLink();
@@ -1374,6 +1376,17 @@ export function PengaturanPage() {
                 value={kode}
                 onChange={(e) => setKode(e.target.value)}
                 placeholder="BGY-PS-XXXX"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Kode Referral (opsional)</label>
+              <input
+                type="text"
+                value={refCode}
+                onChange={(e) => setRefCode(e.target.value)}
+                placeholder="PY-XXXXXX"
+                maxLength={9}
                 className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
               />
             </div>

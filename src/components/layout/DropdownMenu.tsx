@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { PageName, Tier } from "@/types/enums";
 import { PRO_PRICE } from "@/lib/constants";
-import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat } from "lucide-react";
+import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat, Gift } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -87,6 +87,14 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
           <Repeat size={16} /> Ganti Peran (Admin / Guru)
+        </button>
+
+        <div className="h-px bg-[var(--border)] mx-0" />
+        <button
+          onClick={() => { setActivePage(PageName.AFFILIATE); onClose(); }}
+          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
+        >
+          <Gift size={16} /> Program Affiliate
         </button>
 
         {!isPRO && (

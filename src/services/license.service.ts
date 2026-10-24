@@ -4,6 +4,30 @@ import type { License } from "@/types/entities";
 import { Tier } from "@/types/enums";
 import { generateId, timestamp } from "@/lib/utils";
 import { asTier } from "@/lib/features";
+import { supabase } from "@/lib/supabase";
+
+interface AffiliateReward {
+  commission: number;
+  days: number;
+}
+
+export interface AffiliateInfo {
+  rewards: { PLUS: AffiliateReward; PRO: AffiliateReward; GURU_PLUS?: AffiliateReward; GURU_PRO?: AffiliateReward };
+  minWithdraw: number;
+  capPerSemester: number;
+}
+
+export interface AffiliateDashboard extends AffiliateInfo {
+  code: string;
+  email: string;
+  referrals: { email: string; tier: string | null; product?: string; at: string; amount: number; days: number }[];
+  rewardsThisSemester: number;
+  earned: number;
+  withdrawn: number;
+  pending: number;
+  saldo: number;
+  hasPending: boolean;
+}
 
 export interface ActivationResult {
   success: boolean;
@@ -15,9 +39,12 @@ export interface ActivationResult {
 }
 
 async function callLicenseApi(body: Record<string, unknown>): Promise<{ ok: boolean; status: number; data: any }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const { data: sess } = await supabase.auth.getSession();
+  if (sess.session?.access_token) headers.Authorization = `Bearer ${sess.session.access_token}`;
   const res = await fetch("/api/license", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
@@ -42,7 +69,38 @@ export const licenseService = {
     return { success: true, message: "Kode valid" };
   },
 
-  async activate(email: string, kode: string, guruId: number): Promise<ActivationResult> {
+  /** Angka program affiliate (publik): komisi, bonus hari, minimal tarik. */
+  async getAffiliateInfo(): Promise<AffiliateInfo | null> {
+    try {
+      const { ok, data } = await callLicenseApi({ action: "affiliate_info" });
+      return ok ? (data as AffiliateInfo) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  /** Dashboard affiliate (khusus PRO, butuh sesi verifikasi email). */
+  async getAffiliate(): Promise<{ ok: true; data: AffiliateDashboard } | { ok: false; code?: string; error: string }> {
+    try {
+      const { ok, data } = await callLicenseApi({ action: "affiliate" });
+      if (!ok) return { ok: false, code: data.code, error: data.error || "Gagal memuat data affiliate" };
+      return { ok: true, data };
+    } catch {
+      return { ok: false, error: "Gagal memuat. Periksa koneksi internet." };
+    }
+  },
+
+  /** Ajukan penarikan seluruh saldo komisi. */
+  async requestWithdraw(nama: string, tujuan: string): Promise<{ ok: boolean; amount?: number; error?: string }> {
+    try {
+      const { ok, data } = await callLicenseApi({ action: "withdraw", nama, tujuan });
+      return ok ? { ok: true, amount: data.amount } : { ok: false, error: data.error || "Gagal mengajukan penarikan" };
+    } catch {
+      return { ok: false, error: "Gagal mengajukan. Periksa koneksi internet." };
+    }
+  },
+
+  async activate(email: string, kode: string, guruId: number, ref?: string): Promise<ActivationResult> {
     if (!email || !email.includes("@")) {
       return { success: false, message: "Email tidak valid" };
     }
@@ -59,7 +117,7 @@ export const licenseService = {
     const normalizedEmail = email.toLowerCase().trim();
 
     try {
-      const { ok, status, data } = await callLicenseApi({ action: "activate", email: normalizedEmail, kode: upperKode, guruId });
+      const { ok, status, data } = await callLicenseApi({ action: "activate", email: normalizedEmail, kode: upperKode, guruId, ref: ref?.trim().toUpperCase() || undefined });
       if (!ok) {
         return { success: false, message: status >= 500 ? "Gagal mengaktivasi lisensi" : data.error || "Gagal mengaktivasi lisensi" };
       }

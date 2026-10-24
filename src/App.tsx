@@ -30,9 +30,11 @@ import { AbsenGuruPage } from "@/components/attendance/AbsenGuruPage";
 import { EntryGate } from "@/components/entry/EntryGate";
 import { GuruShell } from "@/components/guru/GuruShell";
 import { useEffect } from "react";
-import { captureAktivasiLink, readAktivasiLink } from "@/lib/aktivasi-link";
+import { captureAktivasiLink, captureRef, readAktivasiLink } from "@/lib/aktivasi-link";
+import { AffiliatePage } from "@/components/pro/AffiliatePage";
 
 // Tangkap /aktivasi?email=&kode= dari link toko sebelum render apa pun.
+captureRef();
 captureAktivasiLink();
 
 function getAbsenToken(): string | null {
@@ -86,6 +88,8 @@ function PageContent() {
       return <TentangKontak />;
     case PageName.BACKUP:
       return <BackupRestorePage />;
+    case PageName.AFFILIATE:
+      return <AffiliatePage />;
     case PageName.UPGRADE:
       return <UpgradePage />;
     case PageName.PENGATURAN:

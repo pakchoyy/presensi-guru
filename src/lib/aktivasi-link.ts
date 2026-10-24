@@ -36,3 +36,26 @@ export function readAktivasiLink(): AktivasiLink | null {
 export function clearAktivasiLink() {
   try { sessionStorage.removeItem(KEY); } catch { /* ignore */ }
 }
+
+// Link ajakan affiliate: ?ref=PY-XXXXXX di URL mana pun. Disimpan sampai aktivasi.
+const REF_KEY = "py_ref";
+const REF_RE = /^PY-[A-Z0-9]{6}$/;
+
+export function captureRef() {
+  if (typeof window === "undefined") return;
+  const q = new URLSearchParams(window.location.search);
+  const ref = (q.get("ref") || "").trim().toUpperCase();
+  if (!REF_RE.test(ref)) return;
+  try { localStorage.setItem(REF_KEY, ref); } catch { /* ignore */ }
+  q.delete("ref");
+  const rest = q.toString();
+  window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
+}
+
+export function readRef(): string {
+  try { return localStorage.getItem(REF_KEY) || ""; } catch { return ""; }
+}
+
+export function clearRef() {
+  try { localStorage.removeItem(REF_KEY); } catch { /* ignore */ }
+}
