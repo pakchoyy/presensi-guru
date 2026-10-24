@@ -1,21 +1,18 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus, KeyRound, Hash, SkipForward } from "lucide-react";
-import { DeviceLimitModal } from "./DeviceLimitModal";
+import { Mail, Eye, EyeOff, LogIn, KeyRound, Hash, SkipForward } from "lucide-react";
+import { OtpVerify } from "./OtpVerify";
 
 type Tab = "guru" | "admin";
-type AdminMode = "login" | "register";
 
 export function LoginPage() {
-  const { login, loginGuru, register, loading, deviceLimitError, clearDeviceLimitError } = useAuth();
+  const { loginGuru, markDeviceOk, loading } = useAuth();
 
   const [tab, setTab] = useState<Tab>("guru");
 
-  // ===== Admin form =====
-  const [mode, setMode] = useState<AdminMode>("login");
+  // ===== Admin: masuk dengan kode email =====
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [showOtp, setShowOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // ===== Guru form =====
@@ -29,31 +26,11 @@ export function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.split("?")[1] || "");
     const emailParam = params.get("email");
-    const refParam = params.get("ref");
     if (emailParam) {
       setEmail(emailParam);
       setTab("admin");
-      if (refParam === "activation") setMode("register");
     }
   }, []);
-
-  const handleSubmitAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
-    try {
-      if (mode === "login") {
-        await login(email, password);
-      } else {
-        if (!name.trim()) throw new Error("Nama tidak boleh kosong");
-        await register(email, password, name);
-      }
-    } catch (err: any) {
-      const msg = err.message || "Terjadi kesalahan. Coba lagi.";
-      if (!msg.includes("Batas perangkat tercapai")) setError(msg);
-      setSubmitting(false);
-    }
-  };
 
   const handleSubmitGuru = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +51,6 @@ export function LoginPage() {
     window.location.reload();
   };
 
-  const handleDeviceLoggedOut = () => {
-    clearDeviceLimitError();
-    if (tab === "admin") handleSubmitAdmin({ preventDefault: () => {} } as React.FormEvent);
-    else handleSubmitGuru({ preventDefault: () => {} } as React.FormEvent);
-  };
-
-  const adminValid = email.includes("@") && password.length >= 6;
   const guruValid = kode.trim().length > 0 && /^\d{4,6}$/.test(pin.trim());
 
   return (
@@ -163,78 +133,32 @@ export function LoginPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleSubmitAdmin} className="space-y-3">
-              {mode === "register" && (
-                <Field label="Nama Lengkap">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Nama Anda"
-                      className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
-                      required
-                    />
-                    <UserPlus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  </div>
-                </Field>
-              )}
-              <Field label="Email">
+            <form onSubmit={(e) => { e.preventDefault(); setShowOtp(true); }} className="space-y-3">
+              <Field label="Email admin sekolah">
                 <div className="relative">
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nama@email.com"
+                    autoComplete="email"
                     className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
                     required
                   />
                   <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 </div>
               </Field>
-              <Field label="Password">
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimal 6 karakter"
-                    className="w-full px-4 py-3 pl-10 pr-10 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 outline-none focus:border-[#2563eb] focus:bg-white transition-colors"
-                    required
-                    minLength={6}
-                  />
-                  <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2563eb]"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </Field>
-              {error && <ErrorBox>{error}</ErrorBox>}
+              <p className="text-[0.7rem] text-gray-500 leading-snug">
+                Tanpa password: kami kirim kode ke email ini. Belum punya akun? Akun dibuat otomatis.
+              </p>
               <button
                 type="submit"
-                disabled={!adminValid || submitting || loading}
+                disabled={!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || loading}
                 className="w-full py-3 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
                 style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb)" }}
               >
-                {submitting ? "Memproses..." : mode === "login"
-                  ? (<><LogIn size={16} /> Masuk sebagai Admin</>)
-                  : (<><UserPlus size={16} /> Daftar Akun Admin</>)}
+                <LogIn size={16} /> Kirim kode masuk
               </button>
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }}
-                  className="text-xs text-gray-600 hover:text-[#2563eb] transition-colors"
-                >
-                  {mode === "login"
-                    ? (<>Belum punya akun admin? <b>Daftar</b></>)
-                    : (<>Sudah punya akun? <b>Login</b></>)}
-                </button>
-              </div>
             </form>
           )}
 
@@ -263,14 +187,12 @@ export function LoginPage() {
         </div>
       </div>
 
-      {deviceLimitError && (
-        <DeviceLimitModal
-          isOpen={true}
-          onClose={clearDeviceLimitError}
-          devices={deviceLimitError.devices}
-          tier={deviceLimitError.tier}
-          deviceLimit={deviceLimitError.deviceLimit}
-          onDeviceLoggedOut={handleDeviceLoggedOut}
+      {showOtp && (
+        <OtpVerify
+          email={email}
+          title="Masuk admin sekolah"
+          onConnected={() => { setShowOtp(false); markDeviceOk(); }}
+          onClose={() => setShowOtp(false)}
         />
       )}
     </div>

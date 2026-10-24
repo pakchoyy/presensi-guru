@@ -14,7 +14,6 @@ import { MAX_STUDENTS_FREE, PRO_PRICE } from "@/lib/constants";
 import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
 import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
-import { trackDevice } from "@/contexts/AuthContext";
 import {
   Settings,
   ArrowUpCircle,
@@ -602,9 +601,6 @@ export function PengaturanPage() {
         profileId = inserted?.id ?? null;
       }
 
-      if (profileId) {
-        trackDevice(profileId).catch(() => {});
-      }
       
       localStorage.setItem("presensi_cloud_email", emailAddress);
       
