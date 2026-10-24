@@ -733,7 +733,7 @@ export function PengaturanPage() {
           <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 mb-3 border border-blue-200 dark:border-blue-800 flex items-start gap-2">
             <Info size={14} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-[1px]" />
             <div className="text-[0.7rem] text-blue-900 dark:text-blue-100">
-              <b>Fitur PRO Aktif:</b> Unlimited kelas & siswa, kalender custom, logo laporan, update Excel, cloud sync otomatis, multi-device (max 3), backup cloud harian.
+              <b>Fitur PRO Aktif:</b> Guru tanpa batas, verifikasi izin Kepala Sekolah, logo laporan, cloud sync otomatis, 3 HP admin, Program Affiliate.
             </div>
           </div>
 
@@ -765,7 +765,7 @@ export function PengaturanPage() {
               Akses Penuh Semua Fitur Premium
             </div>
             <div className="text-[0.75rem] text-[var(--text-light)] mb-2">
-              Kelola semua kelas, cloud sync, backup otomatis & banyak lagi
+              Tambah guru lebih banyak, cloud sync, verifikasi izin & banyak lagi
             </div>
             <div className="text-[1.6rem] font-black text-[#2563eb] leading-tight">
               PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
