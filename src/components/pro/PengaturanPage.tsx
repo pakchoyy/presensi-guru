@@ -606,8 +606,9 @@ export function PengaturanPage() {
           onClose={() => setOtpEmail(null)}
         />
       )}
+      <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-1 mb-2 px-1">Akun & Paket</div>
       {/* Status Tier */}
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
           <Settings size={15} /> Pengaturan Akun
         </div>
@@ -645,9 +646,288 @@ export function PengaturanPage() {
           </button>
         </div>
       </div>
+      {/* PRO Section */}
+      {isPRO ? (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
+          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
+            <Crown size={15} className="text-[#f59e0b]" /> Lisensi PRO Aktif
+          </div>
 
+          {licenseInfo ? (
+            <>
+              <div className="mb-3 space-y-1 text-[0.74rem]">
+                <div className="flex gap-2">
+                  <Mail size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
+                  <span className="text-[var(--text)]">{licenseInfo.email}</span>
+                </div>
+                <div className="flex gap-2">
+                  <CalendarCheck size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
+                  <span className="text-[var(--text)]">
+                    Berlaku sampai <b>{licenseInfo.berakhir}</b>
+                  </span>
+                </div>
+                {daysRemaining !== undefined && (
+                  <div className="flex gap-2">
+                    <Clock size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
+                    <span className={isExpiring ? "text-[#b45309] font-semibold" : "text-[var(--text)]"}>
+                      {daysRemaining} hari tersisa
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {isExpiring && daysRemaining !== undefined && (
+                <div className="bg-[#fef3c7] rounded-lg p-3 mb-3 border border-[#fbbf24] flex items-start gap-2">
+                  <AlertTriangle size={14} className="text-[#b45309] flex-shrink-0 mt-[1px]" />
+                  <div className="text-[0.7rem] text-[#78350f] flex-1">
+                    {daysRemaining === 0
+                      ? "Lisensi akan habis hari ini! Perpanjang sekarang agar fitur PRO tetap aktif."
+                      : `Lisensi akan habis dalam ${daysRemaining} hari. Perpanjang sekarang agar tidak terputus.`}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-[0.74rem] text-[var(--text-light)] mb-3">
+              Memuat info lisensi...
+            </div>
+          )}
+
+          <div className="border-t border-[var(--border)] pt-3 mb-3">
+            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2">
+              Perpanjang Lisensi
+            </div>
+            <div className="mb-2">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+                <Key size={11} className="inline mr-1" /> Kode Perpanjangan
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={kode}
+                  onChange={(e) => setKode(e.target.value)}
+                  placeholder="BGY-PS-XXXX"
+                  className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
+                />
+                {kode && (
+                  <button
+                    onClick={copyKode}
+                    className="px-2 py-[9px] rounded-[8px] border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)] cursor-pointer"
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={handleRenew}
+              disabled={renewing || !kode.trim()}
+              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
+            >
+              <ArrowUpCircle size={15} />
+              {renewing ? "Memperpanjang..." : "Perpanjang 1 Tahun"}
+            </button>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 mb-3 border border-blue-200 dark:border-blue-800 flex items-start gap-2">
+            <Info size={14} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-[1px]" />
+            <div className="text-[0.7rem] text-blue-900 dark:text-blue-100">
+              <b>Fitur PRO Aktif:</b> Unlimited kelas & siswa, kalender custom, logo laporan, update Excel, cloud sync otomatis, multi-device (max 3), backup cloud harian.
+            </div>
+          </div>
+
+          <button
+            onClick={handleDeactivate}
+            className="w-full py-[9px] rounded-[10px] border-[1.5px] border-[#ef4444] text-[#ef4444] font-bold text-[0.78rem] cursor-pointer bg-transparent"
+          >
+            Nonaktifkan Lisensi
+          </button>
+        </div>
+      ) : (
+        /* FREE / Upgrade */
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
+          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
+            <ArrowUpCircle size={15} className="text-[#2563eb]" /> Upgrade ke PRO
+          </div>
+
+          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 mb-3 text-[0.72rem] text-[var(--text)] flex items-start gap-2">
+            <Info size={13} className="text-[#2563eb] flex-shrink-0 mt-[2px]" />
+            <span>Sudah pernah beli? Masukkan email & kode yang sama untuk aktivasi ulang.</span>
+          </div>
+
+          <div className="bg-gradient-to-br from-[#2563eb]/8 to-[#1d4ed8]/12 rounded-xl p-4 mb-3 border-2 border-[#2563eb]/20 text-center"
+            style={{
+              background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(13,122,138,0.10))",
+            }}>
+            <Crown size={24} className="text-[#2563eb] mx-auto mb-1" />
+            <div className="text-[1rem] font-bold text-[var(--text)] mb-1">
+              Akses Penuh Semua Fitur Premium
+            </div>
+            <div className="text-[0.75rem] text-[var(--text-light)] mb-2">
+              Kelola semua kelas, cloud sync, backup otomatis & banyak lagi
+            </div>
+            <div className="text-[1.6rem] font-black text-[#2563eb] leading-tight">
+              PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
+            </div>
+            <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
+              per semester (6 bulan) — PLUS maks 15 guru, PRO tanpa batas
+            </div>
+          </div>
+
+          <div className="mb-3">
+            {manfaat.map((m, i) => (
+              <div key={i} className="flex items-start gap-2 mb-1 text-[0.74rem] text-[var(--text)]">
+                <Check size={14} className="text-[#16a34a] flex-shrink-0 mt-[2px]" />
+                <span>{m}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-3">
+            <a
+              href={KREACY_PRO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer no-underline"
+              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
+            >
+              Beli Disini
+            </a>
+          </div>
+          <div className="mb-3">
+            <button
+              onClick={handleWA}
+              className="w-full flex items-center justify-center gap-[6px] py-[9px] rounded-[10px] text-white font-bold text-[0.78rem] cursor-pointer"
+              style={{ background: "#25D366" }}
+            >
+              <MessageCircle size={14} /> Atau via WhatsApp
+            </button>
+          </div>
+
+          <div className="border-t border-[var(--border)] pt-3">
+            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
+              <Key size={13} /> Dapatkan Kode Lisensi
+            </div>
+
+            <div className="mb-2">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+                <Mail size={11} className="inline mr-1" /> Email
+              </label>
+              <input
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="nama@email.com"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+                <Key size={11} className="inline mr-1" /> Kode Lisensi
+              </label>
+              <input
+                type="text"
+                value={kode}
+                onChange={(e) => setKode(e.target.value)}
+                placeholder="BGY-PS-XXXX"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
+              />
+            </div>
+            <div className="mb-3">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Kode Referral (opsional)</label>
+              <input
+                type="text"
+                value={refCode}
+                onChange={(e) => setRefCode(e.target.value)}
+                placeholder="PY-XXXXXX"
+                maxLength={9}
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
+              />
+            </div>
+            <button
+              onClick={handleActivate}
+              disabled={activating || !kode.trim() || !email.trim()}
+              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
+            >
+              <ArrowUpCircle size={15} />
+              {activating ? "Mengaktivasi..." : "Aktivasi Sekarang"}
+            </button>
+          </div>
+          
+          {/* Login Device Lain */}
+          <div className="border-t border-[var(--border)] pt-4 mt-4">
+            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
+              <Upload size={13} /> Sudah PRO di Device Lain?
+            </div>
+            <div className="text-[0.68rem] text-[var(--text-light)] mb-3">
+              Hubungkan device ini dengan email yang sudah terdaftar PRO untuk sinkronisasi data.
+            </div>
+            <div className="mb-2">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
+                <Mail size={11} className="inline mr-1" /> Email PRO Anda
+              </label>
+              <input
+                type="email"
+                value={loginEmail || teacher?.email || ""}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="email@example.com"
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+              />
+            </div>
+            <button
+              onClick={handleDeviceLogin}
+              disabled={connecting || !(loginEmail || teacher?.email)}
+              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#2563eb] text-[#2563eb] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
+            >
+              <Upload size={15} />
+              {connecting ? "Menghubungkan..." : "Hubungkan Device"}
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Perbandingan Gratis vs PRO (khusus FREE) */}
+      {!isPRO && (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
+          <div className="text-[0.75rem] font-bold text-[var(--text)] mb-2">
+            Perbandingan Gratis vs PRO
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[0.7rem] border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--border)]">
+                  <th className="py-2 px-2 text-left text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Fitur</th>
+                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Gratis</th>
+                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[#2563eb] font-bold">PRO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { fitur: "Bisa kelola kelas", free: "1 Kelas", pro: "Semua Kelas" },
+                  { fitur: "Jumlah siswa per kelas", free: `${MAX_STUDENTS_FREE} siswa`, pro: "Unlimited" },
+                  { fitur: "Buka di HP & laptop", free: "Tidak", pro: "Bisa" },
+                  { fitur: "Data aman di internet", free: "Tidak", pro: "Bisa" },
+                  { fitur: "Atur kalender sendiri", free: "Lihat saja", pro: "Bisa atur" },
+                  { fitur: "Backup ke internet", free: "Tidak", pro: "Bisa" },
+                  { fitur: "Logo di laporan", free: "Tidak", pro: "Bisa" },
+                  { fitur: "Update data Excel", free: "Tidak", pro: "Bisa" },
+                  { fitur: "Harga", free: "Gratis", pro: PRO_PRICE },
+                ].map((row, i) => (
+                  <tr key={i} className="border-b border-[var(--border)] last:border-0">
+                    <td className="py-2 px-2 font-semibold">{row.fitur}</td>
+                    <td className="py-2 px-2 text-center text-[var(--text-light)]">{row.free}</td>
+                    <td className="py-2 px-2 text-center text-[#2563eb] font-bold">{row.pro}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Sekolah</div>
       {editSekolah && (
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#f59e0b] p-[14px] mb-3">
           <div className="text-[0.78rem] font-bold flex items-center gap-[6px] mb-[10px]">
             <School size={15} /> Edit Sekolah
           </div>
@@ -682,9 +962,183 @@ export function PengaturanPage() {
           </div>
         </div>
       )}
+      {/* Periode Ajaran */}
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#f59e0b] p-[14px] mb-3">
+        <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
+          <Calendar size={15} /> Periode Ajaran
+        </div>
+        <div className="text-[0.72rem] text-[var(--text-light)] mb-3">
+          Atur tanggal mulai dan selesai tahun ajaran untuk menghitung rekap kehadiran.
+        </div>
 
+        {editingAjaran ? (
+          <>
+            <div className="mb-2">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Label</label>
+              <input
+                type="text"
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+              />
+            </div>
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1">
+                <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={editMulai}
+                  onChange={(e) => setEditMulai(e.target.value)}
+                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Tanggal Selesai</label>
+                <input
+                  type="date"
+                  value={editSelesai}
+                  onChange={(e) => setEditSelesai(e.target.value)}
+                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveAjaran}
+                disabled={savingAjaran}
+                className="flex-1 py-[9px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.78rem] border-none cursor-pointer disabled:opacity-50"
+              >
+                {savingAjaran ? "Menyimpan..." : "Simpan"}
+              </button>
+              <button
+                onClick={() => setEditingAjaran(false)}
+                className="flex-1 py-[9px] rounded-[10px] border border-[var(--border)] text-[var(--text)] font-bold text-[0.78rem] cursor-pointer bg-transparent"
+              >
+                Batal
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-1 mb-3 text-[0.74rem]">
+              <div className="flex gap-2">
+                <span className="text-[var(--text-light)] min-w-[80px]">Label:</span>
+                <span className="text-[var(--text)] font-semibold">{activeAy?.label || "-"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[var(--text-light)] min-w-[80px]">Mulai:</span>
+                <span className="text-[var(--text)]">{activeAy?.tanggalMulai || "-"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[var(--text-light)] min-w-[80px]">Selesai:</span>
+                <span className="text-[var(--text)]">{activeAy?.tanggalSelesai || "-"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[var(--text-light)] min-w-[80px]">Semester:</span>
+                <span className="text-[var(--text)] font-semibold">{activeAy?.semesterAktif || "-"}</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={startEditAjaran}
+                className="flex-1 py-[9px] rounded-[10px] border border-[var(--border)] text-[var(--text)] font-bold text-[0.78rem] cursor-pointer bg-transparent flex items-center justify-center gap-1"
+              >
+                <PenLine size={13} /> Edit
+              </button>
+              <button
+                onClick={handleTambahAjaranBaru}
+                className="flex-1 py-[9px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.78rem] border-none cursor-pointer flex items-center justify-center gap-1"
+              >
+                <Plus size={13} /> Ajaran Baru
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+      {/* Hari Aktif */}
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#f59e0b] p-[14px] mb-3">
+        <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
+          <Calendar size={15} /> Hari Aktif
+        </div>
+        <div className="text-[0.72rem] text-[var(--text-light)] mb-3">
+          Pilih hari yang masuk presensi. Hari tidak aktif akan ditandai merah di kalender.
+        </div>
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => saveHariAktifSettings("Senin-Jumat", "1,2,3,4,5")}
+            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
+              hariAktif === "Senin-Jumat"
+                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
+                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
+            }`}
+          >
+            Senin - Jumat
+          </button>
+          <button
+            onClick={() => saveHariAktifSettings("Senin-Sabtu", "1,2,3,4,5,6")}
+            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
+              hariAktif === "Senin-Sabtu"
+                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
+                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
+            }`}
+          >
+            Senin - Sabtu
+          </button>
+          <button
+            onClick={() => saveHariAktifSettings("Kustom", customDays || "1,2,3,4,5,6")}
+            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
+              hariAktif === "Kustom"
+                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
+                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
+            }`}
+          >
+            Custom
+          </button>
+        </div>
+
+        {hariAktif === "Kustom" && (
+          <div className="mb-3">
+            <div className="grid grid-cols-7 gap-1.5">
+              {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((label, i) => {
+                const active = customDays?.split(",").map(Number).includes(i) || false;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      const current = customDays ? customDays.split(",").map(Number) : [];
+                      const next = current.includes(i) ? current.filter((d) => d !== i) : [...current, i];
+                      const sorted = next.sort((a, b) => a - b);
+                      const joined = sorted.join(",");
+                      setCustomDays(joined);
+                      localStorage.setItem("bgy_hari_aktif_custom", joined);
+                    }}
+                    className={`py-2 rounded-lg text-[0.72rem] font-bold border-[1.5px] cursor-pointer transition-all ${
+                      active
+                        ? "border-[#2563eb] bg-[#2563eb] text-white shadow-sm"
+                        : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="text-[0.65rem] text-[var(--text-light)]">
+          {hariAktif === "Senin-Jumat" && "Sabtu & Minggu: tidak masuk presensi, merah di kalender"}
+          {hariAktif === "Senin-Sabtu" && "Minggu: tidak masuk presensi, merah di kalender"}
+          {hariAktif === "Kustom" && "Hari yang tidak aktif: tidak masuk presensi, merah di kalender"}
+        </div>
+      </div>
+      {/* Logo Sekolah (PRO only) */}
+      {isPRO && (
+        <LogoUpload editable={true} />
+      )}
+      <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Cara Absen</div>
       {/* Lokasi & Jam Sekolah (geofencing presensi guru) */}
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#0ea5a0] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">
           <MapPin size={15} className="text-[#2563eb]" /> Lokasi &amp; Jam Sekolah
         </div>
@@ -888,10 +1342,10 @@ export function PengaturanPage() {
           <Save size={14} /> {savingLokasi ? "Menyimpan..." : "Simpan Lokasi & Jam"}
         </button>
       </div>
-
+      {isPRO && <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Data &amp; Cloud</div>}
       {/* Cloud Sync — Simplified (PRO only) */}
       {isPRO && isCloudConnected && (
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#22c55e] p-[14px] mb-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Smartphone size={15} className="text-[#2563eb]" />
@@ -1013,465 +1467,23 @@ export function PengaturanPage() {
           </button>
         </div>
       )}
-
-      {/* Logo Sekolah (PRO only) */}
-      {isPRO && (
-        <LogoUpload editable={true} />
-      )}
-
-      {/* Periode Ajaran */}
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
-        <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-          <Calendar size={15} /> Periode Ajaran
-        </div>
-        <div className="text-[0.72rem] text-[var(--text-light)] mb-3">
-          Atur tanggal mulai dan selesai tahun ajaran untuk menghitung rekap kehadiran.
-        </div>
-
-        {editingAjaran ? (
-          <>
-            <div className="mb-2">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Label</label>
-              <input
-                type="text"
-                value={editLabel}
-                onChange={(e) => setEditLabel(e.target.value)}
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-              />
-            </div>
-            <div className="flex gap-2 mb-2">
-              <div className="flex-1">
-                <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Tanggal Mulai</label>
-                <input
-                  type="date"
-                  value={editMulai}
-                  onChange={(e) => setEditMulai(e.target.value)}
-                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Tanggal Selesai</label>
-                <input
-                  type="date"
-                  value={editSelesai}
-                  onChange={(e) => setEditSelesai(e.target.value)}
-                  className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveAjaran}
-                disabled={savingAjaran}
-                className="flex-1 py-[9px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.78rem] border-none cursor-pointer disabled:opacity-50"
-              >
-                {savingAjaran ? "Menyimpan..." : "Simpan"}
-              </button>
-              <button
-                onClick={() => setEditingAjaran(false)}
-                className="flex-1 py-[9px] rounded-[10px] border border-[var(--border)] text-[var(--text)] font-bold text-[0.78rem] cursor-pointer bg-transparent"
-              >
-                Batal
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="space-y-1 mb-3 text-[0.74rem]">
-              <div className="flex gap-2">
-                <span className="text-[var(--text-light)] min-w-[80px]">Label:</span>
-                <span className="text-[var(--text)] font-semibold">{activeAy?.label || "-"}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-[var(--text-light)] min-w-[80px]">Mulai:</span>
-                <span className="text-[var(--text)]">{activeAy?.tanggalMulai || "-"}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-[var(--text-light)] min-w-[80px]">Selesai:</span>
-                <span className="text-[var(--text)]">{activeAy?.tanggalSelesai || "-"}</span>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-[var(--text-light)] min-w-[80px]">Semester:</span>
-                <span className="text-[var(--text)] font-semibold">{activeAy?.semesterAktif || "-"}</span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={startEditAjaran}
-                className="flex-1 py-[9px] rounded-[10px] border border-[var(--border)] text-[var(--text)] font-bold text-[0.78rem] cursor-pointer bg-transparent flex items-center justify-center gap-1"
-              >
-                <PenLine size={13} /> Edit
-              </button>
-              <button
-                onClick={handleTambahAjaranBaru}
-                className="flex-1 py-[9px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.78rem] border-none cursor-pointer flex items-center justify-center gap-1"
-              >
-                <Plus size={13} /> Ajaran Baru
-              </button>
-            </div>
-          </>
-        )}
+      <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Lainnya</div>
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#64748b] mb-3 overflow-hidden">
+        {[
+          { page: PageName.PETUNJUK, label: "Petunjuk" },
+          { page: PageName.KALENDER, label: "Kalender" },
+          { page: PageName.AFFILIATE, label: "Program Affiliate" },
+          { page: PageName.TENTANG, label: "Tentang & Kontak" },
+        ].map((m, i) => (
+          <button
+            key={m.page}
+            onClick={() => setActivePage(m.page)}
+            className={`w-full flex items-center justify-between px-[14px] py-[11px] text-[0.8rem] font-semibold text-[var(--text)] bg-transparent border-none cursor-pointer text-left ${i ? "border-t border-[var(--border)]" : ""}`}
+          >
+            {m.label} <span className="text-[var(--text-light)]">›</span>
+          </button>
+        ))}
       </div>
-
-      {/* Hari Aktif */}
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
-        <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-          <Calendar size={15} /> Hari Aktif
-        </div>
-        <div className="text-[0.72rem] text-[var(--text-light)] mb-3">
-          Pilih hari yang masuk presensi. Hari tidak aktif akan ditandai merah di kalender.
-        </div>
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={() => saveHariAktifSettings("Senin-Jumat", "1,2,3,4,5")}
-            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
-              hariAktif === "Senin-Jumat"
-                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
-                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
-            }`}
-          >
-            Senin - Jumat
-          </button>
-          <button
-            onClick={() => saveHariAktifSettings("Senin-Sabtu", "1,2,3,4,5,6")}
-            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
-              hariAktif === "Senin-Sabtu"
-                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
-                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
-            }`}
-          >
-            Senin - Sabtu
-          </button>
-          <button
-            onClick={() => saveHariAktifSettings("Kustom", customDays || "1,2,3,4,5,6")}
-            className={`flex-1 py-[10px] rounded-[10px] text-[0.78rem] font-bold border-[1.5px] cursor-pointer ${
-              hariAktif === "Kustom"
-                ? "border-[#2563eb] bg-[rgba(14,165,160,0.1)] text-[#2563eb]"
-                : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
-            }`}
-          >
-            Custom
-          </button>
-        </div>
-
-        {hariAktif === "Kustom" && (
-          <div className="mb-3">
-            <div className="grid grid-cols-7 gap-1.5">
-              {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((label, i) => {
-                const active = customDays?.split(",").map(Number).includes(i) || false;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      const current = customDays ? customDays.split(",").map(Number) : [];
-                      const next = current.includes(i) ? current.filter((d) => d !== i) : [...current, i];
-                      const sorted = next.sort((a, b) => a - b);
-                      const joined = sorted.join(",");
-                      setCustomDays(joined);
-                      localStorage.setItem("bgy_hari_aktif_custom", joined);
-                    }}
-                    className={`py-2 rounded-lg text-[0.72rem] font-bold border-[1.5px] cursor-pointer transition-all ${
-                      active
-                        ? "border-[#2563eb] bg-[#2563eb] text-white shadow-sm"
-                        : "border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="text-[0.65rem] text-[var(--text-light)]">
-          {hariAktif === "Senin-Jumat" && "Sabtu & Minggu: tidak masuk presensi, merah di kalender"}
-          {hariAktif === "Senin-Sabtu" && "Minggu: tidak masuk presensi, merah di kalender"}
-          {hariAktif === "Kustom" && "Hari yang tidak aktif: tidak masuk presensi, merah di kalender"}
-        </div>
-      </div>
-
-      {/* PRO Section */}
-      {isPRO ? (
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
-          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-            <Crown size={15} className="text-[#f59e0b]" /> Lisensi PRO Aktif
-          </div>
-
-          {licenseInfo ? (
-            <>
-              <div className="mb-3 space-y-1 text-[0.74rem]">
-                <div className="flex gap-2">
-                  <Mail size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
-                  <span className="text-[var(--text)]">{licenseInfo.email}</span>
-                </div>
-                <div className="flex gap-2">
-                  <CalendarCheck size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
-                  <span className="text-[var(--text)]">
-                    Berlaku sampai <b>{licenseInfo.berakhir}</b>
-                  </span>
-                </div>
-                {daysRemaining !== undefined && (
-                  <div className="flex gap-2">
-                    <Clock size={13} className="text-[var(--text-light)] flex-shrink-0 mt-[1px]" />
-                    <span className={isExpiring ? "text-[#b45309] font-semibold" : "text-[var(--text)]"}>
-                      {daysRemaining} hari tersisa
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {isExpiring && daysRemaining !== undefined && (
-                <div className="bg-[#fef3c7] rounded-lg p-3 mb-3 border border-[#fbbf24] flex items-start gap-2">
-                  <AlertTriangle size={14} className="text-[#b45309] flex-shrink-0 mt-[1px]" />
-                  <div className="text-[0.7rem] text-[#78350f] flex-1">
-                    {daysRemaining === 0
-                      ? "Lisensi akan habis hari ini! Perpanjang sekarang agar fitur PRO tetap aktif."
-                      : `Lisensi akan habis dalam ${daysRemaining} hari. Perpanjang sekarang agar tidak terputus.`}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-[0.74rem] text-[var(--text-light)] mb-3">
-              Memuat info lisensi...
-            </div>
-          )}
-
-          <div className="border-t border-[var(--border)] pt-3 mb-3">
-            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2">
-              Perpanjang Lisensi
-            </div>
-            <div className="mb-2">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-                <Key size={11} className="inline mr-1" /> Kode Perpanjangan
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={kode}
-                  onChange={(e) => setKode(e.target.value)}
-                  placeholder="BGY-PS-XXXX"
-                  className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
-                />
-                {kode && (
-                  <button
-                    onClick={copyKode}
-                    className="px-2 py-[9px] rounded-[8px] border-[1.5px] border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)] cursor-pointer"
-                  >
-                    <Copy size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={handleRenew}
-              disabled={renewing || !kode.trim()}
-              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
-            >
-              <ArrowUpCircle size={15} />
-              {renewing ? "Memperpanjang..." : "Perpanjang 1 Tahun"}
-            </button>
-          </div>
-
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 mb-3 border border-blue-200 dark:border-blue-800 flex items-start gap-2">
-            <Info size={14} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-[1px]" />
-            <div className="text-[0.7rem] text-blue-900 dark:text-blue-100">
-              <b>Fitur PRO Aktif:</b> Unlimited kelas & siswa, kalender custom, logo laporan, update Excel, cloud sync otomatis, multi-device (max 3), backup cloud harian.
-            </div>
-          </div>
-
-          <button
-            onClick={handleDeactivate}
-            className="w-full py-[9px] rounded-[10px] border-[1.5px] border-[#ef4444] text-[#ef4444] font-bold text-[0.78rem] cursor-pointer bg-transparent"
-          >
-            Nonaktifkan Lisensi
-          </button>
-        </div>
-      ) : (
-        /* FREE / Upgrade */
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
-          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-            <ArrowUpCircle size={15} className="text-[#2563eb]" /> Upgrade ke PRO
-          </div>
-
-          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 mb-3 text-[0.72rem] text-[var(--text)] flex items-start gap-2">
-            <Info size={13} className="text-[#2563eb] flex-shrink-0 mt-[2px]" />
-            <span>Sudah pernah beli? Masukkan email & kode yang sama untuk aktivasi ulang.</span>
-          </div>
-
-          <div className="bg-gradient-to-br from-[#2563eb]/8 to-[#1d4ed8]/12 rounded-xl p-4 mb-3 border-2 border-[#2563eb]/20 text-center"
-            style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(13,122,138,0.10))",
-            }}>
-            <Crown size={24} className="text-[#2563eb] mx-auto mb-1" />
-            <div className="text-[1rem] font-bold text-[var(--text)] mb-1">
-              Akses Penuh Semua Fitur Premium
-            </div>
-            <div className="text-[0.75rem] text-[var(--text-light)] mb-2">
-              Kelola semua kelas, cloud sync, backup otomatis & banyak lagi
-            </div>
-            <div className="text-[1.6rem] font-black text-[#2563eb] leading-tight">
-              PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
-            </div>
-            <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-              per semester (6 bulan) — PLUS maks 15 guru, PRO tanpa batas
-            </div>
-          </div>
-
-          <div className="mb-3">
-            {manfaat.map((m, i) => (
-              <div key={i} className="flex items-start gap-2 mb-1 text-[0.74rem] text-[var(--text)]">
-                <Check size={14} className="text-[#16a34a] flex-shrink-0 mt-[2px]" />
-                <span>{m}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-3">
-            <a
-              href={KREACY_PRO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer no-underline"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
-            >
-              Beli Disini
-            </a>
-          </div>
-          <div className="mb-3">
-            <button
-              onClick={handleWA}
-              className="w-full flex items-center justify-center gap-[6px] py-[9px] rounded-[10px] text-white font-bold text-[0.78rem] cursor-pointer"
-              style={{ background: "#25D366" }}
-            >
-              <MessageCircle size={14} /> Atau via WhatsApp
-            </button>
-          </div>
-
-          <div className="border-t border-[var(--border)] pt-3">
-            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
-              <Key size={13} /> Dapatkan Kode Lisensi
-            </div>
-
-            <div className="mb-2">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-                <Mail size={11} className="inline mr-1" /> Email
-              </label>
-              <input
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-                <Key size={11} className="inline mr-1" /> Kode Lisensi
-              </label>
-              <input
-                type="text"
-                value={kode}
-                onChange={(e) => setKode(e.target.value)}
-                placeholder="BGY-PS-XXXX"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
-              />
-            </div>
-            <div className="mb-3">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Kode Referral (opsional)</label>
-              <input
-                type="text"
-                value={refCode}
-                onChange={(e) => setRefCode(e.target.value)}
-                placeholder="PY-XXXXXX"
-                maxLength={9}
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
-              />
-            </div>
-            <button
-              onClick={handleActivate}
-              disabled={activating || !kode.trim() || !email.trim()}
-              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
-            >
-              <ArrowUpCircle size={15} />
-              {activating ? "Mengaktivasi..." : "Aktivasi Sekarang"}
-            </button>
-          </div>
-          
-          {/* Login Device Lain */}
-          <div className="border-t border-[var(--border)] pt-4 mt-4">
-            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
-              <Upload size={13} /> Sudah PRO di Device Lain?
-            </div>
-            <div className="text-[0.68rem] text-[var(--text-light)] mb-3">
-              Hubungkan device ini dengan email yang sudah terdaftar PRO untuk sinkronisasi data.
-            </div>
-            <div className="mb-2">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
-                <Mail size={11} className="inline mr-1" /> Email PRO Anda
-              </label>
-              <input
-                type="email"
-                value={loginEmail || teacher?.email || ""}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="email@example.com"
-                className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
-              />
-            </div>
-            <button
-              onClick={handleDeviceLogin}
-              disabled={connecting || !(loginEmail || teacher?.email)}
-              className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#2563eb] text-[#2563eb] font-bold text-[0.82rem] cursor-pointer disabled:opacity-60 bg-transparent"
-            >
-              <Upload size={15} />
-              {connecting ? "Menghubungkan..." : "Hubungkan Device"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Perbandingan Gratis vs PRO (khusus FREE) */}
-      {!isPRO && (
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
-          <div className="text-[0.75rem] font-bold text-[var(--text)] mb-2">
-            Perbandingan Gratis vs PRO
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[0.7rem] border-collapse">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 px-2 text-left text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Fitur</th>
-                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[var(--text-light)] font-semibold">Gratis</th>
-                  <th className="py-2 px-2 text-center text-[0.62rem] uppercase text-[#2563eb] font-bold">PRO</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { fitur: "Bisa kelola kelas", free: "1 Kelas", pro: "Semua Kelas" },
-                  { fitur: "Jumlah siswa per kelas", free: `${MAX_STUDENTS_FREE} siswa`, pro: "Unlimited" },
-                  { fitur: "Buka di HP & laptop", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Data aman di internet", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Atur kalender sendiri", free: "Lihat saja", pro: "Bisa atur" },
-                  { fitur: "Backup ke internet", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Logo di laporan", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Update data Excel", free: "Tidak", pro: "Bisa" },
-                  { fitur: "Harga", free: "Gratis", pro: PRO_PRICE },
-                ].map((row, i) => (
-                  <tr key={i} className="border-b border-[var(--border)] last:border-0">
-                    <td className="py-2 px-2 font-semibold">{row.fitur}</td>
-                    <td className="py-2 px-2 text-center text-[var(--text-light)]">{row.free}</td>
-                    <td className="py-2 px-2 text-center text-[#2563eb] font-bold">{row.pro}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* Keluar dari Akun PRO (PRO only) */}
       {isPRO && (
         <div className="mt-3">
