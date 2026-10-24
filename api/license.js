@@ -52,7 +52,66 @@ async function activate(supabase, body) {
   });
   if (!ok) return [409, { error: await kodeError(supabase, kode) }];
 
-  return [200, { ok: true, tanggalBerakhir, tier: ok }];
+  let referral = null;
+  try { referral = await applyReferral(supabase, body.ref, email, ok); } catch { /* referral tidak boleh menggagalkan aktivasi */ }
+  return [200, { ok: true, tanggalBerakhir, tier: ok, referral }];
+}
+
+// ── Affiliate (kode & saldo sama dengan Presensi Siswa; bonus pembeli Guru dari app_settings) ──
+const REF_RE = /^PY-[A-Z0-9]{6}$/;
+const GURU_REWARD_KEYS = {
+  PLUS: ["affiliate_commission_guru_plus", "affiliate_bonus_days_guru_plus", 1500, 12],
+  PRO: ["affiliate_commission_guru_pro", "affiliate_bonus_days_guru_pro", 3000, 30],
+};
+
+async function activeLic(supabase, email, product) {
+  const { data } = await supabase.from("licenses").select("id, tier, tanggal_berakhir")
+    .eq("email", email).eq("status", "digunakan").eq("product", product)
+    .order("tanggal_berakhir", { ascending: false }).limit(1).maybeSingle();
+  return data && (!data.tanggal_berakhir || data.tanggal_berakhir > Date.now()) ? data : null;
+}
+const isPro = (l) => !!l && (l.tier || "PRO") === "PRO";
+
+async function applyReferral(supabase, rawCode, buyerEmail, buyerTier) {
+  const code = String(rawCode || "").toUpperCase().trim();
+  if (!code) return null;
+  if (!REF_RE.test(code)) return "invalid";
+  const { data: ref } = await supabase.from("referrals").select("owner_email").eq("code", code).maybeSingle();
+  if (!ref) return "invalid";
+  if (ref.owner_email === buyerEmail) return "self";
+  // Pembeli baru di Presensi Guru: belum pernah punya lisensi Guru lain.
+  const { count } = await supabase.from("licenses").select("id", { count: "exact", head: true })
+    .eq("email", buyerEmail).eq("status", "digunakan").eq("product", PRODUCT);
+  if ((count || 0) > 1) return "not_new";
+  const [ownGuru, ownSiswa] = await Promise.all([activeLic(supabase, ref.owner_email, "guru"), activeLic(supabase, ref.owner_email, "siswa")]);
+  if (!isPro(ownGuru) && !isPro(ownSiswa)) return "owner_not_pro";
+  const [kC, kD, dC, dD] = GURU_REWARD_KEYS[buyerTier === "PLUS" ? "PLUS" : "PRO"];
+  const { data: rows } = await supabase.from("app_settings").select("key, value").in("key", [kC, kD, "affiliate_cap_per_semester"]);
+  const cfg = Object.fromEntries((rows || []).map((r) => [r.key, Number(r.value)]));
+  const { data, error } = await supabase.rpc("affiliate_credit", {
+    p_code: code, p_owner: ref.owner_email, p_buyer: buyerEmail, p_tier: buyerTier,
+    p_days: Number.isFinite(cfg[kD]) ? cfg[kD] : dD,
+    p_commission: Number.isFinite(cfg[kC]) ? cfg[kC] : dC,
+    p_cap: Number.isFinite(cfg.affiliate_cap_per_semester) ? cfg.affiliate_cap_per_semester : 6,
+    // Bonus hari ke lisensi Guru pemilik; kalau tidak punya, ke lisensi Siswa-nya.
+    p_license_id: (ownGuru || ownSiswa)?.id ?? null,
+    p_product: PRODUCT,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Dashboard, info & tarik dana dilayani server Presensi Siswa (satu saldo). Token sesi email sama (satu project Supabase).
+const AFFILIATE_UPSTREAM = "https://presiswa.bantuguruyuk.web.id/api/license";
+const PROXIED = new Set(["affiliate", "affiliate_info", "withdraw"]);
+async function proxyAffiliate(req, res) {
+  const r = await fetch(AFFILIATE_UPSTREAM, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}) },
+    body: JSON.stringify(req.body || {}),
+  });
+  const data = await r.json().catch(() => ({}));
+  return res.status(r.status).json(data);
 }
 
 async function renew(supabase, body) {
@@ -133,6 +192,10 @@ export default async function handler(req, res) {
   if (req.method === "GET" && req.query?.action === "announcements") return announcements(res);
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
   const { action } = req.body || {};
+  res.setHeader("Cache-Control", "no-store");
+  if (PROXIED.has(action)) {
+    try { return await proxyAffiliate(req, res); } catch { return res.status(502).json({ error: "Layanan affiliate sedang tidak tersedia" }); }
+  }
   const fn = ACTIONS[action];
   if (!fn) return res.status(400).json({ error: "Action tidak dikenal" });
   try {
