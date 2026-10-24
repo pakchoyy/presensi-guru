@@ -165,7 +165,7 @@ export function RekapPage() {
   };
 
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       {/* Filter card */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[12px]">

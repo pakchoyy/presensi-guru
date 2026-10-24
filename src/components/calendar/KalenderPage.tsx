@@ -153,7 +153,7 @@ export function KalenderPage() {
   };
 
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       {!isPRO && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2 text-[0.7rem] text-[var(--text-light)]">
           <Lock size={12} className="text-[#b45309]" />

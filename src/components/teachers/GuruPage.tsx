@@ -481,7 +481,7 @@ export function GuruPage() {
   const jumlahBelum = guruList.filter((g) => !cloudUserIdMap[g.id] && g.kodeLogin && g.pin).length;
 
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       <AkunCloudSekolah
         jumlahTersambung={jumlahTersambung}
         jumlahBelum={jumlahBelum}

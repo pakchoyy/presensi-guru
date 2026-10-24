@@ -3,7 +3,7 @@ import { APP_URL, MAIN_SITE_URL } from "@/lib/constants";
 
 export function TentangKontak() {
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       {/* Tentang */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
         <div className="text-[0.85rem] font-bold flex items-center gap-[8px] mb-3">

@@ -25,7 +25,7 @@ import { PengaturanPage } from "@/components/pro/PengaturanPage";
 import { UpgradePage } from "@/components/pro/UpgradePage";
 import { CloudSettingsPage } from "@/components/pro/CloudSettingsPage";
 
-import { PageName } from "@/types/enums";
+import { PageName, Tier } from "@/types/enums";
 import { AbsenGuruPage } from "@/components/attendance/AbsenGuruPage";
 import { EntryGate } from "@/components/entry/EntryGate";
 import { GuruShell } from "@/components/guru/GuruShell";
@@ -106,7 +106,7 @@ function PageContent() {
 }
 
 function AppContent() {
-  const { setupSelesai, loading, entryMode, setActivePage } = useApp();
+  const { setupSelesai, loading, entryMode, setActivePage, teacher } = useApp();
 
   useAutoSync();
 
@@ -140,8 +140,8 @@ function AppContent() {
         <PageRouter />
       </div>
       {setupSelesai && (
-        <div className="sticky bottom-[56px] lg:static z-[95] w-full">
-          <Marquee />
+        <div className="w-full">
+          {teacher?.tier !== Tier.PRO && <div className="hidden lg:block"><Marquee /></div>}
           <Footer />
         </div>
       )}

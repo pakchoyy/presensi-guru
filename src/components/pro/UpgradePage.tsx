@@ -117,7 +117,7 @@ export function UpgradePage() {
 
   if (isPRO) {
     return (
-      <div className="flex-1 px-[14px] pt-[14px] pb-[130px] lg:pb-4">
+      <div className="flex-1 px-[14px] pt-[14px] pb-[calc(130px+var(--ticker-h,0px))] lg:pb-4">
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] text-center">
           <div className="text-[2rem] mb-2">👑</div>
           <div className="text-[0.9rem] font-bold text-[#f59e0b] mb-1">Kamu sudah PRO!</div>
@@ -130,7 +130,7 @@ export function UpgradePage() {
   }
 
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[130px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(130px+var(--ticker-h,0px))] lg:pb-4">
       <div className="bg-gradient-to-br from-[#2563eb] to-[#1e40af] rounded-2xl p-6 mb-3 text-white text-center">
         <ArrowUpCircle size={48} className="mx-auto mb-3 opacity-90" />
         <h2 className="text-[1.3rem] font-extrabold mb-2">Pilih Paket</h2>

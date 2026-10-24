@@ -24,7 +24,7 @@ export function GuruProfilPage({
   const kode = guru.kodeLogin || guru.nip || String(guru.id);
 
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       {/* Hero */}
       <div
         className="rounded-2xl p-5 text-white relative overflow-hidden text-center"

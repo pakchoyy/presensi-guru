@@ -41,7 +41,7 @@ const GUIDES = [
 
 export function PetunjukPage() {
   return (
-    <div className="flex-1 px-[14px] pt-[14px] pb-[90px] lg:pb-4">
+    <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
         <div className="text-[0.85rem] font-bold flex items-center gap-[8px] mb-4">
           <BookOpen size={18} className="text-[#2563eb]" /> Petunjuk Penggunaan
