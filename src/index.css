@@ -148,6 +148,7 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .ticker-fade { animation: none; }
+}
 
 @keyframes slide-up {
   from { transform: translateY(24px); opacity: 0; }
