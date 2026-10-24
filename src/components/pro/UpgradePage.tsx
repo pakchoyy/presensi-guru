@@ -15,7 +15,8 @@ const Confetti: React.FC<any> = () => null;
 import { PageName, Tier } from "@/types/enums";
 
 const COMPARE_ROWS: [string, string, string, string][] = [
-  ["Jumlah guru", "5", "15", "∞"],
+  ["Jumlah guru", "5", "10", "∞"],
+  ["Peta lokasi absen", "—", "—", "✓"],
   ["HP admin (cloud)", "—", "1", "3"],
   ["Absen GPS + selfie", "✓", "✓", "✓"],
   ["Rekap & pengingat", "✓", "✓", "✓"],
@@ -198,7 +199,7 @@ export function UpgradePage() {
         tagline="Buat sekolah kecil"
         price={PLUS_PRICE}
         perMonth="cuma ±Rp4.500/bulan"
-        bullets={["Maks 15 guru", "1 HP admin (data aman di cloud)", "Absen GPS + selfie", "Rekap & pengingat"]}
+        bullets={["Maks 10 guru", "1 HP admin (data aman di cloud)", "Absen GPS + selfie", "Rekap & pengingat"]}
         accentColor="#2563eb"
         isCurrent={tier === Tier.PLUS}
         muted={false}
@@ -211,7 +212,7 @@ export function UpgradePage() {
         tagline="Semua di PLUS, plus:"
         price={PRO_PRICE}
         perMonth="cuma ±Rp8.500/bulan"
-        bullets={["Guru tanpa batas", "3 HP admin", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate", "Bebas iklan"]}
+        bullets={["Guru tanpa batas", "3 HP admin", "Peta lokasi absen", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate", "Bebas iklan"]}
         accentColor="#f59e0b"
         isCurrent={false}
         muted={false}

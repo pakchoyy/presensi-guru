@@ -771,7 +771,7 @@ export function PengaturanPage() {
               PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
             </div>
             <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-              per semester (6 bulan) — PLUS maks 15 guru, PRO tanpa batas
+              per semester (6 bulan) — PLUS maks 10 guru, PRO tanpa batas + peta lokasi
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { ArrowLeft, Save } from "lucide-react";
-import { PetaLokasi } from "@/components/attendance/PetaLokasi";
+import { PetaPro } from "@/components/attendance/PetaPro";
 
 /**
  * Layar konfirmasi sebelum presensi disimpan: foto selfie, lokasi sekolah,
@@ -102,7 +102,7 @@ export function KonfirmasiPresensi({
 
         {/* Peta */}
         {lat != null && lng != null ? (
-          <PetaLokasi
+          <PetaPro
             namaSekolah={namaSekolah}
             lat={lat}
             lng={lng}

@@ -2,6 +2,12 @@ import { BookOpen, ClipboardCheck, Upload, BarChart3, Database, Calendar, Settin
 
 const GUIDES = [
   {
+    num: "★",
+    icon: Settings,
+    title: "Paket & Peta Lokasi",
+    desc: "FREE maks 5 guru, <b>PLUS maks 10 guru</b>, PRO tanpa batas. <b>Peta lokasi absen hanya di PRO</b>. Titik sekolah tetap bisa diatur di Pengaturan lewat <b>Gunakan lokasi saya sekarang</b> atau isi lat/lng manual — cek radius GPS tetap jalan di semua paket.",
+  },
+  {
     num: "1",
     icon: ClipboardCheck,
     title: "Presensi Harian",

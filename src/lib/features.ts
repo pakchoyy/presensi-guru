@@ -1,7 +1,7 @@
 import { Tier } from "@/types/enums";
 
 // Batas jumlah guru per paket.
-export const MAX_GURU: Record<Tier, number> = { [Tier.FREE]: 5, [Tier.PLUS]: 15, [Tier.PRO]: Infinity };
+export const MAX_GURU: Record<Tier, number> = { [Tier.FREE]: 5, [Tier.PLUS]: 10, [Tier.PRO]: Infinity };
 
 export const isPaid = (tier?: string) => tier === Tier.PLUS || tier === Tier.PRO;
 export const isPro = (tier?: string) => tier === Tier.PRO;

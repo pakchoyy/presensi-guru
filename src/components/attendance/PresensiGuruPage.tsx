@@ -17,7 +17,7 @@ import { useApp } from "@/contexts/AppContext";
 import { PageName, AttendanceStatus } from "@/types/enums";
 import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { PetaLokasi } from "@/components/attendance/PetaLokasi";
+import { PetaPro } from "@/components/attendance/PetaPro";
 import { IzinSheet } from "@/components/attendance/IzinSheet";
 import { KonfirmasiPresensi } from "@/components/attendance/KonfirmasiPresensi";
 import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
@@ -513,7 +513,7 @@ function SelfAbsenPanel({
         </div>
       )}
       {school?.lat != null && school?.lng != null && (
-        <PetaLokasi
+        <PetaPro
           namaSekolah={school.nama}
           lat={school.lat}
           lng={school.lng}
