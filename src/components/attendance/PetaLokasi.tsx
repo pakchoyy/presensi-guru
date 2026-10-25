@@ -1,12 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MapPin, Navigation, LocateFixed, School as SchoolIcon, UserRound } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Navigation, LocateFixed, School as SchoolIcon, UserRound, ExternalLink } from "lucide-react";
 
 /**
- * Peta lokasi presensi (Leaflet + tile OpenStreetMap — tanpa API key).
- * Menampilkan marker sekolah, lingkaran radius geofence, dan marker posisi
- * guru kalau GPS sudah didapat.
+ * Peta lokasi presensi: Google Maps embed (tanpa API key) + tombol "Buka di Maps".
+ * Lingkaran radius tidak bisa digambar di embed, jadi radius & jarak ditulis di bawah peta.
  */
 export function PetaLokasi({
   namaSekolah,
@@ -27,75 +24,11 @@ export function PetaLokasi({
   loading?: boolean;
   onRefresh?: () => void;
 }) {
-  // "sekolah" = radius selalu terlihat; "keduanya" = zoom out sampai posisi
-  // guru ikut masuk layar (lingkaran radius bisa jadi kecil kalau jauh).
-  const [fokus, setFokus] = useState<"sekolah" | "keduanya">("sekolah");
-  const boxRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const layerRef = useRef<L.LayerGroup | null>(null);
-
+  // "sekolah" = titik sekolah; "saya" = titik posisi guru.
+  const [fokus, setFokus] = useState<"sekolah" | "saya">("sekolah");
   const radius = radiusMeter ?? 100;
-
-  // Inisialisasi peta sekali.
-  useEffect(() => {
-    if (!boxRef.current || mapRef.current) return;
-    const map = L.map(boxRef.current, {
-      center: [lat, lng],
-      zoom: 17,
-      zoomControl: true,
-      attributionControl: true,
-    });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
-    }).addTo(map);
-    layerRef.current = L.layerGroup().addTo(map);
-    mapRef.current = map;
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      layerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Gambar ulang marker + radius setiap data berubah.
-  useEffect(() => {
-    const map = mapRef.current;
-    const layer = layerRef.current;
-    if (!map || !layer) return;
-    layer.clearLayers();
-
-    const titikSekolah = L.latLng(lat, lng);
-    const lingkaran = L.circle(titikSekolah, {
-      radius,
-      color: "#2563eb",
-      weight: 2,
-      fillColor: "#3b82f6",
-      fillOpacity: 0.18,
-    }).addTo(layer);
-    L.marker(titikSekolah, { icon: ikonBulat("#16a34a", SVG_SEKOLAH, 34) })
-      .addTo(layer)
-      .bindPopup(namaSekolah);
-
-    const titikSaya = posisi ? L.latLng(posisi.lat, posisi.lng) : null;
-    if (titikSaya) {
-      // Posisi guru di atas marker sekolah supaya tetap terlihat walau berimpit.
-      L.marker(titikSaya, { icon: ikonBulat("#eab308", SVG_ORANG, 30), zIndexOffset: 1000 })
-        .addTo(layer)
-        .bindPopup("Posisi Anda");
-    }
-
-    if (fokus === "keduanya" && titikSaya) {
-      map.fitBounds(L.latLngBounds([titikSekolah, titikSaya]).pad(0.3), { maxZoom: 18 });
-    } else {
-      // Pas ke lingkaran radius supaya area geofence selalu kelihatan jelas.
-      map.fitBounds(lingkaran.getBounds().pad(0.6), { maxZoom: 18 });
-    }
-    // Container baru kadang belum punya ukuran final saat render pertama.
-    setTimeout(() => map.invalidateSize(), 50);
-  }, [lat, lng, radius, posisi, namaSekolah, fokus]);
-
+  const titik = fokus === "saya" && posisi ? posisi : { lat, lng };
+  const q = `${titik.lat},${titik.lng}`;
   const diDalam = jarakMeter != null ? jarakMeter <= radius : null;
 
   return (
@@ -123,23 +56,27 @@ export function PetaLokasi({
         )}
       </div>
 
-      {/* isolate: z-index Leaflet (400–1000) tetap di dalam peta, tidak menutupi menu/sheet. */}
       <div className="relative isolate">
-        <div ref={boxRef} className="h-[190px] w-full bg-[var(--input-bg)] z-0" aria-label="Peta lokasi sekolah" />
+        <iframe
+          key={q}
+          title={fokus === "saya" ? "Peta posisi Anda" : `Peta lokasi ${namaSekolah}`}
+          src={`https://maps.google.com/maps?q=${q}&z=17&output=embed`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="block h-[220px] w-full border-0 bg-[var(--input-bg)]"
+        />
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${q}`}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-lg bg-white px-2 py-[6px] text-[0.68rem] font-bold text-[#1a73e8] no-underline shadow"
+        >
+          Buka di Maps <ExternalLink size={12} />
+        </a>
         {posisi && (
-          <div className="absolute right-2 top-2 z-[400] flex rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-bg)] shadow">
-            <FokusBtn
-              aktif={fokus === "sekolah"}
-              onClick={() => setFokus("sekolah")}
-              icon={<SchoolIcon size={12} />}
-              label="Area"
-            />
-            <FokusBtn
-              aktif={fokus === "keduanya"}
-              onClick={() => setFokus("keduanya")}
-              icon={<UserRound size={12} />}
-              label="Saya"
-            />
+          <div className="absolute right-2 top-2 z-10 flex rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-bg)] shadow">
+            <FokusBtn aktif={fokus === "sekolah"} onClick={() => setFokus("sekolah")} icon={<SchoolIcon size={12} />} label="Sekolah" />
+            <FokusBtn aktif={fokus === "saya"} onClick={() => setFokus("saya")} icon={<UserRound size={12} />} label="Saya" />
           </div>
         )}
       </div>
@@ -151,7 +88,7 @@ export function PetaLokasi({
             ? "Mengambil lokasi Anda..."
             : jarakMeter != null
               ? <>Jarak Anda <b className="text-[var(--text)]">{jarakMeter} m</b> · radius {radius} m</>
-              : "Lokasi Anda belum diambil"}
+              : <>Radius presensi {radius} m dari titik sekolah</>}
         </div>
         {diDalam != null && (
           <span
@@ -190,20 +127,4 @@ function FokusBtn({
       {icon} {label}
     </button>
   );
-}
-
-/** Marker custom (divIcon) supaya tidak perlu bundling aset ikon Leaflet. */
-// Sekolah = gedung hijau, guru = orang kuning (ikon lucide School / UserRound).
-const SVG_SEKOLAH = '<path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 3.447 1.724a1 1 0 0 1 .553.894V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7.382a1 1 0 0 1 .553-.894L6 10"/><path d="M18 5v17"/><path d="m4 6 7.106-3.553a2 2 0 0 1 1.788 0L20 6"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/>';
-const SVG_ORANG = '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>';
-
-function ikonBulat(warna: string, svg: string, ukuran: number): L.DivIcon {
-  const ikon = Math.round(ukuran * 0.55);
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:${ukuran}px;height:${ukuran}px;border-radius:50%;background:${warna};border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="${ikon}" height="${ikon}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></div>`,
-    iconSize: [ukuran, ukuran],
-    iconAnchor: [ukuran / 2, ukuran / 2],
-    popupAnchor: [0, -ukuran / 2],
-  });
 }

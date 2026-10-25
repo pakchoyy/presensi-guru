@@ -5,14 +5,14 @@ import { effectiveTier } from "@/lib/features";
 import { PageName, Tier } from "@/types/enums";
 import type { PetaLokasi as PetaLokasiType } from "./PetaLokasi";
 
-// Leaflet hanya dimuat untuk PRO (termasuk masa coba).
+// Peta (Google Maps embed) hanya untuk PRO (termasuk masa coba).
 const PetaLokasi = lazy(() => import("./PetaLokasi").then((m) => ({ default: m.PetaLokasi })));
 
 export function PetaPro(props: ComponentProps<typeof PetaLokasiType>) {
   const { teacher, setActivePage } = useApp();
   if (effectiveTier(teacher?.tier) === Tier.PRO) {
     return (
-      <Suspense fallback={<div className="mt-3 h-[190px] rounded-2xl bg-[var(--input-bg)]" />}>
+      <Suspense fallback={<div className="mt-3 h-[220px] rounded-2xl bg-[var(--input-bg)]" />}>
         <PetaLokasi {...props} />
       </Suspense>
     );
