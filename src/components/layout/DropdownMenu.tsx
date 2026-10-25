@@ -6,11 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { AvatarGuru } from "@/components/shared/AvatarGuru";
 import { PageName, Tier } from "@/types/enums";
-import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat, Gift } from "lucide-react";
+import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Bug, Gift } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onLaporBug: () => void;
 }
 
 interface BeforeInstallPromptEvent extends Event {
@@ -18,8 +19,8 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-export function DropdownMenu({ isOpen, onClose }: Props) {
-  const { setActivePage, setupSelesai, teacher, setEntryMode } = useApp();
+export function DropdownMenu({ isOpen, onClose, onLaporBug }: Props) {
+  const { setActivePage, setupSelesai, teacher } = useApp();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [lic, setLic] = useState<{ berakhir: string; daysRemaining: number } | null>(null);
@@ -106,10 +107,10 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
         <div className="h-px bg-[var(--border)] mx-0" />
 
         <button
-          onClick={() => { onClose(); setEntryMode("choose"); }}
+          onClick={() => { onLaporBug(); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
         >
-          <Repeat size={16} /> Ganti Peran (Admin / Guru)
+          <Bug size={16} /> Laporkan Bug
         </button>
 
         <div className="h-px bg-[var(--border)] mx-0" />

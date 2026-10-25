@@ -44,3 +44,4 @@ export const DEFAULT_LOGO = "/icons/pg-192-v1.png";
 const LEGACY_DEFAULT_LOGOS = ["/logo-presensiyuk.png", "/logo-presensiyuk.png?v=2", "/guru-presguru.png", "/guru-cibisd2.png"];
 export const resolveLogo = (url?: string | null) =>
   !url || LEGACY_DEFAULT_LOGOS.includes(url) || /^\/icons\/pg-\d+-v\d+\.png$/.test(url) ? DEFAULT_LOGO : url;
+export const WA_ADMIN = "6289530713597";

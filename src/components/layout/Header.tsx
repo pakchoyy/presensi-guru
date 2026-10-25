@@ -7,10 +7,12 @@ import { SyncIndicator } from "@/components/layout/SyncIndicator";
 import { LicenseExpiryBadge } from "@/components/layout/LicenseExpiryBadge";
 import { Moon, Sun, Menu } from "lucide-react";
 import { AvatarGuru } from "@/components/shared/AvatarGuru";
+import { LaporBug } from "@/components/shared/LaporBug";
 
 export function Header() {
   const { darkMode, toggleDarkMode, setupSelesai, teacher } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bugOpen, setBugOpen] = useState(false);
 
   // Judul PATEN — selalu "Presensi Yuk | Guru" apapun halaman aktifnya.
   return (
@@ -71,7 +73,8 @@ export function Header() {
               >
                 <Menu size={16} />
               </button>
-              <DropdownMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+              <DropdownMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} onLaporBug={() => setBugOpen(true)} />
+              {bugOpen && <LaporBug onClose={() => setBugOpen(false)} />}
             </>
           )}
         </div>

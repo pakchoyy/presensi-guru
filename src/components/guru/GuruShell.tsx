@@ -4,13 +4,14 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard, Bug } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
 import { DashboardHarianPage } from "@/components/attendance/DashboardHarianPage";
 import { db } from "@/repositories/dexie/db";
 import { PetunjukPage } from "@/components/guide/PetunjukPage";
 import { TentangKontak } from "@/components/about/TentangKontak";
 import { pasangAplikasi } from "@/components/layout/DropdownMenu";
+import { LaporBug } from "@/components/shared/LaporBug";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
@@ -26,6 +27,7 @@ export function GuruShell() {
   const [tab, setTab] = useState<GuruTab>("presensi");
   const [logJenis, setLogJenis] = useState<"presensi" | "izin">("presensi");
   const [menuBuka, setMenuBuka] = useState(false);
+  const [bugBuka, setBugBuka] = useState(false);
   // Kepala Sekolah / verifikator yang ditunjuk admin: bisa memutuskan izin guru lain.
   const [cloudKs, setCloudKs] = useState(false);
   useEffect(() => { guruCloud.cekVerifikator().then(setCloudKs).catch(() => {}); }, []);
@@ -151,6 +153,7 @@ export function GuruShell() {
                   { ikon: <BookOpen size={16} />, teks: "Petunjuk", aksi: () => setTab("petunjuk") },
                   { ikon: <Info size={16} />, teks: "Tentang & Kontak", aksi: () => setTab("tentang") },
                   { ikon: <Download size={16} />, teks: "Install Presensi Yuk", aksi: () => pasangAplikasi(toast) },
+                  { ikon: <Bug size={16} />, teks: "Laporkan Bug", aksi: () => setBugBuka(true) },
                 ].map((m) => (
                   <button
                     key={m.teks}
@@ -163,6 +166,7 @@ export function GuruShell() {
               </div>
             </>
           )}
+          {bugBuka && <LaporBug onClose={() => setBugBuka(false)} />}
         </div>
       </header>
 

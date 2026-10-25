@@ -8,7 +8,7 @@ import { PageName, Tier } from "@/types/enums";
 import { Gift, Copy, Share2, Lock, Wallet, Users, CalendarPlus, Coins, ShieldCheck, Mail, Loader2, X } from "lucide-react";
 
 const APP_URL = "https://preguru.bantuguruyuk.web.id";
-const WA_ADMIN = "6289530713597";
+import { WA_ADMIN } from "@/lib/constants";
 const DEFAULT_INFO: AffiliateInfo = {
   rewards: { PLUS: { commission: 1000, days: 12 }, PRO: { commission: 2500, days: 30 }, GURU_PLUS: { commission: 1500, days: 12 }, GURU_PRO: { commission: 3000, days: 30 } },
   minWithdraw: 20000,
