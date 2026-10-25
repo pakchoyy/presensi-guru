@@ -793,7 +793,7 @@ export function PengaturanPage() {
                 type="text"
                 value={kode}
                 onChange={(e) => setKode(e.target.value)}
-                placeholder="BGY-PS-XXXX"
+                placeholder="BGY-PG-PLUS-… / BGY-PG-PRO-…"
                 className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
               />
             </div>
