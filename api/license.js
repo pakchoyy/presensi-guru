@@ -98,7 +98,22 @@ async function applyReferral(supabase, rawCode, buyerEmail, buyerTier) {
     p_product: PRODUCT,
   });
   if (error) throw error;
+  if (data === "ok") await creditBuyer(supabase, buyerEmail, code, buyerTier, Number.isFinite(cfg[kC]) ? cfg[kC] : dC);
   return data;
+}
+
+/** Bonus uang untuk pembeli yang memakai kode teman: setengah komisi pengajak, dibulatkan ke bawah ke Rp100. */
+export const buyerShare = (commission) => Math.floor(Math.max(0, Number(commission) || 0) / 2 / 100) * 100;
+
+// Dipanggil hanya setelah affiliate_credit = 'ok' (sekali per pembeli per produk), jadi tidak dobel.
+// shortcut: bukan satu transaksi dengan affiliate_credit; kalau insert ini gagal, bonus pembeli dicatat manual oleh admin.
+async function creditBuyer(supabase, buyerEmail, code, tier, commission) {
+  const amount = buyerShare(commission);
+  if (amount <= 0) return;
+  await supabase.from("affiliate_ledger").insert({
+    owner_email: buyerEmail, type: "earn", amount, status: "ok", buyer_email: buyerEmail, product: PRODUCT,
+    note: `Bonus pembeli ${tier} ${PRODUCT} pakai kode ${code}`,
+  });
 }
 
 // Dashboard, info & tarik dana dilayani server Presensi Siswa (satu saldo). Token sesi email sama (satu project Supabase).

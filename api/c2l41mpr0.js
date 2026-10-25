@@ -2,7 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { createHmac, timingSafeEqual } from "crypto";
 
 // Link klaim dibuat toko Kreacy untuk pesanan yang sudah dibayar:
-// ?t=<KLAIM_TOKEN_PLUS|KLAIM_TOKEN_PRO>&order=<id pesanan>&sig=<HMAC-SHA256(KLAIM_HMAC_SECRET, id pesanan)>.
+// ?t=<KLAIM_TOKEN_PLUS|KLAIM_TOKEN_PRO>&order=<id pesanan>&sig=<HMAC(id pesanan)>&sig2=<HMAC("v2:" + t + ":" + id pesanan)>.
+// sig2 mengikat paket ke pesanan, jadi t tidak bisa ditukar (mis. ke token PRO atau dari link Siswa).
+// Link lama (hanya sig) diterima untuk PLUS saja; link PRO lama yang belum diklaim dilayani admin lewat WhatsApp.
 // Satu pesanan = satu kode (licenses.klaim_order unik); membuka link lagi menampilkan kode yang sama.
 function getSupabaseAdmin() {
   const url = process.env.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,10 +20,17 @@ function tierFromToken(t) {
   return null;
 }
 
-export function validOrderSig(order, sig, secret) {
+export function validOrderSig(order, sig, secret, t) {
   if (!secret || !/^[A-Za-z0-9-]{1,64}$/.test(order) || !/^[0-9a-f]{64}$/.test(sig)) return false;
-  const expected = createHmac("sha256", secret).update(order).digest();
+  const expected = createHmac("sha256", secret).update(t === undefined ? order : `v2:${t}:${order}`).digest();
   return timingSafeEqual(expected, Buffer.from(sig, "hex"));
+}
+
+/** Link sah kalau sig2 cocok dengan t+order, atau (link lama) sig cocok dengan order dan paketnya PLUS. */
+export function validClaim(q, tier, secret) {
+  const t = String(q.t || ""), order = String(q.order || "");
+  if (validOrderSig(order, String(q.sig2 || ""), secret, t)) return true;
+  return tier === "PLUS" && validOrderSig(order, String(q.sig || ""), secret);
 }
 
 export default async function handler(req, res) {
@@ -36,7 +45,7 @@ export default async function handler(req, res) {
   let error = "";
 
   const order = String(req.query.order || "");
-  if (!tier || !validOrderSig(order, String(req.query.sig || ""), process.env.KLAIM_HMAC_SECRET)) {
+  if (!tier || !validClaim(req.query, tier, process.env.KLAIM_HMAC_SECRET)) {
     error = "Link klaim tidak valid. Buka link dari halaman pesanan di toko, atau hubungi admin.";
   } else {
     try {
