@@ -9,7 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import type { School, Teacher } from "@/types/entities";
-import { PageName } from "@/types/enums";
+import { PageName, Tier } from "@/types/enums";
+import { effectiveTier } from "@/lib/features";
 import { schoolRepo } from "@/repositories/dexie/school.repo";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { setupService } from "@/services/setup.service";
@@ -52,6 +53,8 @@ interface AppState {
 }
 
 interface AppContextType extends AppState {
+  /** Paket efektif untuk gating fitur: masa coba = PRO. Cloud/lisensi tetap pakai teacher.tier asli. */
+  tier: Tier;
   setActivePage: (page: PageName) => void;
   setTanggalAktif: (tgl: string) => void;
   toggleDarkMode: () => void;
@@ -175,6 +178,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         ...state,
+        tier: effectiveTier(state.teacher?.tier),
         setActivePage,
         setTanggalAktif,
         toggleDarkMode,

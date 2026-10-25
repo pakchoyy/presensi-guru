@@ -1,4 +1,4 @@
-import { isPaid } from "@/lib/features";
+import { isPaid, isOnTrial, trialDaysRemaining } from "@/lib/features";
 import { readAktivasiLink, readRef, clearRef, clearAktivasiLink } from "@/lib/aktivasi-link";
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
@@ -11,11 +11,12 @@ import { syncService } from "@/services/sync.service";
 import { getSyncLog, type SyncLogEntry } from "@/services/sync.service";
 import { Tier, Jenjang, PageName } from "@/types/enums";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { PRO_PRICE, PLUS_PRICE, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
+import { LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
 import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
 import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
 import { OtpVerify } from "@/components/auth/OtpVerify";
+import { PetaPro } from "@/components/attendance/PetaPro";
 import {
   Settings,
   ArrowUpCircle,
@@ -41,6 +42,7 @@ import {
   Smartphone,
   X,
   MapPin,
+  Lock,
   Target,
   Save,
 } from "lucide-react";
@@ -58,21 +60,14 @@ const getHariAktif = (): string => {
   return localStorage.getItem("bgy_hari_aktif") || "Senin-Sabtu";
 };
 
-const getAutoHadir = (): boolean => {
-  const stored = localStorage.getItem("bgy_auto_hadir");
-  if (stored === null) {
-    localStorage.setItem("bgy_auto_hadir", "1");
-    return true;
-  }
-  return stored === "1";
-};
-
 export function PengaturanPage() {
-  const { teacher, school, refreshTeacher, refreshSchool, setActivePage } = useApp();
+  const { teacher, school, tier, refreshTeacher, refreshSchool, setActivePage, setEntryMode } = useApp();
   const { toast } = useToast();
   const { isCloudConnected, cloudUser, setCloudEmail, clearCloudEmail } = useCloudAuth();
 
-  const isPRO = isPaid(teacher?.tier);
+  const isPRO = isPaid(teacher?.tier); // lisensi berbayar asli (cloud)
+  const mapOK = tier === Tier.PRO; // peta & cek radius: PRO dan masa coba
+  const onTrial = isOnTrial(teacher?.tier);
 
   const [email, setEmail] = useState(() => readAktivasiLink()?.email || "");
   const [kode, setKode] = useState(() => readAktivasiLink()?.kode || "");
@@ -90,7 +85,6 @@ export function PengaturanPage() {
 
   const [hariAktif, setHariAktif] = useState<string>(getHariAktif());
   const [customDays, setCustomDays] = useState<string>(localStorage.getItem("bgy_hari_aktif_custom") || "1,2,3,4,5,6");
-  const [autoHadir, setAutoHadir] = useState(getAutoHadir());
 
   // Lokasi & Jam Sekolah (geofencing untuk presensi guru)
   const [editLat, setEditLat] = useState<string>(school?.lat?.toString() ?? "");
@@ -342,13 +336,6 @@ export function PengaturanPage() {
     }
   };
 
-  const handleWA = () => {
-    const msg = encodeURIComponent(
-      "Halo Pak Choyy, saya mau beli lisensi PRO Presensi Yuk | Guru\nEmail: " + (teacher?.email || "")
-    );
-    window.open(`https://wa.me/6289530713597?text=${msg}`, "_blank");
-  };
-
   const handleRenew = async () => {
     if (!teacher || !kode.trim()) {
       toast("Masukkan kode perpanjangan dulu");
@@ -510,7 +497,6 @@ export function PengaturanPage() {
     toast(`✅ Ajaran baru "${nextLabel}" dibuat`);
   };
 
-  const manfaat = licenseService.getManfaat();
 
   const handleDeviceLogin = () => {
     if (!teacher) {
@@ -625,9 +611,9 @@ export function PengaturanPage() {
             <div className="text-[0.7rem] text-[var(--text-light)]">{teacher?.email}</div>
           </div>
           <div className="ml-auto">
-            {isPRO ? (
+            {isPRO || onTrial ? (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[#2563eb]/10 text-[#2563eb] border border-[#2563eb]/20">
-                <Crown size={11} /> PRO
+                <Crown size={11} /> {onTrial ? `PRO · Trial ${trialDaysRemaining()}h` : teacher?.tier}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[var(--input-bg)] text-[var(--text-light)] border border-[var(--border)]">
@@ -706,7 +692,7 @@ export function PengaturanPage() {
                   type="text"
                   value={kode}
                   onChange={(e) => setKode(e.target.value)}
-                  placeholder="BGY-PS-XXXX"
+                  placeholder="BGY-PG-PLUS-… / BGY-PG-PRO-…"
                   className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
                 />
                 {kode && (
@@ -747,67 +733,26 @@ export function PengaturanPage() {
       ) : (
         /* FREE / Upgrade */
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#2563eb] p-[14px] mb-3">
-          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-            <ArrowUpCircle size={15} className="text-[#2563eb]" /> Upgrade ke PRO
+          <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[8px]">
+            <ArrowUpCircle size={15} className="text-[#2563eb]" /> Paket &amp; Lisensi
           </div>
-
-          <div className="bg-[rgba(14,165,160,0.06)] rounded-lg p-2 mb-3 text-[0.72rem] text-[var(--text)] flex items-start gap-2">
-            <Info size={13} className="text-[#2563eb] flex-shrink-0 mt-[2px]" />
-            <span>Sudah pernah beli? Masukkan email & kode yang sama untuk aktivasi ulang.</span>
+          <div className="text-[0.74rem] text-[var(--text-light)] mb-3 leading-relaxed">
+            {onTrial
+              ? `Masa coba PRO tersisa ${trialDaysRemaining()} hari. Setelah itu otomatis FREE (maks 5 guru).`
+              : "Paket FREE: maks 5 guru, presensi selfie."}{" "}
+            Bandingkan FREE, PLUS &amp; PRO di halaman paket.
           </div>
-
-          <div className="bg-gradient-to-br from-[#2563eb]/8 to-[#1d4ed8]/12 rounded-xl p-4 mb-3 border-2 border-[#2563eb]/20 text-center"
-            style={{
-              background: "linear-gradient(135deg, rgba(14,165,160,0.06), rgba(13,122,138,0.10))",
-            }}>
-            <Crown size={24} className="text-[#2563eb] mx-auto mb-1" />
-            <div className="text-[1rem] font-bold text-[var(--text)] mb-1">
-              Akses Penuh Semua Fitur Premium
-            </div>
-            <div className="text-[0.75rem] text-[var(--text-light)] mb-2">
-              Tambah guru lebih banyak, cloud sync, verifikasi izin & banyak lagi
-            </div>
-            <div className="text-[1.6rem] font-black text-[#2563eb] leading-tight">
-              PLUS {PLUS_PRICE.split("/")[0]} · PRO {PRO_PRICE.split("/")[0]}
-            </div>
-            <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-              per semester (6 bulan) — PLUS maks 10 guru, PRO tanpa batas + peta lokasi
-            </div>
-          </div>
-
-          <div className="mb-3">
-            {manfaat.map((m, i) => (
-              <div key={i} className="flex items-start gap-2 mb-1 text-[0.74rem] text-[var(--text)]">
-                <Check size={14} className="text-[#16a34a] flex-shrink-0 mt-[2px]" />
-                <span>{m}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-3">
-            <a
-              href={KREACY_PRO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full text-center py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer no-underline"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
-            >
-              Beli Disini
-            </a>
-          </div>
-          <div className="mb-3">
-            <button
-              onClick={handleWA}
-              className="w-full flex items-center justify-center gap-[6px] py-[9px] rounded-[10px] text-white font-bold text-[0.78rem] cursor-pointer"
-              style={{ background: "#25D366" }}
-            >
-              <MessageCircle size={14} /> Atau via WhatsApp
-            </button>
-          </div>
+          <button
+            onClick={() => setActivePage(PageName.UPGRADE)}
+            className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] text-white font-bold text-[0.82rem] cursor-pointer mb-3"
+            style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
+          >
+            <Crown size={15} /> Lihat Paket &amp; Upgrade ke PRO
+          </button>
 
           <div className="border-t border-[var(--border)] pt-3">
             <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
-              <Key size={13} /> Dapatkan Kode Lisensi
+              <Key size={13} /> Aktivasi Lisensi
             </div>
 
             <div className="mb-2">
@@ -1094,10 +1039,8 @@ export function PengaturanPage() {
           {hariAktif === "Kustom" && "Hari yang tidak aktif: tidak masuk presensi, merah di kalender"}
         </div>
       </div>
-      {/* Logo Sekolah (PRO only) */}
-      {isPRO && (
-        <LogoUpload editable={true} />
-      )}
+      {/* Logo Sekolah (PLUS/PRO/masa coba; FREE melihat kartu terkunci) */}
+      <LogoUpload editable={true} />
       <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Cara Absen</div>
       {/* Lokasi & Jam Sekolah (geofencing presensi guru) */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#0ea5a0] p-[14px] mb-3">
@@ -1105,8 +1048,18 @@ export function PengaturanPage() {
           <MapPin size={15} className="text-[#2563eb]" /> Lokasi &amp; Jam Sekolah
         </div>
 
+        {!mapOK && (
+          <div className="mb-3 rounded-lg p-2 bg-[#fef3c7] text-[#92400e] text-[0.7rem] leading-relaxed flex items-start gap-2">
+            <Lock size={13} className="flex-shrink-0 mt-[1px]" />
+            <span>
+              Presensi dengan <b>GPS, radius &amp; peta lokasi</b> hanya di paket PRO. Paket ini presensi dengan selfie wajah saja.{" "}
+              <button onClick={() => setActivePage(PageName.UPGRADE)} className="font-bold underline bg-transparent border-none cursor-pointer p-0 text-inherit">Lihat paket</button>
+            </span>
+          </div>
+        )}
+        {mapOK && (<>
         <div className="text-[0.68rem] text-[var(--text-light)] mb-3 leading-relaxed">
-          Set koordinat sekolah untuk <b>geofencing</b> saat guru clock-in/out.
+          Set koordinat sekolah untuk <b>geofencing</b> saat guru presensi.
           Guru akan dianggap <b>FAR</b> (di luar radius) kalau presensi lebih dari radius di bawah dari lokasi ini.
         </div>
 
@@ -1146,11 +1099,23 @@ export function PengaturanPage() {
           disabled={gettingGps}
           className="w-full flex items-center justify-center gap-[6px] py-[9px] mb-2 rounded-[10px] border-[1.5px] border-[#2563eb] text-[#2563eb] font-bold text-[0.78rem] bg-transparent active:scale-95 disabled:opacity-50"
         >
-          <Target size={14} /> {gettingGps ? "Mengambil lokasi..." : "Ambil Lokasi Saat Ini (GPS)"}
+          <Target size={14} /> {gettingGps ? "Mengambil lokasi..." : "Gunakan lokasi saya sekarang"}
         </button>
 
         {gpsError && (
           <div className="text-[0.65rem] text-[#dc2626] mb-2">⚠️ {gpsError}</div>
+        )}
+
+        {/* Pratinjau peta supaya admin yakin titiknya benar */}
+        {Number.isFinite(parseFloat(editLat)) && Number.isFinite(parseFloat(editLng)) && (
+          <div className="mb-3">
+            <PetaPro
+              namaSekolah={school?.nama || "Sekolah"}
+              lat={parseFloat(editLat)}
+              lng={parseFloat(editLng)}
+              radiusMeter={editRadius}
+            />
+          </div>
         )}
 
         {/* Radius */}
@@ -1172,6 +1137,8 @@ export function PengaturanPage() {
             <span>50m</span><span>250m</span><span>500m</span>
           </div>
         </div>
+
+        </>)}
 
         {/* Jam Kerja Guru — masuk → pulang */}
         <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
@@ -1232,41 +1199,13 @@ export function PengaturanPage() {
 
         <div className="mb-3" />
 
-        {/* Isi Hadir Otomatis — tetap pertahankan untuk fallback */}
-        <div className="flex items-center justify-between py-[6px] border-t border-[var(--border)] pt-3">
-          <div className="flex items-start gap-2 flex-1 min-w-0">
-            <Check size={14} className="text-[#16a34a] mt-[2px] flex-shrink-0" />
-            <div className="min-w-0">
-              <div className="text-[0.78rem] font-semibold text-[var(--text)]">Isi Hadir Otomatis</div>
-              <div className="text-[0.65rem] text-[var(--text-light)]">Default status hari = Hadir untuk guru yang clock-in</div>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              const newVal = !autoHadir;
-              setAutoHadir(newVal);
-              localStorage.setItem("bgy_auto_hadir", newVal ? "1" : "0");
-              toast(newVal ? "✅ Isi Hadir Otomatis: ON" : "Isi Hadir Otomatis: OFF");
-            }}
-            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none flex-shrink-0 ${
-              autoHadir ? "bg-[#2563eb]" : "bg-[var(--border)]"
-            }`}
-          >
-            <span
-              className={`absolute top-[2px] left-[2px] w-5 h-5 rounded-full bg-white transition-transform shadow ${
-                autoHadir ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-
         {/* Save */}
         <button
           onClick={async () => {
             if (!school) { toast("Sekolah belum siap"); return; }
             const lat = parseFloat(editLat);
             const lng = parseFloat(editLng);
-            if (isNaN(lat) || isNaN(lng)) { toast("Lat/Lng tidak valid"); return; }
+            if (mapOK && (isNaN(lat) || isNaN(lng))) { toast("Lat/Lng tidak valid"); return; }
             if (!/^\d{2}:\d{2}$/.test(editJamMasuk) || !/^\d{2}:\d{2}$/.test(editJamPulang)) {
               toast("Format jam tidak valid"); return;
             }
@@ -1274,9 +1213,9 @@ export function PengaturanPage() {
             try {
               const baru = {
                 ...school,
-                lat,
-                lng,
-                radiusMeter: editRadius,
+                lat: mapOK ? lat : school.lat,
+                lng: mapOK ? lng : school.lng,
+                radiusMeter: mapOK ? editRadius : school.radiusMeter,
                 jamMasukStandar: editJamMasuk,
                 jamPulangStandar: editJamPulang,
                 toleransiTerlambatMenit: editToleransi,
@@ -1429,34 +1368,15 @@ export function PengaturanPage() {
           </button>
         </div>
       )}
-      <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Lainnya</div>
-      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#64748b] mb-3 overflow-hidden">
-        {[
-          { page: PageName.PETUNJUK, label: "Petunjuk" },
-          { page: PageName.KALENDER, label: "Kalender" },
-          { page: PageName.AFFILIATE, label: "Program Affiliate" },
-          { page: PageName.TENTANG, label: "Tentang & Kontak" },
-        ].map((m, i) => (
-          <button
-            key={m.page}
-            onClick={() => setActivePage(m.page)}
-            className={`w-full flex items-center justify-between px-[14px] py-[11px] text-[0.8rem] font-semibold text-[var(--text)] bg-transparent border-none cursor-pointer text-left ${i ? "border-t border-[var(--border)]" : ""}`}
-          >
-            {m.label} <span className="text-[var(--text-light)]">›</span>
-          </button>
-        ))}
+      {/* Keluar: akun berbayar → lepas lisensi di perangkat ini; lainnya → kembali ke layar masuk */}
+      <div className="mt-5">
+        <button
+          onClick={() => (isPRO ? setShowLogoutConfirm(true) : setEntryMode("choose"))}
+          className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#ef4444] text-[#ef4444] font-bold text-[0.8rem] cursor-pointer bg-transparent"
+        >
+          <LogOut size={15} /> Keluar
+        </button>
       </div>
-      {/* Keluar dari Akun PRO (PRO only) */}
-      {isPRO && (
-        <div className="mt-3">
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#ef4444] text-[#ef4444] font-bold text-[0.8rem] cursor-pointer bg-transparent"
-          >
-            <LogOut size={15} /> Keluar dari Akun PRO di Perangkat Ini
-          </button>
-        </div>
-      )}
 
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-end lg:items-center justify-center animate-fade-in" onClick={() => setShowLogoutConfirm(false)}>

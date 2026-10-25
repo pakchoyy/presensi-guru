@@ -237,18 +237,6 @@ export const licenseService = {
       await teacherRepo.updateTier(guruId, Tier.FREE);
     }
   },
-
-  getManfaat(): string[] {
-    return [
-      "Tambah guru lebih banyak (PRO tanpa batas)",
-      "HP guru terhubung ke sekolah lewat cloud",
-      "Data aman tersimpan & otomatis sinkron di internet",
-      "Atur kalender sendiri: tandai libur & hari penting",
-      "Backup & pulihkan data dari internet (cloud)",
-      "Logo sekolah di laporan PDF & Excel",
-      "PRO: presensi dengan GPS & peta lokasi, Kepala Sekolah verifikasi izin",
-    ];
-  },
 };
 
 function formatDate(ts: number): string {

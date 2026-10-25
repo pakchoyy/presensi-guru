@@ -15,9 +15,9 @@ const MONTHS = [
 ];
 
 export function KalenderPage() {
-  const { teacher } = useApp();
+  const { tier } = useApp();
   const { toast } = useToast();
-  const isPRO = isPaid(teacher?.tier);
+  const isPRO = isPaid(tier); // paket efektif: masa coba PRO ikut bisa edit
 
   const [entries, setEntries] = useState<AcademicCalendarEntry[]>([]);
   const [ay, setAy] = useState<{ id: number; label: string } | null>(null);
@@ -157,7 +157,7 @@ export function KalenderPage() {
       {!isPRO && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2 text-[0.7rem] text-[var(--text-light)]">
           <Lock size={12} className="text-[#b45309]" />
-          Kalender hanya bisa dilihat. <span className="font-semibold text-[#2563eb]">Upgrade ke PRO</span> untuk menambah/mengedit hari libur & hari penting.
+          Kalender hanya bisa dilihat. <span className="font-semibold text-[#2563eb]">Upgrade ke PLUS/PRO</span> untuk menambah/mengedit hari libur & hari penting.
         </div>
       )}
 

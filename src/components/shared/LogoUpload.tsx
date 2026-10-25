@@ -1,22 +1,22 @@
 import { useState, useRef } from "react";
-import { effectiveTier } from "@/lib/features";
+import { isPaid } from "@/lib/features";
 import { DEFAULT_LOGO, resolveLogo } from "@/lib/constants";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { schoolRepo } from "@/repositories/dexie/school.repo";
 import { Upload, X } from "lucide-react";
-import { Tier } from "@/types/enums";
+import { PageName } from "@/types/enums";
 
 interface LogoUploadProps {
   editable?: boolean;
 }
 
 export function LogoUpload({ editable = false }: LogoUploadProps) {
-  const { school, teacher } = useApp();
+  const { school, tier, setActivePage } = useApp();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const isPRO = effectiveTier(teacher?.tier) === Tier.PRO;
+  const isPRO = isPaid(tier); // PLUS, PRO, dan masa coba
 
   const logoUrl = resolveLogo(school?.logoUrl);
   const isCustomLogo = logoUrl !== DEFAULT_LOGO;
@@ -90,18 +90,20 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
     );
   }
 
-  // Editable mode (PRO only)
+  // Editable mode (PLUS/PRO/masa coba)
   if (!isPRO) {
     return (
-      <div
-        className="rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden"
-        style={{ width: 40, height: 40 }}
-      >
-        <img
-          src={logoUrl}
-          alt="Logo Sekolah"
-          className="w-full h-full object-contain"
-        />
+      <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-[#fef3c7] text-[#b45309] flex items-center justify-center flex-shrink-0">
+          <Upload size={16} />
+        </div>
+        <div className="flex-1 min-w-0 text-[0.75rem] text-[var(--text)]">
+          <b>Logo sekolah di laporan</b>
+          <div className="text-[0.65rem] text-[var(--text-light)]">Tersedia di PLUS &amp; PRO</div>
+        </div>
+        <button onClick={() => setActivePage(PageName.UPGRADE)} className="text-[0.7rem] font-bold text-[#b45309] whitespace-nowrap bg-transparent border-none cursor-pointer">
+          Upgrade →
+        </button>
       </div>
     );
   }
@@ -109,7 +111,7 @@ export function LogoUpload({ editable = false }: LogoUploadProps) {
   return (
     <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
       <div className="text-[0.8rem] font-bold flex items-center gap-[6px] mb-[10px]">
-        <Upload size={15} /> Logo Sekolah (PRO)
+        <Upload size={15} /> Logo Sekolah
       </div>
       
       <div className="flex items-center gap-3 mb-3">
