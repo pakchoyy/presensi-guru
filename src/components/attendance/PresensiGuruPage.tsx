@@ -81,7 +81,7 @@ export function PresensiGuruPage({
   onLogout?: () => void;
   onRiwayat?: () => void;
 } = {}) {
-  const { teachers, school, guruSessionId, logoutGuru } = useApp();
+  const { teachers, school, guruSessionId, logoutGuru, teacher } = useApp();
   const { toast } = useToast();
   const [mode, setMode] = useState<Mode>("pick");
   const [guru, setGuru] = useState<Teacher | null>(null);
@@ -134,6 +134,10 @@ export function PresensiGuruPage({
     setMode("pick");
     toast("Sesi presensi diakhiri", "info");
   };
+
+  // Admin di perangkatnya sendiri: langsung presensi sebagai dirinya, tanpa form kode/PIN.
+  const admin = teachers.find((t) => t.id === teacher?.id && t.statusAktif !== false);
+  if (admin) return <SelfAbsenPanel guru={admin} school={school} />;
 
   if (mode === "pick" || !guru) {
     return <PickerForm teachers={teachers} onPick={handleLogin} />;
@@ -273,7 +277,7 @@ function SelfAbsenPanel({
 }: {
   guru: Teacher;
   school: ReturnType<typeof useApp>["school"];
-  onLogout: () => void;
+  onLogout?: () => void;
   onRiwayat?: () => void;
   /** Di HP guru: izin & rekap punya tab sendiri, halaman ini khusus presensi. */
   fokusPresensi?: boolean;
@@ -492,13 +496,13 @@ function SelfAbsenPanel({
               {labelPeran(guru) || guru.jabatan || "Guru"}{guru.nip ? ` · ${guru.nip}` : ""}
             </div>
           </div>
-          <button
+          {onLogout && <button
             onClick={onLogout}
             className="h-9 px-3 rounded-xl bg-white/15 border border-white/30 text-[0.72rem] font-bold flex items-center gap-1 active:scale-95"
             aria-label="Keluar"
           >
             <ArrowLeft size={14} /> Keluar
-          </button>
+          </button>}
         </div>
         <div className="relative mt-3 text-[2rem] font-extrabold tabular-nums tracking-tight">{jamNow} <span className="text-[0.9rem] font-bold opacity-80">{zonaWaktu()}</span></div>
         <div className="relative text-[0.75rem] opacity-90">{formatTanggalPanjang(tanggal)}</div>
