@@ -631,7 +631,7 @@ export function PengaturanPage() {
           <div className="ml-auto">
             {isPRO || onTrial ? (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[#2563eb]/10 text-[#2563eb] border border-[#2563eb]/20">
-                <Crown size={11} /> {onTrial ? `PRO · Trial ${trialDaysRemaining()}h` : teacher?.tier}
+                <Crown size={11} /> {onTrial ? `PRO Trial · sisa ${trialDaysRemaining()} hari` : teacher?.tier}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[0.65rem] font-bold bg-[var(--input-bg)] text-[var(--text-light)] border border-[var(--border)]">
@@ -1264,9 +1264,9 @@ export function PengaturanPage() {
           <Save size={14} /> {savingLokasi ? "Menyimpan..." : "Simpan Lokasi & Jam"}
         </button>
       </div>
-      {isPRO && <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Data &amp; Cloud</div>}
+      {(isPRO || onTrial) && <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Data &amp; Cloud</div>}
       {/* Cloud Sync — Simplified (PRO only) */}
-      {isPRO && isCloudConnected && (
+      {(isPRO || onTrial) && isCloudConnected && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#22c55e] p-[14px] mb-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1358,8 +1358,8 @@ export function PengaturanPage() {
         </div>
       )}
 
-      {/* Cloud Sync Setup (PRO only, not connected) */}
-      {isPRO && !isCloudConnected && (
+      {/* Cloud Sync Setup (berbayar & masa coba, belum tersambung) */}
+      {(isPRO || onTrial) && !isCloudConnected && (
         <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 p-[14px] mb-3">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-amber-500"></div>

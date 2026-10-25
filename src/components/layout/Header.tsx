@@ -49,7 +49,7 @@ export function Header() {
               ? "bg-[#f59e0b]/25 text-[#fef3c7] border border-[#f59e0b]/40"
               : "bg-white/15 text-white/85 border border-white/25"
           }`}>
-            {isOnTrial(teacher?.tier) ? `PRO · Trial ${trialDaysRemaining()}h` : teacher?.tier || "FREE"}
+            {isOnTrial(teacher?.tier) ? <><span className="sm:hidden">Trial {trialDaysRemaining()} hari</span><span className="hidden sm:inline">PRO Trial · sisa {trialDaysRemaining()} hari</span></> : teacher?.tier || "FREE"}
           </span>
         )}
 
