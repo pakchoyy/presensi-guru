@@ -11,7 +11,9 @@ import {
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import type { TeacherAttendance, Teacher } from "@/types/entities";
-import { formatTanggalPanjang, inisial, attendanceIdFrom, timestamp } from "@/lib/utils";
+import { formatTanggalPanjang, inisial, attendanceIdFrom, timestamp, isDayActive } from "@/lib/utils";
+import { db } from "@/repositories/dexie/db";
+import { CalendarEntryType } from "@/types/enums";
 import type { AttendanceStatus } from "@/types/enums";
 import { ClockInStatus } from "@/types/enums";
 import { useApp } from "@/contexts/AppContext";
@@ -68,7 +70,9 @@ export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean
   const [loading, setLoading] = useState(true);
   const [tanggal, setTanggal] = useState<string>(ymd(new Date()));
   const [editGuru, setEditGuru] = useState<Teacher | null>(null);
-  const { school } = useApp();
+  const { school, teacher } = useApp();
+  // Nama hari libur (kalender) / "Hari libur" (bukan hari aktif); null = hari kerja.
+  const [libur, setLibur] = useState<string | null>(null);
   const { toast } = useToast();
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,6 +159,8 @@ export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean
     const tgl = tglOverride || tanggal;
     setLoading(true);
     try {
+      const entri = (await db.calendarEntries.where("tanggal").equals(tgl).toArray()).find((e) => e.jenis === CalendarEntryType.HARI_LIBUR);
+      setLibur(entri ? entri.keterangan || "Hari libur" : isDayActive(parseYmd(tgl).getDay(), teacher ?? undefined) ? null : "Hari libur");
       const [teachers, records] = await Promise.all([
         teacherRepo.list(),
         teacherAttendanceRepo.getAllToday(tgl),
@@ -249,7 +255,15 @@ export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean
         </button>
       </div>
 
+      {libur && (
+        <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4 mb-3 text-center" style={{ boxShadow: "var(--shadow)" }}>
+          <div className="font-extrabold text-[var(--alpha)]">{libur}</div>
+          <div className="text-[0.72rem] text-[var(--text-light)] mt-1">Presensi tidak dibuka. Hari aktif & libur diatur di Pengaturan dan Kalender.</div>
+        </div>
+      )}
+
       {/* Chip stat ringkasan — gaya prototype */}
+      {!libur && <>
       <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2 overflow-x-auto scrollbar-hide" style={{ boxShadow: "var(--shadow)" }}>
         {(["hadir", "sakit", "izin", "alpha", "terlambat", "belum"] as Bucket[]).map((k) => {
           const c = CHIP_COLOR[k];
@@ -281,6 +295,7 @@ export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean
           <div className="font-extrabold text-[var(--alpha)] text-[1.25rem] leading-none mt-1">{total - sudah}</div>
         </div>
       </div>
+      </>}
 
       {rows.length === 0 && !loading && (
         <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-6 text-center">
@@ -320,7 +335,7 @@ export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean
                   className={`inline-block px-[10px] py-[4px] rounded-full text-[0.7rem] font-extrabold ${c.text}`}
                   style={{ background: c.dot + "22" }}
                 >
-                  {c.label}
+                  {libur && bucket === "belum" ? "Libur" : c.label}
                 </span>
                 {jam && (
                   <div className="text-[0.65rem] text-[var(--text-light)] mt-1 tabular-nums">
