@@ -42,6 +42,9 @@ async function activate(supabase, body) {
   if (!email.includes("@")) return [400, { error: "Email tidak valid" }];
   if (kode.length < 8) return [400, { error: "Format kode: BGY-PG-XXXX" }];
 
+  // Sudah punya lisensi aktif: perlakukan sebagai perpanjangan (hari ditumpuk, PRO tidak turun ke PLUS).
+  if (await activeLic(supabase, email, PRODUCT)) return renew(supabase, body);
+
   const now = Date.now();
   const tanggalBerakhir = now + SEMESTER_MS;
   const ok = await claimKode(supabase, kode, {
