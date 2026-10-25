@@ -17,6 +17,10 @@ export interface School {
   mulaiPresensiMasuk?: string;
   /** Presensi pulang ditutup jam ini ("HH:MM"); default 3 jam setelah jam pulang. */
   batasPresensiPulang?: string;
+  /** Paket sekolah (FREE/PLUS/PRO) dicatat admin; dipakai HP guru untuk menentukan fitur GPS/peta. */
+  paket?: string;
+  /** Akhir lisensi/masa coba (ms epoch). */
+  paketSampai?: number;
   dibuatPada: number;
   diubahPada: number;
 }

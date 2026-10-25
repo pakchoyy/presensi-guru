@@ -1,7 +1,7 @@
 import { isPaid, isOnTrial, trialDaysRemaining } from "@/lib/features";
 import { readAktivasiLink, readRef, clearRef, clearAktivasiLink } from "@/lib/aktivasi-link";
 import { useState, useEffect, useRef } from "react";
-import { useApp } from "@/contexts/AppContext";
+import { useApp, PAKET_SYNC_KEY } from "@/contexts/AppContext";
 import { adminCloud } from "@/services/multi-perangkat.service";
 import { useToast } from "@/components/shared/Toast";
 import { licenseService } from "@/services/license.service";
@@ -307,6 +307,7 @@ export function PengaturanPage() {
       toast(result.message);
       setKode("");
       clearAktivasiLink();
+      localStorage.removeItem(PAKET_SYNC_KEY);
       await refreshTeacher();
       const status = await licenseService.getStatus(teacher.id);
       setLicenseInfo(status);
@@ -431,6 +432,7 @@ export function PengaturanPage() {
       await licenseRepo.expire(activeLicense.id);
     }
     await teacherRepo.updateTier(teacher.id, Tier.FREE);
+    localStorage.removeItem(PAKET_SYNC_KEY);
     clearCloudEmail();
     toast("Akun PRO berhasil dikeluarkan dari perangkat ini.");
     setShowLogoutConfirm(false);

@@ -21,6 +21,23 @@ export function trialDaysRemaining(): number {
   return Math.max(0, 30 - Math.floor((Date.now() - stored) / 86400000));
 }
 
+export const trialEndsAt = (): number => {
+  const stored = parseInt(localStorage.getItem(INSTALL_DATE_KEY) || "0", 10);
+  return (stored || Date.now()) + 30 * 86400000;
+};
+
+/**
+ * Paket yang berlaku di HP guru, dari catatan admin pada data sekolah
+ * (paket kosong = data lama → PRO supaya pengguna lama tidak mendadak kehilangan fitur).
+ * Lisensi/masa coba yang sudah lewat → FREE.
+ */
+export function paketSekolah(school?: { paket?: string | null; paketSampai?: number | null } | null): Tier {
+  if (!school) return Tier.FREE;
+  if (!school.paket) return Tier.PRO;
+  if (school.paketSampai && school.paketSampai < Date.now()) return Tier.FREE;
+  return school.paket === "PRO" ? Tier.PRO : school.paket === "PLUS" ? Tier.PLUS : Tier.FREE;
+}
+
 export const isOnTrial = (tier?: string | null) => !isPaid(tier ?? undefined) && trialDaysRemaining() > 0;
 
 export const effectiveTier = (tier?: string | null): Tier =>

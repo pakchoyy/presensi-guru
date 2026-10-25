@@ -10,7 +10,8 @@ import {
 } from "react";
 import type { School, Teacher } from "@/types/entities";
 import { PageName, Tier } from "@/types/enums";
-import { effectiveTier } from "@/lib/features";
+import { effectiveTier, paketSekolah } from "@/lib/features";
+import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
 import { schoolRepo } from "@/repositories/dexie/school.repo";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { setupService } from "@/services/setup.service";
@@ -22,6 +23,8 @@ export type EntryMode = "choose" | "admin" | "guru";
 
 const ENTRY_KEY = "bgy_entry_mode";
 const GURU_SESSION_KEY = "bgy_presensi_guru_session";
+/** Dihapus saat lisensi berubah supaya paket langsung dikirim ulang ke cloud. */
+export const PAKET_SYNC_KEY = "bgy_paket_sync";
 
 function readEntryMode(): EntryMode {
   const v = localStorage.getItem(ENTRY_KEY);
@@ -103,6 +106,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           teachers,
           loading: false,
         }));
+        // Admin: sampaikan paket (lisensi/masa coba) ke cloud supaya HP guru ikut; paling sering tiap 6 jam.
+        if (school && !guruCloud.aktif() && Date.now() - Number(localStorage.getItem(PAKET_SYNC_KEY) || 0) > 6 * 3600_000) {
+          localStorage.setItem(PAKET_SYNC_KEY, String(Date.now()));
+          adminCloud.daftarkanSekolah(school, teacher).catch(() => {});
+        }
       } else {
         setState((prev) => ({ ...prev, loading: false }));
       }
@@ -178,7 +186,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         ...state,
-        tier: effectiveTier(state.teacher?.tier),
+        // HP guru memakai paket sekolah (catatan admin); perangkat admin: lisensi/masa coba lokal.
+        tier: guruCloud.aktif() ? paketSekolah(state.school) : effectiveTier(state.teacher?.tier),
         setActivePage,
         setTanggalAktif,
         toggleDarkMode,

@@ -16,6 +16,8 @@ import { supabaseGuru } from "@/lib/supabase-guru";
 import { db } from "@/repositories/dexie/db";
 import { attendanceIdFrom, getActiveDays, timestamp, todayStr, addDays, passwordDariPin } from "@/lib/utils";
 import { Jenjang, Tier } from "@/types/enums";
+import { effectiveTier, isPaid, trialEndsAt } from "@/lib/features";
+import { licenseRepo } from "@/repositories/dexie/license.repo";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
 
 const KUNCI_PERANGKAT = "bgy_perangkat_guru";
@@ -52,6 +54,8 @@ interface BarisSekolah {
   mulai_masuk: string | null;
   batas_pulang: string | null;
   hari_aktif: string;
+  paket?: string | null;
+  paket_sampai?: number | null;
   diubah_pada: number;
 }
 
@@ -213,6 +217,8 @@ function sekolahLokalDari(s: BarisSekolah, lama?: School): School {
     toleransiTerlambatMenit: s.toleransi_menit,
     mulaiPresensiMasuk: u(s.mulai_masuk),
     batasPresensiPulang: u(s.batas_pulang),
+    paket: u(s.paket ?? null),
+    paketSampai: u(s.paket_sampai ?? null),
     diubahPada: timestamp(),
   } as School;
 }
@@ -562,6 +568,13 @@ export const adminCloud = {
   async daftarkanSekolah(school: School, adminTeacher?: Teacher | null): Promise<string | null> {
     const uid = await this.siap();
     if (!uid) return null;
+    // Catat paket efektif admin (masa coba = PRO) agar HP guru tahu fitur yang berlaku.
+    const paket = effectiveTier(adminTeacher?.tier);
+    let paketSampai: number | null = null;
+    if (paket !== Tier.FREE) {
+      if (isPaid(adminTeacher?.tier)) paketSampai = (adminTeacher ? (await licenseRepo.getActive(adminTeacher.id))?.tanggalBerakhir : undefined) ?? null;
+      else paketSampai = trialEndsAt();
+    }
     const { data, error } = await supabase
       .from("cloud_guru_sekolah")
       .upsert(
@@ -578,6 +591,8 @@ export const adminCloud = {
           mulai_masuk: n(school.mulaiPresensiMasuk),
           batas_pulang: n(school.batasPresensiPulang),
           hari_aktif: getActiveDays(adminTeacher ?? undefined).join(","),
+          paket,
+          paket_sampai: paketSampai,
           diubah_pada: timestamp(),
         },
         { onConflict: "owner_user_id" },
