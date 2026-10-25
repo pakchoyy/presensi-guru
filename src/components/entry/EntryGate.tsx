@@ -177,7 +177,7 @@ function GuruLogin({
                 {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className="text-[0.65rem] text-gray-500 mt-1">Belum punya PIN? Hubungi Ops / Kepala Sekolah.</div>
+            <div className="text-[0.65rem] text-gray-500 mt-1">Belum punya PIN? Hubungi Admin / Kepala Sekolah.</div>
           </div>
 
           {err && <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-[0.8rem] text-red-700">{err}</div>}
@@ -191,7 +191,7 @@ function GuruLogin({
             <LogIn size={16} /> {memproses ? "Menyambungkan..." : "Masuk & Presensi"}
           </button>
           <div className="text-[0.62rem] text-gray-400 text-center leading-snug">
-            Kode & PIN diberikan Ops / Kepala Sekolah. Login pertama di HP sendiri butuh internet.
+            Kode & PIN diberikan Admin / Kepala Sekolah. Login pertama di HP sendiri butuh internet.
           </div>
       </>
     </form>

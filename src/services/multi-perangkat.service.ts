@@ -274,7 +274,7 @@ export const guruCloud = {
       .maybeSingle<BarisGuru & { verifikator: boolean }>();
     if (!guru || !guru.status_aktif || !guru.sekolah_uuid) {
       await supabaseGuru.auth.signOut();
-      throw new Error("Akun guru ini sudah tidak aktif. Hubungi Ops / Kepala Sekolah.");
+      throw new Error("Akun guru ini sudah tidak aktif. Hubungi Admin / Kepala Sekolah.");
     }
 
     const { data: sekolah } = await supabaseGuru
