@@ -6,6 +6,7 @@ import { adminCloud } from "@/services/multi-perangkat.service";
 import { useToast } from "@/components/shared/Toast";
 import { licenseService } from "@/services/license.service";
 import { licenseRepo } from "@/repositories/dexie/license.repo";
+import { KodeTeman } from "./KodeTeman";
 import type { License } from "@/types/entities";
 import { syncService } from "@/services/sync.service";
 import { getSyncLog, type SyncLogEntry } from "@/services/sync.service";
@@ -742,6 +743,8 @@ export function PengaturanPage() {
               <b>Fitur PRO Aktif:</b> Guru tanpa batas, verifikasi izin Kepala Sekolah, logo laporan, cloud sync otomatis, 3 HP admin, Program Affiliate.
             </div>
           </div>
+
+          {teacher && <KodeTeman guruId={teacher.id} />}
 
           <button
             onClick={handleDeactivate}

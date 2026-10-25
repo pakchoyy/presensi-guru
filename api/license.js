@@ -161,7 +161,29 @@ async function status(supabase, body) {
   return [200, { found: !!data, tanggalBerakhir: data?.tanggal_berakhir ?? null, tier: data ? data.tier || "PRO" : null }];
 }
 
-const ACTIONS = { activate, renew, status };
+// Kode teman yang lupa diisi saat aktivasi: sekali, paling lambat 7 hari setelah aktivasi pertama.
+// Kode lisensi jadi bukti pemilik email (tidak ada sesi login di layar ini).
+async function pakaiRef(supabase, body) {
+  const email = normEmail(body.email);
+  const kode = normKode(body.kode);
+  if (!email.includes("@") || kode.length < 8) return [400, { error: "Isi email dan kode lisensi yang dipakai aktivasi" }];
+  const { data: lis } = await supabase.from("licenses").select("tier")
+    .eq("kode", kode).eq("email", email).eq("product", PRODUCT).eq("status", "digunakan").maybeSingle();
+  if (!lis) return [403, { error: "Email dan kode lisensi tidak cocok" }];
+  const { data: pertama } = await supabase.from("licenses").select("tanggal_aktivasi")
+    .eq("email", email).eq("product", PRODUCT).eq("status", "digunakan")
+    .order("tanggal_aktivasi", { ascending: true }).limit(1).maybeSingle();
+  if (!pertama?.tanggal_aktivasi || Date.now() - pertama.tanggal_aktivasi > 7 * 864e5) {
+    return [409, { error: "Kode teman hanya bisa diisi sampai 7 hari setelah aktivasi pertama" }];
+  }
+  const { count } = await supabase.from("referral_rewards").select("buyer_email", { count: "exact", head: true })
+    .eq("buyer_email", email).eq("product", PRODUCT);
+  if ((count || 0) > 0) return [409, { error: "Kode teman sudah pernah dipakai" }];
+  const referral = await applyReferral(supabase, body.ref, email, lis.tier || "PRO");
+  return [200, { ok: true, referral }];
+}
+
+const ACTIONS = { activate, renew, status, pakai_ref: pakaiRef };
 
 // Rate limit bersama semua instance (tabel rate_hits lewat fungsi DB rate_hit). Gagal cek = tidak membatasi.
 async function rateLimited(supabase, key, max, windowS) {
@@ -169,7 +191,7 @@ async function rateLimited(supabase, key, max, windowS) {
   return !error && data === true;
 }
 const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-const LIMITED_ACTIONS = new Set(["activate", "renew"]);
+const LIMITED_ACTIONS = new Set(["activate", "renew", "pakai_ref"]);
 
 // Pengumuman aktif untuk Presensi Guru (tanpa login). Di-cache CDN 5 menit.
 async function announcements(res) {

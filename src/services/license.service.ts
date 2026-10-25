@@ -100,6 +100,24 @@ export const licenseService = {
     }
   },
 
+  /** Isi kode teman setelah aktivasi (sekali, maks 7 hari). Kode lisensi jadi bukti pemilik email. */
+  async pakaiRef(email: string, kode: string, ref: string): Promise<{ ok: boolean; pesan: string }> {
+    const PESAN: Record<string, string> = {
+      invalid: "Kode teman tidak ditemukan",
+      self: "Tidak bisa memakai kode sendiri",
+      not_new: "Kode teman hanya untuk pembelian pertama",
+      owner_not_pro: "Pemilik kode belum berlangganan PRO",
+    };
+    try {
+      const { ok, data } = await callLicenseApi({ action: "pakai_ref", email: email.toLowerCase().trim(), kode: kode.toUpperCase().trim(), ref: ref.toUpperCase().trim() });
+      if (!ok) return { ok: false, pesan: data.error || "Gagal menyimpan kode teman" };
+      const alasan = typeof data.referral === "string" ? PESAN[data.referral] : undefined;
+      return alasan ? { ok: false, pesan: alasan } : { ok: true, pesan: "Kode teman tercatat. Terima kasih!" };
+    } catch {
+      return { ok: false, pesan: "Gagal menyimpan. Periksa koneksi internet." };
+    }
+  },
+
   async activate(email: string, kode: string, guruId: number, ref?: string): Promise<ActivationResult> {
     if (!email || !email.includes("@")) {
       return { success: false, message: "Email tidak valid" };
