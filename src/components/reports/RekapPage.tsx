@@ -70,6 +70,16 @@ export function RekapPage() {
     });
   }, []);
 
+  // Absen guru dari HP masing-masing: tarik sebulan dari cloud, lalu baca ulang.
+  const [versiCloud, setVersiCloud] = useState(0);
+  useEffect(() => {
+    const d1 = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
+    const d2 = `${tahun}-${String(bulan).padStart(2, "0")}-${String(daysInMonth(tahun, bulan)).padStart(2, "0")}`;
+    adminCloud.tarikAbsen(d1, d2)
+      .then(() => setVersiCloud((v) => v + 1))
+      .catch(() => {});
+  }, [bulan, tahun]);
+
   useEffect(() => {
     teacherRepo.list().then((list) => {
       const active = list.filter((g) => g.statusAktif !== false);
@@ -79,17 +89,7 @@ export function RekapPage() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Absen guru dari HP masing-masing: tarik sebulan dari cloud, lalu baca ulang.
-  const [versiCloud, setVersiCloud] = useState(0);
-  useEffect(() => {
-    const d1 = `${tahun}-${String(bulan).padStart(2, "0")}-01`;
-    const d2 = `${tahun}-${String(bulan).padStart(2, "0")}-${String(daysInMonth(tahun, bulan)).padStart(2, "0")}`;
-    adminCloud.tarikAbsen(d1, d2)
-      .then((berubah) => { if (berubah > 0) setVersiCloud((v) => v + 1); })
-      .catch(() => {});
-  }, [bulan, tahun]);
+  }, [versiCloud]); // HP Kepala Sekolah: daftar guru baru ada setelah tarik cloud
 
   useEffect(() => {
     if (!selectedGuruId) return;
