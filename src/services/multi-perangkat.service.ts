@@ -16,8 +16,6 @@ import { supabaseGuru } from "@/lib/supabase-guru";
 import { db } from "@/repositories/dexie/db";
 import { attendanceIdFrom, getActiveDays, timestamp, todayStr, addDays, passwordDariPin } from "@/lib/utils";
 import { CalendarEntryType, Jenjang, Tier } from "@/types/enums";
-import { effectiveTier, isPaid, trialEndsAt } from "@/lib/features";
-import { licenseRepo } from "@/repositories/dexie/license.repo";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
 
 const KUNCI_PERANGKAT = "bgy_perangkat_guru";
@@ -195,6 +193,9 @@ function dariBarisAbsen(row: BarisAbsen, guruId: number): TeacherAttendance {
     diubahPada: row.diubah_pada,
   };
 }
+
+/** Server menolak karena aturan presensi (lihat 00312): jangan dikirim ulang terus. */
+const ditolakAturan = (e: unknown) => String((e as { message?: string })?.message ?? "").startsWith("PRESENSI:");
 
 /** Gabungkan record dari cloud ke Dexie. Yang lebih baru menang. */
 async function gabungKeLokal(dariCloud: TeacherAttendance): Promise<boolean> {
@@ -430,11 +431,14 @@ export const guruCloud = {
     if (!g) return "tertunda";
     // Foto tidak dikirim dari sini; server mempertahankan foto lama.
     const path = (v?: string) => (v?.startsWith(PREFIX_STORAGE) ? v.slice(PREFIX_STORAGE.length) : null);
-    const { error } = await supabaseGuru
+    const { data, error } = await supabaseGuru
       .from("cloud_guru_attendance")
       .upsert(keBarisAbsen(rec, g.user_id, info.sekolahUuid, { masuk: path(rec.selfieMasukUrl), pulang: path(rec.selfiePulangUrl), izin: path(rec.izinFotoUrl) }), {
         onConflict: "user_id,tanggal",
-      });
+      })
+      .select()
+      .single();
+    if (data) await gabungKeLokal(dariBarisAbsen(data as BarisAbsen, guruLocalId));
     return error ? "tertunda" : "terkirim";
   },
 
@@ -500,12 +504,16 @@ export const guruCloud = {
       const pulang = await this.unggahSelfie(info, rec.selfiePulangUrl, rec.tanggal, "pulang");
       const izin = await this.unggahSelfie(info, rec.izinFotoUrl, rec.tanggal, "izin");
 
-      const { error } = await supabaseGuru
+      // Jam & status dihitung server; simpan versi server supaya kiriman berikutnya cocok.
+      const { data, error } = await supabaseGuru
         .from("cloud_guru_attendance")
         .upsert(keBarisAbsen(rec, info.uid, info.sekolahUuid, { masuk, pulang, izin }), {
           onConflict: "user_id,tanggal",
-        });
-      if (error) throw error;
+        })
+        .select()
+        .single();
+      if (error && !ditolakAturan(error)) throw error;
+      if (data) await gabungKeLokal(dariBarisAbsen(data as BarisAbsen, rec.guruId));
 
       const antrian = bacaJson<number[]>(KUNCI_ANTRIAN, []).filter((x) => x !== recordId);
       tulisJson(KUNCI_ANTRIAN, antrian);
@@ -587,13 +595,6 @@ export const adminCloud = {
   async daftarkanSekolah(school: School, adminTeacher?: Teacher | null): Promise<string | null> {
     const uid = await this.siap();
     if (!uid) return null;
-    // Catat paket efektif admin (masa coba = PRO) agar HP guru tahu fitur yang berlaku.
-    const paket = effectiveTier(adminTeacher?.tier);
-    let paketSampai: number | null = null;
-    if (paket !== Tier.FREE) {
-      if (isPaid(adminTeacher?.tier)) paketSampai = (adminTeacher ? (await licenseRepo.getActive(adminTeacher.id))?.tanggalBerakhir : undefined) ?? null;
-      else paketSampai = trialEndsAt();
-    }
     const { data, error } = await supabase
       .from("cloud_guru_sekolah")
       .upsert(
@@ -610,8 +611,8 @@ export const adminCloud = {
           mulai_masuk: n(school.mulaiPresensiMasuk),
           batas_pulang: n(school.batasPresensiPulang),
           hari_aktif: getActiveDays(adminTeacher ?? undefined).join(","),
-          paket,
-          paket_sampai: paketSampai,
+          // Zona jam HP admin: server mengisi jam presensi dengan zona ini. Paket dihitung server (00312).
+          tz_menit: -new Date().getTimezoneOffset(),
           libur: await liburKalender(),
           diubah_pada: timestamp(),
         },
@@ -701,12 +702,15 @@ export const adminCloud = {
       const pulang = await unggah(rec.selfiePulangUrl, "pulang");
       const izin = await unggah(rec.izinFotoUrl, "izin");
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("cloud_guru_attendance")
         .upsert(keBarisAbsen(rec, akun.userId, sekolah.id, { masuk, pulang, izin }), {
           onConflict: "user_id,tanggal",
-        });
-      if (error) throw error;
+        })
+        .select()
+        .single();
+      if (error && !ditolakAturan(error)) throw error;
+      if (data) await gabungKeLokal(dariBarisAbsen(data as BarisAbsen, guruLocalId));
       this.lepasAntrian(rec.id);
       return "terkirim";
     } catch {
