@@ -47,6 +47,19 @@ export function EntryGate() {
             <div className="text-center text-[0.82rem] text-gray-600 mb-1">Masuk sebagai</div>
 
             <button
+              onClick={() => setEntryMode("admin")}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-gray-300 bg-gray-50/60 transition-colors text-left active:scale-[.99]"
+            >
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0 bg-gradient-to-br from-slate-600 to-slate-800">
+                <ShieldCheck size={24} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-extrabold text-gray-800">Admin</div>
+                <div className="text-[0.72rem] text-gray-500">Sekolah belum terdaftar? Daftar di sini, lalu kelola guru & pengaturan</div>
+              </div>
+            </button>
+
+            <button
               onClick={() => setStep("guru")}
               className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-blue-100 hover:border-[#2563eb] bg-blue-50/50 transition-colors text-left active:scale-[.99]"
             >
@@ -72,18 +85,6 @@ export function EntryGate() {
               </div>
             </button>
 
-            <button
-              onClick={() => setEntryMode("admin")}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-gray-300 bg-gray-50/60 transition-colors text-left active:scale-[.99]"
-            >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0 bg-gradient-to-br from-slate-600 to-slate-800">
-                <ShieldCheck size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-gray-800">Operator</div>
-                <div className="text-[0.72rem] text-gray-500">Kelola guru, rekap, pengaturan sekolah</div>
-              </div>
-            </button>
           </div>
         ) : (
           <GuruLogin
