@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { APP_NAME, WA_ADMIN } from "@/lib/constants";
 import { Bug, X } from "lucide-react";
 
@@ -23,7 +24,8 @@ export function LaporBug({ onClose }: { onClose: () => void }) {
   };
 
   const input = "w-full px-3 py-[10px] rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.85rem]";
-  return (
+  // Portal ke body: header/menu punya stacking context sendiri, jadi modal bisa tertutup navbar bawah.
+  return createPortal(
     <div className="fixed inset-0 z-[1000] bg-black/50 flex items-end sm:items-center justify-center p-3" onClick={onClose}>
       <form onSubmit={kirim} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-[var(--card-bg)] rounded-2xl p-4 space-y-3" style={{ boxShadow: "var(--shadow-lg)" }}>
         <div className="flex items-center gap-2">
@@ -42,6 +44,7 @@ export function LaporBug({ onClose }: { onClose: () => void }) {
         </label>
         <button type="submit" className="w-full py-3 rounded-xl border-none text-white font-bold bg-[#16a34a]">Kirim lewat WhatsApp</button>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }

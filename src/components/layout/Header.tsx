@@ -32,11 +32,11 @@ export function Header() {
       </div>
 
       <div className="flex items-center justify-between h-[58px] relative">
-        <div className="flex items-center gap-[8px] flex-1 min-w-0">
+        <div className="flex items-center gap-[6px] sm:gap-[8px] flex-1 min-w-0">
           {/* Logo sama dengan tampilan guru */}
-          <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[42px] h-[42px] rounded-xl shadow-md" />
+          <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[36px] h-[36px] sm:w-[42px] sm:h-[42px] rounded-xl shadow-md" />
           <div className="min-w-0 leading-tight">
-            <div className="text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
+            <div className="text-[0.92rem] sm:text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
               <span className="italic">Presensi Yuk</span>{" "}
               <span className="font-bold opacity-95">| Guru</span>
             </div>
@@ -44,7 +44,7 @@ export function Header() {
         </div>
 
         {setupSelesai && (
-          <span className={`text-[0.65rem] px-[8px] py-[3px] rounded-full font-bold flex-shrink-0 mr-1 ${
+          <span className={`text-[0.65rem] px-[8px] py-[3px] rounded-full font-bold flex-shrink-0 sm:mr-1 ${
             isOnTrial(teacher?.tier) || (teacher?.tier && teacher.tier !== Tier.FREE)
               ? "bg-[#f59e0b]/25 text-[#fef3c7] border border-[#f59e0b]/40"
               : "bg-white/15 text-white/85 border border-white/25"
