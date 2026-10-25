@@ -51,8 +51,10 @@ export const teacherAttendanceService = {
 
   /** Apakah presensi dibuka hari ini? Tutup di hari non-aktif (pengaturan admin) dan hari libur kalender. */
   async hariKerja(guruId: number, tanggal = todayStr()): Promise<boolean> {
-    const [guru, entri] = await Promise.all([db.teachers.get(guruId), db.calendarEntries.toArray()]);
+    const [guru, entri, school] = await Promise.all([db.teachers.get(guruId), db.calendarEntries.toArray(), this.getSchool()]);
     const libur = new Set(entri.filter((e) => e.jenis === CalendarEntryType.HARI_LIBUR).map((e) => e.tanggal));
+    // HP guru tidak punya kalender sendiri: pakai daftar libur yang dikirim admin.
+    school?.libur?.split(",").forEach((t) => libur.add(t));
     return isHariEfektif(tanggal, guru, libur);
   },
 
@@ -82,6 +84,7 @@ export const teacherAttendanceService = {
     const tanggal = todayStr();
     const jam = hhmmssNow();
     const id = attendanceIdFrom(guruId, tanggal);
+    if (!(await this.hariKerja(guruId, tanggal))) throw new Error("Hari ini libur, presensi tidak dibuka");
 
     const adaLokasi = lat != null && lng != null;
     const jarakMeter = adaLokasi && school?.lat != null && school?.lng != null
@@ -89,7 +92,6 @@ export const teacherAttendanceService = {
       : 0;
     const radius = school?.radiusMeter ?? 100;
     const { mulaiMasuk, batasMasuk: cutoff } = jendelaPresensi(school);
-    if (!(await this.hariKerja(guruId, tanggal))) throw new Error("Hari ini libur, presensi tidak dibuka");
     if (compareHHMM(jam.slice(0, 5), mulaiMasuk) < 0) {
       throw new Error(`Presensi masuk baru dibuka jam ${mulaiMasuk}`);
     }
@@ -130,6 +132,7 @@ export const teacherAttendanceService = {
     const tanggal = todayStr();
     const jam = hhmmssNow();
     const id = attendanceIdFrom(guruId, tanggal);
+    if (!(await this.hariKerja(guruId, tanggal))) throw new Error("Hari ini libur, presensi tidak dibuka");
 
     const adaLokasi = lat != null && lng != null;
     const jarakMeter = adaLokasi && school?.lat != null && school?.lng != null

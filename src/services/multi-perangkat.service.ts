@@ -15,7 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { supabaseGuru } from "@/lib/supabase-guru";
 import { db } from "@/repositories/dexie/db";
 import { attendanceIdFrom, getActiveDays, timestamp, todayStr, addDays, passwordDariPin } from "@/lib/utils";
-import { Jenjang, Tier } from "@/types/enums";
+import { CalendarEntryType, Jenjang, Tier } from "@/types/enums";
 import { effectiveTier, isPaid, trialEndsAt } from "@/lib/features";
 import { licenseRepo } from "@/repositories/dexie/license.repo";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
@@ -56,6 +56,7 @@ interface BarisSekolah {
   hari_aktif: string;
   paket?: string | null;
   paket_sampai?: number | null;
+  libur?: string | null;
   diubah_pada: number;
 }
 
@@ -209,6 +210,15 @@ async function gabungKeLokal(dariCloud: TeacherAttendance): Promise<boolean> {
   return true;
 }
 
+/** Tanggal libur kalender mulai hari ini, untuk HP guru & server. */
+async function liburKalender(): Promise<string> {
+  const hariIni = todayStr();
+  return (await db.calendarEntries.toArray())
+    .filter((e) => e.jenis === CalendarEntryType.HARI_LIBUR && e.tanggal >= hariIni)
+    .map((e) => e.tanggal)
+    .join(",");
+}
+
 function sekolahLokalDari(s: BarisSekolah, lama?: School): School {
   return {
     ...(lama ?? { jenjang: Jenjang.SD, dibuatPada: timestamp() }),
@@ -224,6 +234,7 @@ function sekolahLokalDari(s: BarisSekolah, lama?: School): School {
     batasPresensiPulang: u(s.batas_pulang),
     paket: u(s.paket ?? null),
     paketSampai: u(s.paket_sampai ?? null),
+    libur: u(s.libur ?? null),
     diubahPada: timestamp(),
   } as School;
 }
@@ -601,6 +612,7 @@ export const adminCloud = {
           hari_aktif: getActiveDays(adminTeacher ?? undefined).join(","),
           paket,
           paket_sampai: paketSampai,
+          libur: await liburKalender(),
           diubah_pada: timestamp(),
         },
         { onConflict: "owner_user_id" },

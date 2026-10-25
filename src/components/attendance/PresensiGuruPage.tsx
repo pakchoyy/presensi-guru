@@ -286,7 +286,8 @@ function SelfAbsenPanel({
   const { setActivePage, tier } = useApp();
   // GPS, radius & peta hanya di PRO/masa coba; paket lain selfie wajah saja.
   const mapOK = tier === Tier.PRO;
-  const [hariKerja, setHariKerja] = useState(true);
+  // null = belum dicek; tombol presensi baru muncul setelah pasti hari kerja.
+  const [hariKerja, setHariKerja] = useState<boolean | null>(null);
   const [existing, setExisting] = useState<TeacherAttendance | undefined>();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -336,7 +337,7 @@ function SelfAbsenPanel({
   };
 
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [guru.id]);
-  useEffect(() => { teacherAttendanceService.hariKerja(guru.id, tanggal).then(setHariKerja).catch(() => {}); }, [guru.id, tanggal]);
+  useEffect(() => { teacherAttendanceService.hariKerja(guru.id, tanggal).then(setHariKerja).catch(() => setHariKerja(true)); }, [guru.id, tanggal]);
 
 
   const izinAktif =
@@ -416,6 +417,7 @@ function SelfAbsenPanel({
   const pulangTutup = jamKini > jendela.batasPulang;
 
   const start = async (action: "in" | "out") => {
+    if (!hariKerja) { toast("Hari ini libur, presensi tidak dibuka", "info"); return; }
     if (!mapOK) {
       pendingLocRef.current = null;
       setShowCamera(action);
@@ -595,14 +597,14 @@ function SelfAbsenPanel({
 
       {/* Aksi */}
       <div className="mt-4">
-        {!hariKerja && !sudahMasuk && (
+        {hariKerja === false && (
           <div className="rounded-2xl p-4 bg-[var(--card-bg)] border border-[var(--border)] text-center">
             <Clock className="mx-auto text-[var(--text-light)]" size={26} />
             <div className="font-extrabold text-[var(--text)] mt-1">Hari ini libur, presensi tidak dibuka</div>
             <div className="text-[0.72rem] text-[var(--text-light)]">Hari aktif & hari libur diatur oleh Admin.</div>
           </div>
         )}
-        {hariKerja && !sudahMasuk && (
+        {hariKerja === true && !sudahMasuk && (
           <button
             disabled={submitting || geoLoading || masukBelumBuka}
             onClick={() => start("in")}
@@ -613,7 +615,7 @@ function SelfAbsenPanel({
             {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : masukBelumBuka ? `Presensi masuk dibuka jam ${jendela.mulaiMasuk}` : "Ambil Presensi Masuk"}
           </button>
         )}
-        {sudahMasuk && !pulangTutup && (
+        {hariKerja === true && sudahMasuk && !pulangTutup && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => start("out")}
@@ -624,7 +626,7 @@ function SelfAbsenPanel({
             {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : sudahPulang ? "Ulangi Presensi Pulang" : "Ambil Presensi Pulang"}
           </button>
         )}
-        {sudahMasuk && !sudahPulang && (
+        {hariKerja === true && sudahMasuk && !sudahPulang && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => start("in")}
@@ -633,7 +635,7 @@ function SelfAbsenPanel({
             <Camera size={16} /> Ulangi Presensi Masuk (ganti foto)
           </button>
         )}
-        {sudahMasuk && (sudahPulang ? (
+        {hariKerja === true && sudahMasuk && (sudahPulang ? (
           <div className="mt-3 rounded-2xl p-4 bg-[var(--hadir-bg)] border border-[var(--border)] text-center">
             <CheckCircle2 className="mx-auto text-[var(--hadir)]" size={28} />
             <div className="font-extrabold text-[var(--hadir)] mt-1">Presensi hari ini lengkap</div>
@@ -650,7 +652,7 @@ function SelfAbsenPanel({
         ))}
 
         {/* Ajukan sakit / izin sendiri */}
-        {!fokusPresensi && !izinAktif && !sudahMasuk && (
+        {hariKerja === true && !fokusPresensi && !izinAktif && !sudahMasuk && (
           <button
             onClick={() => setShowIzin(true)}
             className="w-full mt-3 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--text-light)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95"

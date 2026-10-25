@@ -67,13 +67,16 @@ async function getSekolahForUser(supabase, userId, sekolahLocalId) {
 async function getPaketSekolah(supabase, userId) {
   const { data } = await supabase
     .from("cloud_guru_sekolah")
-    .select("paket, paket_sampai, hari_aktif")
+    .select("paket, paket_sampai, hari_aktif, libur")
     .eq("owner_user_id", userId)
     .limit(1)
     .maybeSingle();
   const gps = !data?.paket || (data.paket === "PRO" && (!data.paket_sampai || data.paket_sampai > Date.now()));
   const hari = String(data?.hari_aktif || "1,2,3,4,5,6").split(",").map(Number);
-  const hariKerja = hari.includes(new Date(`${todayWIB()}T00:00:00Z`).getUTCDay());
+  const hariIni = todayWIB();
+  // libur = tanggal libur kalender sekolah (dikirim admin), dipisah koma.
+  const hariKerja = hari.includes(new Date(`${hariIni}T00:00:00Z`).getUTCDay())
+    && !String(data?.libur || "").split(",").includes(hariIni);
   return { gps, hariKerja };
 }
 
@@ -219,7 +222,7 @@ export default async function handler(req, res) {
     if (!g) return res.status(404).json({ error: "Token tidak valid" });
     const { gps, hariKerja } = await getPaketSekolah(supabase, g.user_id);
     if (gps && (!isFinite(lat) || !isFinite(lng))) return res.status(400).json({ error: "Lokasi wajib diisi" });
-    if (action === "in" && !hariKerja) return res.status(400).json({ error: "Hari ini libur, presensi tidak dibuka" });
+    if (!hariKerja) return res.status(400).json({ error: "Hari ini libur, presensi tidak dibuka" });
 
     const sekolah = await getSekolahForUser(supabase, g.user_id, g.sekolah_id);
     const tanggal = todayWIB();

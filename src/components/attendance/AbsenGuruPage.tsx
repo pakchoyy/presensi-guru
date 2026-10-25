@@ -187,7 +187,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
         )}
 
         {/* Tombol aksi */}
-        {!sudahMasuk && info?.hariKerja === false && (
+        {info?.hariKerja === false && (
           <div className="rounded-xl p-3 mb-3 text-center bg-[#f1f5f9] text-[#475569] text-[0.85rem] font-bold">
             Hari ini libur, presensi tidak dibuka
           </div>
@@ -203,7 +203,7 @@ export function AbsenGuruPage({ token }: { token: string }) {
           </button>
         )}
 
-        {sudahMasuk && !sudahPulang && (
+        {sudahMasuk && !sudahPulang && info?.hariKerja !== false && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => startAction("out")}

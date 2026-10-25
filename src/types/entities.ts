@@ -21,6 +21,8 @@ export interface School {
   paket?: string;
   /** Akhir lisensi/masa coba (ms epoch). */
   paketSampai?: number;
+  /** Tanggal libur kalender dari admin (YYYY-MM-DD dipisah koma); dipakai HP guru. */
+  libur?: string;
   dibuatPada: number;
   diubahPada: number;
 }
