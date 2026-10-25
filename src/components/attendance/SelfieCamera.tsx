@@ -75,6 +75,8 @@ function hitungYaw(pos: { x: number; y: number }[]): number {
 
 export function SelfieCamera({ onCapture, onCancel }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const ovalRef = useRef<HTMLDivElement | null>(null);
+  const [memeriksa, setMemeriksa] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -220,7 +222,43 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
     return () => { berhenti = true; };
   }, [error, ambilFrame]);
 
+  // Siapkan pendeteksi wajah sejak kamera dibuka supaya tombol rana tidak menunggu lama.
+  useEffect(() => { if (!VERIFIKASI_AKTIF) siapkanFaceApi().catch(() => {}); }, []);
+
+  /** Ada tepat 1 wajah dan titik tengahnya di dalam oval? null = tidak bisa dicek. */
+  const wajahDiOval = async (): Promise<boolean | null> => {
+    const video = videoRef.current;
+    const oval = ovalRef.current?.getBoundingClientRect();
+    if (!video || !oval || !video.videoWidth) return null;
+    // shortcut: model gagal/lambat dimuat (offline) → presensi tidak diblokir, foto tanpa cek wajah.
+    const api = await Promise.race([
+      siapkanFaceApi().catch(() => null),
+      new Promise<null>((r) => setTimeout(() => r(null), 5000)),
+    ]);
+    if (!api) return null;
+    const hasil = await api.detectAllFaces(video, new api.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.45 }));
+    if (hasil.length !== 1) return false;
+    // Koordinat video → layar (object-cover + dicerminkan), lalu cek persamaan elips.
+    const kotak = video.getBoundingClientRect();
+    const skala = Math.max(kotak.width / video.videoWidth, kotak.height / video.videoHeight);
+    const geserX = (video.videoWidth * skala - kotak.width) / 2;
+    const geserY = (video.videoHeight * skala - kotak.height) / 2;
+    const b = hasil[0].box;
+    const x = kotak.left + kotak.width - ((b.x + b.width / 2) * skala - geserX);
+    const y = kotak.top + (b.y + b.height / 2) * skala - geserY;
+    const dx = (x - (oval.left + oval.width / 2)) / (oval.width / 2);
+    const dy = (y - (oval.top + oval.height / 2)) / (oval.height / 2);
+    return dx * dx + dy * dy <= 1 && b.width * skala >= oval.width * 0.3;
+  };
+
   const jepretManual = async () => {
+    if (!VERIFIKASI_AKTIF) {
+      setMemeriksa(true);
+      const ok = await wajahDiOval().catch(() => null);
+      setMemeriksa(false);
+      if (ok === false) { setPetunjuk("Wajah belum terlihat jelas di dalam lingkaran"); return; }
+      setPetunjuk(null);
+    }
     const blob = await ambilFrame();
     if (blob) onCapture(blob, VERIFIKASI_AKTIF ? { verifikasiWajah: false } : undefined);
   };
@@ -268,6 +306,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
         {/* Bingkai wajah */}
         {!error && (
           <div
+            ref={ovalRef}
             className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[64%] max-w-[300px] aspect-[3/4] rounded-[50%] border-[3px] pointer-events-none transition-colors"
             style={{
               borderColor: fase === "selesai" ? "#16a34a" : petunjuk ? "#f59e0b" : "rgba(255,255,255,.85)",
@@ -303,7 +342,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
       <div className="h-[150px] flex-shrink-0 flex flex-col items-center justify-center gap-2 bg-[#6b7280]/90">
         <button
           onClick={jepretManual}
-          disabled={!!error || (verifikasiBerjalan && !bolehManual) || fase === "memuat" || fase === "selesai"}
+          disabled={!!error || memeriksa || (verifikasiBerjalan && !bolehManual) || fase === "memuat" || fase === "selesai"}
           className="w-[92px] h-[92px] rounded-full flex items-center justify-center text-white border-none shadow-xl active:scale-95 disabled:opacity-45 transition-opacity"
           style={{ background: "var(--brand-strong)" }}
           aria-label="Ambil foto"
@@ -312,7 +351,7 @@ export function SelfieCamera({ onCapture, onCancel }: Props) {
         </button>
         <div className="text-[0.8rem] text-white/90 font-semibold text-center px-6 leading-snug">
           {fase === "manual"
-            ? "Tekan untuk mengambil foto"
+            ? memeriksa ? "Memeriksa wajah…" : "Posisikan wajah di dalam lingkaran, lalu tekan"
             : bolehManual && verifikasiBerjalan
               ? "Verifikasi lama? Tekan untuk foto biasa (ditandai belum terverifikasi)"
               : "Ikuti instruksi di atas — foto diambil otomatis"}
