@@ -1,11 +1,9 @@
 import { labelPeran } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ClipboardCheck,
   MapPin,
   Stethoscope,
   Camera,
-  LogIn,
   LogOut,
   AlertTriangle,
   CheckCircle2,
@@ -28,50 +26,6 @@ import type { Teacher, TeacherAttendance } from "@/types/entities";
 import { SelfieCamera, type InfoSelfie } from "./SelfieCamera";
 import { haversineDistance } from "@/lib/geo";
 
-type Mode = "pick" | "session";
-
-const SESSION_KEY = "bgy_presensi_guru_session";
-
-function loadSession(): { guruId: number; expires: number } | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed.guruId !== "number") return null;
-    if (parsed.expires && parsed.expires < Date.now()) {
-      localStorage.removeItem(SESSION_KEY);
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(guruId: number) {
-  // sesi 8 jam
-  localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ guruId, expires: Date.now() + 8 * 3600_000 })
-  );
-}
-
-function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-}
-
-function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
-  const needle = kode.trim();
-  if (!needle) return undefined;
-  return teachers.find(
-    (t) =>
-      t.statusAktif !== false &&
-      ((t.kodeLogin && t.kodeLogin === needle) ||
-        (t.nip && t.nip === needle) ||
-        String(t.id) === needle)
-  );
-}
-
 export function PresensiGuruPage({
   embedded = false,
   onLogout: onLogoutProp,
@@ -82,9 +36,6 @@ export function PresensiGuruPage({
   onRiwayat?: () => void;
 } = {}) {
   const { teachers, school, guruSessionId, logoutGuru, teacher } = useApp();
-  const { toast } = useToast();
-  const [mode, setMode] = useState<Mode>("pick");
-  const [guru, setGuru] = useState<Teacher | null>(null);
 
   // Mode embedded (dalam GuruShell): guru sudah login lewat EntryGate.
   if (embedded) {
@@ -107,162 +58,14 @@ export function PresensiGuruPage({
     );
   }
 
-  // init: cek sesi tersimpan
-  useEffect(() => {
-    const s = loadSession();
-    if (s) {
-      const t = teachers.find((x) => x.id === s.guruId);
-      if (t && t.statusAktif !== false) {
-        setGuru(t);
-        setMode("session");
-      } else {
-        clearSession();
-      }
-    }
-  }, [teachers]);
-
-  const handleLogin = (g: Teacher) => {
-    saveSession(g.id);
-    setGuru(g);
-    setMode("session");
-    toast(`Selamat datang, ${g.nama}`, "success");
-  };
-
-  const handleLogout = () => {
-    clearSession();
-    setGuru(null);
-    setMode("pick");
-    toast("Sesi presensi diakhiri", "info");
-  };
-
   // Admin di perangkatnya sendiri: langsung presensi sebagai dirinya, tanpa form kode/PIN.
   const admin = teachers.find((t) => t.id === teacher?.id && t.statusAktif !== false);
   if (admin) return <SelfAbsenPanel guru={admin} school={school} />;
 
-  if (mode === "pick" || !guru) {
-    return <PickerForm teachers={teachers} onPick={handleLogin} />;
-  }
-
+  // Admin hanya presensi sebagai dirinya sendiri (tidak ada mode perangkat bersama).
   return (
-    <SelfAbsenPanel
-      guru={guru}
-      school={school}
-      onLogout={handleLogout}
-    />
-  );
-}
-
-/* ─────────────── Picker (login mandiri) ─────────────── */
-function PickerForm({
-  teachers,
-  onPick,
-}: {
-  teachers: Teacher[];
-  onPick: (g: Teacher) => void;
-}) {
-  const [kode, setKode] = useState("");
-  const [pin, setPin] = useState("");
-  const [err, setErr] = useState("");
-  const { toast } = useToast();
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErr("");
-    const g = matchGuru(teachers, kode);
-    if (!g) {
-      setErr("Nomor / Kode tidak ditemukan. Minta Admin / Kepala Sekolah membuatkan akun di menu Daftar Guru.");
-      return;
-    }
-    // Jika guru punya PIN di-set, cocokan. Jika tidak di-set, abaikan (fallback: dianggap akun lama).
-    if (g.pin && g.pin !== pin.trim()) {
-      setErr("PIN salah");
-      return;
-    }
-    onPick(g);
-  };
-
-  const hintPertama = teachers.length === 0;
-
-  return (
-    <div className="flex-1 px-[14px] pt-[18px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
-      <div
-        className="rounded-2xl p-5 text-white relative overflow-hidden"
-        style={{ background: "var(--grad)", boxShadow: "var(--shadow-lg)" }}
-      >
-        <span className="header-orb" style={{ width: 140, height: 140, top: -40, right: -30 }} />
-        <span className="header-orb" style={{ width: 80, height: 80, bottom: -30, left: -20, background: "rgba(255,255,255,.08)" }} />
-        <div className="relative">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center mb-3">
-            <ClipboardCheck size={28} />
-          </div>
-          <div className="text-[1.1rem] font-extrabold italic leading-tight">Presensi Yuk</div>
-          <div className="text-[0.78rem] opacity-90">Login mandiri untuk mencatat kehadiran Anda</div>
-        </div>
-      </div>
-
-      <form onSubmit={submit} className="mt-4 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-4 space-y-3" style={{ boxShadow: "var(--shadow)" }}>
-        <div>
-          <label className="block text-[0.7rem] font-bold text-[var(--text-light)] mb-1 uppercase tracking-wide">
-            Nomor NIP / NUPTK / Kode
-          </label>
-          <input
-            value={kode}
-            onChange={(e) => setKode(e.target.value)}
-            placeholder="Mis. 1998… atau G-1234"
-            inputMode="text"
-            autoComplete="off"
-            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.9rem] outline-none focus:border-[var(--brand)]"
-          />
-        </div>
-        <div>
-          <label className="block text-[0.7rem] font-bold text-[var(--text-light)] mb-1 uppercase tracking-wide">
-            PIN
-          </label>
-          <input
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            placeholder="4–6 digit"
-            inputMode="numeric"
-            autoComplete="off"
-            className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.9rem] outline-none focus:border-[var(--brand)] tracking-widest"
-          />
-          <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-            Kalau Anda belum punya PIN, hubungi Admin / Kepala Sekolah.
-          </div>
-        </div>
-
-        {err && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-2 text-[0.8rem] text-red-700 flex items-start gap-2">
-            <AlertTriangle size={14} className="mt-[2px] flex-shrink-0" />
-            <span>{err}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          className="w-full py-3 rounded-xl text-white font-bold text-[0.9rem] flex items-center justify-center gap-2 active:scale-95"
-          style={{ background: "var(--grad)" }}
-        >
-          <LogIn size={16} /> Masuk & Presensi
-        </button>
-
-        {hintPertama ? (
-          <div className="text-[0.72rem] text-[var(--text-light)] text-center pt-2 border-t border-[var(--border)]">
-            Belum ada guru terdaftar. Minta Admin / Kepala Sekolah menambahkan guru di menu
-            <button
-              type="button"
-              onClick={() => toast("Buka menu > Daftar Guru", "info")}
-              className="ml-1 text-[var(--brand)] font-bold underline"
-            >
-              Daftar Guru
-            </button>.
-          </div>
-        ) : (
-          <div className="text-[0.68rem] text-[var(--text-light)] text-center pt-2 border-t border-[var(--border)]">
-            Data guru dikelola oleh Admin / Kepala Sekolah.
-          </div>
-        )}
-      </form>
+    <div className="flex-1 p-8 text-center text-[var(--text-light)] text-[0.85rem]">
+      Akun admin belum ada di Daftar Guru. Tambahkan diri Anda di menu Guru untuk bisa presensi.
     </div>
   );
 }
