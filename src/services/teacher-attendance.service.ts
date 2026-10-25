@@ -2,7 +2,8 @@ import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.r
 import { db } from "@/repositories/dexie/db";
 import type { TeacherAttendance, School } from "@/types/entities";
 import { ClockInStatus } from "@/types/enums";
-import { attendanceIdFrom, timestamp, todayStr } from "@/lib/utils";
+import { attendanceIdFrom, isHariEfektif, timestamp, todayStr } from "@/lib/utils";
+import { CalendarEntryType } from "@/types/enums";
 import { haversineDistance } from "@/lib/geo";
 
 function hhmmssNow(): string {
@@ -48,6 +49,13 @@ export const teacherAttendanceService = {
     return all[0];
   },
 
+  /** Apakah presensi dibuka hari ini? Tutup di hari non-aktif (pengaturan admin) dan hari libur kalender. */
+  async hariKerja(guruId: number, tanggal = todayStr()): Promise<boolean> {
+    const [guru, entri] = await Promise.all([db.teachers.get(guruId), db.calendarEntries.toArray()]);
+    const libur = new Set(entri.filter((e) => e.jenis === CalendarEntryType.HARI_LIBUR).map((e) => e.tanggal));
+    return isHariEfektif(tanggal, guru, libur);
+  },
+
   async statusHariIni(guruId: number): Promise<{
     sudahMasuk: boolean;
     sudahPulang: boolean;
@@ -62,10 +70,11 @@ export const teacherAttendanceService = {
     };
   },
 
+  /** lat/lng null = paket tanpa GPS (selfie saja): tidak ada cek radius. */
   async clockIn(
     guruId: number,
-    lat: number,
-    lng: number,
+    lat: number | null,
+    lng: number | null,
     selfieUrl?: string,
     verifikasiWajah?: boolean
   ): Promise<ClockInResult> {
@@ -74,11 +83,13 @@ export const teacherAttendanceService = {
     const jam = hhmmssNow();
     const id = attendanceIdFrom(guruId, tanggal);
 
-    const jarakMeter = school?.lat != null && school?.lng != null
+    const adaLokasi = lat != null && lng != null;
+    const jarakMeter = adaLokasi && school?.lat != null && school?.lng != null
       ? haversineDistance(lat, lng, school.lat, school.lng)
       : 0;
     const radius = school?.radiusMeter ?? 100;
     const { mulaiMasuk, batasMasuk: cutoff } = jendelaPresensi(school);
+    if (!(await this.hariKerja(guruId, tanggal))) throw new Error("Hari ini libur, presensi tidak dibuka");
     if (compareHHMM(jam.slice(0, 5), mulaiMasuk) < 0) {
       throw new Error(`Presensi masuk baru dibuka jam ${mulaiMasuk}`);
     }
@@ -97,9 +108,9 @@ export const teacherAttendanceService = {
       jamMasuk: jam,
       selfieMasukUrl: selfieUrl ?? existing?.selfieMasukUrl,
       verifikasiWajahMasuk: verifikasiWajah ?? existing?.verifikasiWajahMasuk,
-      lokasiMasukLat: lat,
-      lokasiMasukLng: lng,
-      jarakMasukMeter: Math.round(jarakMeter),
+      lokasiMasukLat: lat ?? undefined,
+      lokasiMasukLng: lng ?? undefined,
+      jarakMasukMeter: adaLokasi ? Math.round(jarakMeter) : undefined,
       statusMasuk,
       diubahPada: timestamp(),
     } as TeacherAttendance;
@@ -110,8 +121,8 @@ export const teacherAttendanceService = {
 
   async clockOut(
     guruId: number,
-    lat: number,
-    lng: number,
+    lat: number | null,
+    lng: number | null,
     selfieUrl?: string,
     verifikasiWajah?: boolean
   ): Promise<{ record: TeacherAttendance; jarakMeter: number; statusPulang: ClockInStatus }> {
@@ -120,7 +131,8 @@ export const teacherAttendanceService = {
     const jam = hhmmssNow();
     const id = attendanceIdFrom(guruId, tanggal);
 
-    const jarakMeter = school?.lat != null && school?.lng != null
+    const adaLokasi = lat != null && lng != null;
+    const jarakMeter = adaLokasi && school?.lat != null && school?.lng != null
       ? haversineDistance(lat, lng, school.lat, school.lng)
       : 0;
     const radius = school?.radiusMeter ?? 100;
@@ -143,9 +155,9 @@ export const teacherAttendanceService = {
       jamPulang: jam,
       selfiePulangUrl: selfieUrl ?? existing?.selfiePulangUrl,
       verifikasiWajahPulang: verifikasiWajah ?? existing?.verifikasiWajahPulang,
-      lokasiPulangLat: lat,
-      lokasiPulangLng: lng,
-      jarakPulangMeter: Math.round(jarakMeter),
+      lokasiPulangLat: lat ?? undefined,
+      lokasiPulangLng: lng ?? undefined,
+      jarakPulangMeter: adaLokasi ? Math.round(jarakMeter) : undefined,
       statusPulang,
       diubahPada: timestamp(),
     } as TeacherAttendance;

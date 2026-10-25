@@ -62,6 +62,21 @@ async function getSekolahForUser(supabase, userId, sekolahLocalId) {
   return data || null;
 }
 
+// Fitur GPS/radius hanya untuk sekolah PRO/masa coba (dicatat admin di cloud_guru_sekolah.paket).
+// Paket kosong = data lama → tetap GPS. hari_aktif = hari kerja (0=Min … 6=Sab).
+async function getPaketSekolah(supabase, userId) {
+  const { data } = await supabase
+    .from("cloud_guru_sekolah")
+    .select("paket, paket_sampai, hari_aktif")
+    .eq("owner_user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  const gps = !data?.paket || (data.paket === "PRO" && (!data.paket_sampai || data.paket_sampai > Date.now()));
+  const hari = String(data?.hari_aktif || "1,2,3,4,5,6").split(",").map(Number);
+  const hariKerja = hari.includes(new Date(`${todayWIB()}T00:00:00Z`).getUTCDay());
+  return { gps, hariKerja };
+}
+
 async function getAttendanceToday(supabase, userId, guruId, tanggal) {
   const { data } = await supabase
     .from("cloud_guru_attendance")
@@ -153,8 +168,11 @@ export default async function handler(req, res) {
     const sekolah = await getSekolahForUser(supabase, g.user_id, g.sekolah_id);
     const tanggal = todayWIB();
     const att = await getAttendanceToday(supabase, g.user_id, g.local_id, tanggal);
+    const { gps, hariKerja } = await getPaketSekolah(supabase, g.user_id);
 
     return res.status(200).json({
+      gps,
+      hariKerja,
       guru: { id: g.local_id, nama: g.nama, nip: g.nip, jabatan: g.jabatan },
       sekolah: sekolah ? {
         nama: sekolah.nama,
@@ -193,12 +211,15 @@ export default async function handler(req, res) {
     const action = String(fields.action || "").trim(); // "in" | "out"
     const lat = parseFloat(String(fields.lat));
     const lng = parseFloat(String(fields.lng));
-    if (!token || !["in", "out"].includes(action) || !isFinite(lat) || !isFinite(lng)) {
+    if (!token || !["in", "out"].includes(action)) {
       return res.status(400).json({ error: "Parameter tidak lengkap" });
     }
 
     const g = await findGuruByToken(supabase, token);
     if (!g) return res.status(404).json({ error: "Token tidak valid" });
+    const { gps, hariKerja } = await getPaketSekolah(supabase, g.user_id);
+    if (gps && (!isFinite(lat) || !isFinite(lng))) return res.status(400).json({ error: "Lokasi wajib diisi" });
+    if (action === "in" && !hariKerja) return res.status(400).json({ error: "Hari ini libur, presensi tidak dibuka" });
 
     const sekolah = await getSekolahForUser(supabase, g.user_id, g.sekolah_id);
     const tanggal = todayWIB();
@@ -208,12 +229,12 @@ export default async function handler(req, res) {
     const toleransi = sekolah?.toleransi_terlambat_menit ?? 15;
 
     let jarakMeter = 0;
-    if (sekolah?.lat != null && sekolah?.lng != null) {
+    if (gps && sekolah?.lat != null && sekolah?.lng != null) {
       jarakMeter = Math.round(haversineMeters(lat, lng, sekolah.lat, sekolah.lng));
     }
 
     let status;
-    if (sekolah?.lat != null && jarakMeter > radius) status = "FAR";
+    if (gps && sekolah?.lat != null && jarakMeter > radius) status = "FAR";
     else if (action === "in") {
       const cutoff = addMinutes(jamStandar, toleransi);
       status = jam.slice(0, 5) <= cutoff ? "ONTIME" : "LATE";
@@ -249,17 +270,17 @@ export default async function handler(req, res) {
         ? {
             jam_masuk: jam,
             selfie_masuk_url: selfieUrl,
-            lokasi_masuk_lat: lat,
-            lokasi_masuk_lng: lng,
-            jarak_masuk_meter: jarakMeter,
+            lokasi_masuk_lat: gps ? lat : null,
+            lokasi_masuk_lng: gps ? lng : null,
+            jarak_masuk_meter: gps ? jarakMeter : null,
             status_masuk: status,
           }
         : {
             jam_pulang: jam,
             selfie_pulang_url: selfieUrl,
-            lokasi_pulang_lat: lat,
-            lokasi_pulang_lng: lng,
-            jarak_pulang_meter: jarakMeter,
+            lokasi_pulang_lat: gps ? lat : null,
+            lokasi_pulang_lng: gps ? lng : null,
+            jarak_pulang_meter: gps ? jarakMeter : null,
             status_pulang: status,
           }),
       diubah_pada: now,

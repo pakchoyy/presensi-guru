@@ -15,6 +15,9 @@ type Info = {
     jamPulangStandar?: string;
     toleransiTerlambatMenit?: number;
   };
+  /** false = paket tanpa GPS (selfie saja). */
+  gps?: boolean;
+  hariKerja?: boolean;
   tanggal: string;
   existing: {
     jamMasuk?: string;
@@ -76,6 +79,11 @@ export function AbsenGuruPage({ token }: { token: string }) {
 
   const startAction = async (action: "in" | "out") => {
     setErr("");
+    if (info?.gps === false) {
+      pendingLocRef.current = null;
+      setShowCamera(action);
+      return;
+    }
     const coords = await requestLocation();
     if (!coords) {
       setErr(geoError || "Gagal ambil lokasi");
@@ -89,14 +97,16 @@ export function AbsenGuruPage({ token }: { token: string }) {
     const action = showCamera;
     const loc = pendingLocRef.current;
     setShowCamera(null);
-    if (!action || !loc) return;
+    if (!action || (info?.gps !== false && !loc)) return;
     setSubmitting(true);
     try {
       const fd = new FormData();
       fd.append("token", token);
       fd.append("action", action);
-      fd.append("lat", String(loc.lat));
-      fd.append("lng", String(loc.lng));
+      if (loc) {
+        fd.append("lat", String(loc.lat));
+        fd.append("lng", String(loc.lng));
+      }
       fd.append("selfie", blob, `selfie_${action}.jpg`);
       const r = await fetch("/api/clockin", { method: "POST", body: fd });
       const j = await r.json();
@@ -177,7 +187,12 @@ export function AbsenGuruPage({ token }: { token: string }) {
         )}
 
         {/* Tombol aksi */}
-        {!sudahMasuk && (
+        {!sudahMasuk && info?.hariKerja === false && (
+          <div className="rounded-xl p-3 mb-3 text-center bg-[#f1f5f9] text-[#475569] text-[0.85rem] font-bold">
+            Hari ini libur, presensi tidak dibuka
+          </div>
+        )}
+        {!sudahMasuk && info?.hariKerja !== false && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => startAction("in")}

@@ -26,7 +26,8 @@ export function KonfirmasiPresensi({
   lat?: number;
   lng?: number;
   radiusMeter?: number;
-  posisi: { lat: number; lng: number };
+  /** null = paket tanpa GPS (selfie saja): info lokasi & peta disembunyikan. */
+  posisi: { lat: number; lng: number } | null;
   jarakMeter: number | null;
   menyimpan: boolean;
   onKembali: () => void;
@@ -83,6 +84,7 @@ export function KonfirmasiPresensi({
         </div>
         )}
 
+        {posisi && (<>
         {/* Info lokasi */}
         <div
           className="mt-4 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] overflow-hidden"
@@ -115,6 +117,10 @@ export function KonfirmasiPresensi({
             Titik sekolah belum diatur, jadi peta tidak bisa ditampilkan.
           </div>
         )}
+        </>)}
+        <div className="mt-3 text-center text-[0.68rem] text-[var(--text-light)]">
+          Foto kurang bagus? Tap <b>Kembali</b> lalu ambil ulang. Yang dihitung presensi terakhir.
+        </div>
       </div>
 
       {/* Aksi */}

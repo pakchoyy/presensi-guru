@@ -14,7 +14,7 @@ import {
   History,
 } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
-import { PageName, AttendanceStatus } from "@/types/enums";
+import { PageName, AttendanceStatus, Tier } from "@/types/enums";
 import { useToast } from "@/components/shared/Toast";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { PetaPro } from "@/components/attendance/PetaPro";
@@ -279,7 +279,10 @@ function SelfAbsenPanel({
   fokusPresensi?: boolean;
 }) {
   const { toast } = useToast();
-  const { setActivePage } = useApp();
+  const { setActivePage, tier } = useApp();
+  // GPS, radius & peta hanya di PRO/masa coba; paket lain selfie wajah saja.
+  const mapOK = tier === Tier.PRO;
+  const [hariKerja, setHariKerja] = useState(true);
   const [existing, setExisting] = useState<TeacherAttendance | undefined>();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -305,7 +308,7 @@ function SelfAbsenPanel({
     setKiriman(hasil === "lokal" ? null : hasil);
   };
   const [konfirmasi, setKonfirmasi] = useState<
-    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number }; verifikasiWajah?: boolean } | null
+    { aksi: "in" | "out"; fotoUrl: string; lokasi: { lat: number; lng: number } | null; verifikasiWajah?: boolean } | null
   >(null);
   const [, setTick] = useState(0);
   const { request: requestLocation, coords, error: geoError, loading: geoLoading } = useGeolocation();
@@ -329,6 +332,7 @@ function SelfAbsenPanel({
   };
 
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [guru.id]);
+  useEffect(() => { teacherAttendanceService.hariKerja(guru.id, tanggal).then(setHariKerja).catch(() => {}); }, [guru.id, tanggal]);
 
 
   const izinAktif =
@@ -397,19 +401,22 @@ function SelfAbsenPanel({
 
   // Ambil lokasi sekali saat panel dibuka supaya peta & jarak langsung terisi.
   useEffect(() => {
-    if (!school?.lat || !school?.lng) return;
+    if (!mapOK || !school?.lat || !school?.lng) return;
     requestLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [school?.lat, school?.lng]);
+  }, [mapOK, school?.lat, school?.lng]);
 
   const jendela = jendelaPresensi(school ?? undefined);
   const jamKini = new Date().toTimeString().slice(0, 5);
   const masukBelumBuka = jamKini < jendela.mulaiMasuk;
-  // Presensi boleh diulang selama jendela masih buka; yang terakhir dihitung.
-  const bolehUlangMasuk = jamKini <= jendela.batasMasuk;
   const pulangTutup = jamKini > jendela.batasPulang;
 
   const start = async (action: "in" | "out") => {
+    if (!mapOK) {
+      pendingLocRef.current = null;
+      setShowCamera(action);
+      return;
+    }
     const coords = await requestLocation();
     if (!coords) {
       toast(geoError || "Gagal ambil lokasi", "error");
@@ -424,7 +431,7 @@ function SelfAbsenPanel({
     const action = showCamera;
     const loc = pendingLocRef.current;
     setShowCamera(null);
-    if (!action || !loc) return;
+    if (!action || (mapOK && !loc)) return;
     const fotoUrl = await blobToDataUrl(blob);
     setKonfirmasi({ aksi: action, fotoUrl, lokasi: loc, verifikasiWajah: info?.verifikasiWajah });
   };
@@ -435,7 +442,7 @@ function SelfAbsenPanel({
     setSubmitting(true);
     try {
       if (action === "in") {
-        const res = await teacherAttendanceService.clockIn(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
+        const res = await teacherAttendanceService.clockIn(guru.id, loc?.lat ?? null, loc?.lng ?? null, selfieUrl, verifikasiWajah);
         toast(
           res.statusMasuk === "ONTIME"
             ? "Presensi masuk tersimpan — tepat waktu"
@@ -445,7 +452,7 @@ function SelfAbsenPanel({
           res.statusMasuk === "ONTIME" ? "success" : "info"
         );
       } else {
-        const res = await teacherAttendanceService.clockOut(guru.id, loc.lat, loc.lng, selfieUrl, verifikasiWajah);
+        const res = await teacherAttendanceService.clockOut(guru.id, loc?.lat ?? null, loc?.lng ?? null, selfieUrl, verifikasiWajah);
         toast(
           res.statusPulang === "FAR"
             ? `Presensi pulang: di luar radius (${Math.round(res.jarakMeter)}m)`
@@ -498,7 +505,7 @@ function SelfAbsenPanel({
       </div>
 
       {/* Peta & lokasi sekolah */}
-      {school && (school.lat == null || school.lng == null) && (
+      {mapOK && school && (school.lat == null || school.lng == null) && (
         <div className="mt-3 bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-strong)] flex items-center justify-center flex-shrink-0">
             <MapPin size={16} />
@@ -512,7 +519,7 @@ function SelfAbsenPanel({
           </div>
         </div>
       )}
-      {school?.lat != null && school?.lng != null && (
+      {mapOK && school?.lat != null && school?.lng != null && (
         <PetaPro
           namaSekolah={school.nama}
           lat={school.lat}
@@ -584,7 +591,14 @@ function SelfAbsenPanel({
 
       {/* Aksi */}
       <div className="mt-4">
-        {!sudahMasuk && (
+        {!hariKerja && !sudahMasuk && (
+          <div className="rounded-2xl p-4 bg-[var(--card-bg)] border border-[var(--border)] text-center">
+            <Clock className="mx-auto text-[var(--text-light)]" size={26} />
+            <div className="font-extrabold text-[var(--text)] mt-1">Hari ini libur, presensi tidak dibuka</div>
+            <div className="text-[0.72rem] text-[var(--text-light)]">Hari aktif & hari libur diatur oleh Admin.</div>
+          </div>
+        )}
+        {hariKerja && !sudahMasuk && (
           <button
             disabled={submitting || geoLoading || masukBelumBuka}
             onClick={() => start("in")}
@@ -606,13 +620,13 @@ function SelfAbsenPanel({
             {submitting ? "Menyimpan..." : geoLoading ? "Ambil lokasi..." : sudahPulang ? "Ulangi Presensi Pulang" : "Ambil Presensi Pulang"}
           </button>
         )}
-        {sudahMasuk && !sudahPulang && bolehUlangMasuk && (
+        {sudahMasuk && !sudahPulang && (
           <button
             disabled={submitting || geoLoading}
             onClick={() => start("in")}
             className="w-full mt-2 py-3 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] text-[var(--brand)] font-bold text-[0.85rem] flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
           >
-            <Camera size={16} /> Ulangi Presensi Masuk
+            <Camera size={16} /> Ulangi Presensi Masuk (ganti foto)
           </button>
         )}
         {sudahMasuk && (sudahPulang ? (
@@ -665,7 +679,7 @@ function SelfAbsenPanel({
           radiusMeter={school?.radiusMeter}
           posisi={konfirmasi.lokasi}
           jarakMeter={
-            school?.lat != null && school?.lng != null
+            konfirmasi.lokasi && school?.lat != null && school?.lng != null
               ? Math.round(
                   haversineDistance(
                     konfirmasi.lokasi.lat,
