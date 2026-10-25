@@ -240,13 +240,13 @@ export const licenseService = {
 
   getManfaat(): string[] {
     return [
-      "Kelola semua kelas yang kamu ajar (tanpa batas)",
-      "Buka data yang sama dari HP, laptop, atau tablet",
+      "Tambah guru lebih banyak (PRO tanpa batas)",
+      "HP guru terhubung ke sekolah lewat cloud",
       "Data aman tersimpan & otomatis sinkron di internet",
       "Atur kalender sendiri: tandai libur & hari penting",
-      "Update data siswa lewat Excel tanpa duplikat",
       "Backup & pulihkan data dari internet (cloud)",
-      "Tambah logo sekolah di laporan PDF & Excel",
+      "Logo sekolah di laporan PDF & Excel",
+      "PRO: presensi dengan GPS & peta lokasi, Kepala Sekolah verifikasi izin",
     ];
   },
 };

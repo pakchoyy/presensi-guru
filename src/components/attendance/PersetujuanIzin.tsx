@@ -9,7 +9,7 @@ import type { TeacherAttendance } from "@/types/entities";
 import { addDays, formatTanggalPanjang, timestamp, todayStr } from "@/lib/utils";
 
 /**
- * Verifikasi izin di Dashboard (Operator & Kepala Sekolah): yang menunggu +
+ * Verifikasi izin di Dashboard (Admin & Kepala Sekolah): yang menunggu +
  * riwayat keputusan (31 hari terakhir), plus catat izin langsung.
  */
 export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {

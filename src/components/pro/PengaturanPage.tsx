@@ -11,7 +11,7 @@ import { syncService } from "@/services/sync.service";
 import { getSyncLog, type SyncLogEntry } from "@/services/sync.service";
 import { Tier, Jenjang, PageName } from "@/types/enums";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { MAX_STUDENTS_FREE, PRO_PRICE, PLUS_PRICE, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
+import { PRO_PRICE, PLUS_PRICE, KREACY_PRO_URL, LICENSE_DURATION_DAYS, DAY_MS } from "@/lib/constants";
 import { generateId, getActiveDays, zonaWaktu } from "@/lib/utils";
 import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
@@ -1548,8 +1548,6 @@ const SYNC_DETAIL_LABEL: Record<string, string> = {
   schools: "sekolah",
   teachers: "guru",
   academicYears: "tahun ajaran",
-  classrooms: "kelas",
-  students: "siswa",
   attendanceSessions: "sesi",
   attendanceRecords: "catatan",
   calendarEntries: "kalender",

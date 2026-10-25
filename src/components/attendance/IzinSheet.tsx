@@ -98,7 +98,7 @@ export function IzinSheet({
         )}
 
         <div className="text-[0.62rem] text-[var(--text-light)] text-center mt-3">
-          Pengajuan langsung tercatat di rekap. Ops / Kepala Sekolah bisa mengubahnya dari Dashboard.
+          Pengajuan langsung tercatat di rekap. Admin / Kepala Sekolah bisa mengubahnya dari Dashboard.
         </div>
       </div>
     </div>

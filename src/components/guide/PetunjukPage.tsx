@@ -1,47 +1,53 @@
-import { BookOpen, ClipboardCheck, Upload, BarChart3, Database, Calendar, Settings } from "lucide-react";
+import { BookOpen, ClipboardCheck, Users, Stethoscope, BarChart3, Database, Calendar, Settings } from "lucide-react";
 
 const GUIDES = [
   {
     num: "★",
     icon: Settings,
-    title: "Paket & Peta Lokasi",
-    desc: "FREE maks 5 guru, <b>PLUS maks 10 guru</b>, PRO tanpa batas. <b>Peta lokasi absen hanya di PRO</b>. Titik sekolah tetap bisa diatur di Pengaturan lewat <b>Gunakan lokasi saya sekarang</b> atau isi lat/lng manual — cek radius GPS tetap jalan di semua paket.",
+    title: "Paket FREE, PLUS & PRO",
+    desc: "Pengguna baru dapat <b>masa coba PRO 30 hari</b>. Setelah itu FREE (maks 5 guru, presensi selfie). <b>PLUS</b> maks 10 guru, cloud, logo sekolah. <b>PRO</b> guru tanpa batas, presensi dengan <b>GPS &amp; peta lokasi</b>, Kepala Sekolah memverifikasi izin. Lihat tabel lengkap di menu <b>Upgrade paket</b>.",
   },
   {
     num: "1",
-    icon: ClipboardCheck,
-    title: "Presensi Harian",
-    desc: "Buka menu Presensi. Kalau <b>Isi Hadir Otomatis</b> ON (di Pengaturan), semua siswa otomatis berstatus <b>Hadir</b>. Tap nama siswa yang <b>tidak hadir</b>, lalu pilih Sakit/Izin/Alpha. Data langsung tersimpan.",
+    icon: Users,
+    title: "Admin: Tambah Guru",
+    desc: "Buka menu <b>Guru</b>. Tambah guru satu per satu atau lewat <b>Import Excel</b>. Tiap guru otomatis mendapat <b>Kode login</b> dan <b>PIN</b> — bagikan ke guru. Pilih peran <b>Guru</b> atau <b>Kepala Sekolah</b> (PRO).",
   },
   {
     num: "2",
-    icon: Settings,
-    title: "Pengaturan Hari Aktif",
-    desc: "Buka menu <b>Pengaturan</b> > <b>Hari Aktif</b>. Pilih <b>Senin - Jumat</b> (Sabtu & Minggu libur) atau <b>Senin - Sabtu</b> (hanya Minggu libur). Hari non-aktif ditandai merah di kalender dan tidak masuk presensi.",
+    icon: ClipboardCheck,
+    title: "Guru: Presensi Masuk & Pulang",
+    desc: "Guru masuk lewat <b>Guru / Kepala Sekolah</b> dengan kode + PIN, lalu tap <b>Ambil Presensi Masuk</b> dan foto selfie. Di PRO, lokasi GPS dicek terhadap radius sekolah. Foto kurang bagus? <b>Ulangi</b> presensi — yang <b>terakhir</b> yang dihitung. Sore hari ambil <b>Presensi Pulang</b>.",
   },
   {
     num: "3",
-    icon: Upload,
-    title: "Import Siswa dari Excel",
-    desc: "Download template Excel dari menu Siswa. Isi kolom <b>Nama, NISN, Jenis Kelamin, Kelas</b> — lalu upload. Sistem membaca dan menampilkan pratinjau. Kolom <b>Kelas</b> otomatis membuat kelas baru (PRO).",
+    icon: Stethoscope,
+    title: "Sakit / Izin",
+    desc: "Di tab <b>Izin</b>, guru memilih tanggal awal–akhir, jenis (Sakit/Izin), keterangan, dan boleh melampirkan <b>foto</b> (surat dokter dll). Di PRO, <b>Kepala Sekolah</b> menyetujui atau menolak. Admin hanya bisa melihat.",
   },
   {
     num: "4",
-    icon: BarChart3,
-    title: "Rekap & Export Laporan",
-    desc: "Buka menu Rekap — pilih <b>Bulanan</b> atau <b>Semester</b>. Lihat tabel ringkasan Hadir/Sakit/Izin/Alpha per siswa. Ekspor langsung ke <b>PDF</b> atau <b>Excel</b> untuk laporan ke kepala sekolah.",
+    icon: Settings,
+    title: "Jam, Hari Aktif & Lokasi",
+    desc: "Di <b>Pengaturan</b> admin mengatur jam masuk/pulang, batas tepat waktu, dan <b>Hari Aktif</b> (Senin–Jumat / Senin–Sabtu / kustom). Di hari non-aktif atau libur kalender, presensi ditutup. Titik sekolah (PRO) diisi lewat <b>Gunakan lokasi saya sekarang</b> dan dicek di peta.",
   },
   {
     num: "5",
-    icon: Calendar,
-    title: "Kalender Akademik (PRO)",
-    desc: "Buka menu Kalender. Versi PRO bisa <b>menandai Hari Libur</b> (merah) dan <b>Hari Penting</b> (biru) — seperti penerimaan rapor, ujian, atau perayaan sekolah. Kalender membantu merencanakan semester.",
+    icon: BarChart3,
+    title: "Dashboard & Rekap",
+    desc: "<b>Dashboard</b> menampilkan kehadiran semua guru hari ini (admin: hanya lihat; Kepala Sekolah: bisa ubah status). Menu <b>Rekap</b> merangkum Hadir/Terlambat/Sakit/Izin/Alpha per guru dan bisa diekspor ke <b>PDF</b> atau <b>Excel</b>.",
   },
   {
     num: "6",
+    icon: Calendar,
+    title: "Kalender Akademik",
+    desc: "Buka menu Kalender. Paket PLUS/PRO (dan masa coba) bisa <b>menandai Hari Libur</b> (merah) dan <b>Hari Penting</b> (biru). Hari libur otomatis tidak dihitung di presensi dan rekap.",
+  },
+  {
+    num: "7",
     icon: Database,
     title: "Backup & Restore Data",
-    desc: "Buka menu Backup — klik <b>Buat Backup Lokal</b> untuk menyimpan data ke file. Simpan di HP atau Google Drive. Kalau ganti HP, <b>Restore</b> dari file yang sama. Versi PRO bisa backup ke cloud.",
+    desc: "Buka menu Backup — <b>Buat Backup Lokal</b> menyimpan data ke file. Kalau ganti HP, <b>Restore</b> dari file yang sama. Paket berbayar juga bisa sinkron ke cloud.",
   },
 ];
 
@@ -60,7 +66,7 @@ export function PetunjukPage() {
             borderLeft: "4px solid #2563eb",
           }}
         >
-          <b>Presensi Yuk | Guru</b> dirancang sesederhana mungkin. Guru bisa mengisi presensi <b>kurang dari 30 detik per kelas</b>, bisa online maupun offline.
+          <b>Presensi Yuk | Guru</b> dirancang sesederhana mungkin. Guru bisa mengisi presensi <b>kurang dari 30 detik</b>, bisa online maupun offline.
         </div>
 
         <div className="flex flex-col gap-[10px]">
@@ -69,8 +75,8 @@ export function PetunjukPage() {
               key={g.num}
               className="flex gap-3 items-start p-[10px] border border-[var(--border)] rounded-[9px] bg-[var(--input-bg)]"
             >
-              <div className="text-[1.2rem] flex-shrink-0 font-bold text-[#2563eb]">
-                {g.num}️⃣
+              <div className="w-6 h-6 rounded-full bg-[#2563eb] text-white text-[0.72rem] font-bold flex items-center justify-center flex-shrink-0">
+                {g.num}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-[6px] mb-1">

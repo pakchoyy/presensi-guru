@@ -166,7 +166,7 @@ function PickerForm({
     setErr("");
     const g = matchGuru(teachers, kode);
     if (!g) {
-      setErr("Nomor / Kode tidak ditemukan. Minta Ops / Kepala Sekolah membuatkan akun di menu Daftar Guru.");
+      setErr("Nomor / Kode tidak ditemukan. Minta Admin / Kepala Sekolah membuatkan akun di menu Daftar Guru.");
       return;
     }
     // Jika guru punya PIN di-set, cocokan. Jika tidak di-set, abaikan (fallback: dianggap akun lama).
@@ -223,7 +223,7 @@ function PickerForm({
             className="w-full px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.9rem] outline-none focus:border-[var(--brand)] tracking-widest"
           />
           <div className="text-[0.65rem] text-[var(--text-light)] mt-1">
-            Kalau Anda belum punya PIN, hubungi Ops / Kepala Sekolah.
+            Kalau Anda belum punya PIN, hubungi Admin / Kepala Sekolah.
           </div>
         </div>
 
@@ -244,7 +244,7 @@ function PickerForm({
 
         {hintPertama ? (
           <div className="text-[0.72rem] text-[var(--text-light)] text-center pt-2 border-t border-[var(--border)]">
-            Belum ada guru terdaftar. Minta Ops / Kepala Sekolah menambahkan guru di menu
+            Belum ada guru terdaftar. Minta Admin / Kepala Sekolah menambahkan guru di menu
             <button
               type="button"
               onClick={() => toast("Buka menu > Daftar Guru", "info")}
@@ -255,7 +255,7 @@ function PickerForm({
           </div>
         ) : (
           <div className="text-[0.68rem] text-[var(--text-light)] text-center pt-2 border-t border-[var(--border)]">
-            Data guru dikelola oleh Ops / Kepala Sekolah.
+            Data guru dikelola oleh Admin / Kepala Sekolah.
           </div>
         )}
       </form>
@@ -507,7 +507,7 @@ function SelfAbsenPanel({
             <div className="text-[0.65rem] text-[var(--text-light)]">Lokasi Presensi</div>
             <div className="font-bold text-[var(--text)] text-[0.85rem] truncate">{school.nama}</div>
             <div className="text-[0.62rem] text-[var(--text-light)] mt-[2px]">
-              Titik sekolah belum diatur — minta Ops / Kepala Sekolah mengisinya di Pengaturan.
+              Titik sekolah belum diatur — minta Admin / Kepala Sekolah mengisinya di Pengaturan.
             </div>
           </div>
         </div>

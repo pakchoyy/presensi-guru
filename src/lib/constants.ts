@@ -36,10 +36,7 @@ export const LICENSE_DURATION_DAYS = 180;
 export const KREACY_PLUS_URL = "https://kreacy.my.id/produk/rj99kg07";
 export const KREACY_PRO_URL = "https://kreacy.my.id/produk/cynjla94";
 
-export const MAX_KELAS_FREE = 1;
-export const MAX_STUDENTS_FREE = 12;
-
-export const APP_URL = "https://presiswa.bantuguruyuk.web.id";
+export const APP_URL = "https://preguru.bantuguruyuk.web.id";
 export const MAIN_SITE_URL = "https://bantuguruyuk.web.id";
 
 // Logo bawaan aplikasi. Logo bawaan lama yang tersimpan di data sekolah dianggap sama dengan bawaan.

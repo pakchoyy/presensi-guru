@@ -637,11 +637,11 @@ export function GuruPage() {
               >
                 <option value="guru">Guru</option>
                 <option value="ks">Kepala Sekolah (menyetujui izin){isPro(effectiveTier(teacher?.tier)) ? "" : " — PRO"}</option>
-                <option value="admin">Operator (admin)</option>
+                <option value="admin">Admin</option>
               </select>
               {fRole === "ks" && (
                 <div className="text-[0.66rem] text-[var(--text-light)] mt-1">
-                  Kepala Sekolah masuk sebagai Guru dengan kode + PIN-nya, lalu bisa menyetujui / menolak izin di tab Izin. Pengaturan sistem tetap di Operator.
+                  Kepala Sekolah masuk sebagai Guru dengan kode + PIN-nya, lalu bisa menyetujui / menolak izin di tab Izin. Pengaturan sistem tetap di Admin.
                 </div>
               )}
             </Field>

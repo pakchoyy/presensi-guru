@@ -62,7 +62,7 @@ export function GuruProfilPage({
             ) : undefined
           }
         />
-        <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Operator" : guru.role === "ks" ? "Kepala Sekolah" : "Guru"} />
+        <Row icon={<Briefcase size={16} />} label="Peran" value={guru.role === "admin" ? "Admin" : guru.role === "ks" ? "Kepala Sekolah" : "Guru"} />
         <Row icon={<SchoolIcon size={16} />} label="Sekolah" value={school?.nama || "—"} />
         <Row icon={<Clock size={16} />} label="Jam masuk" value={(school?.jamMasukStandar || "07:00").slice(0, 5)} />
         <Row icon={<Clock size={16} />} label="Jam pulang" value={(school?.jamPulangStandar || "15:00").slice(0, 5)} last />
@@ -134,7 +134,7 @@ export function GuruProfilPage({
       )}
 
       <div className="text-[0.65rem] text-[var(--text-light)] text-center mt-3">
-        Untuk mengubah data atau reset PIN, hubungi Ops / Kepala Sekolah.
+        Untuk mengubah data atau reset PIN, hubungi Admin / Kepala Sekolah.
       </div>
 
       <button

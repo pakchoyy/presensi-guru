@@ -78,7 +78,7 @@ export function LoginPage() {
               Guru (NIP+PIN)
             </TabBtn>
             <TabBtn active={tab === "admin"} onClick={() => { setTab("admin"); setError(""); }}>
-              Admin / Ops
+              Admin
             </TabBtn>
           </div>
 
@@ -119,7 +119,7 @@ export function LoginPage() {
                   </button>
                 </div>
                 <div className="text-[0.65rem] text-gray-500 mt-1">
-                  Belum punya? Hubungi Ops / Kepala Sekolah untuk kode & PIN Anda.
+                  Belum punya? Hubungi Admin / Kepala Sekolah untuk kode & PIN Anda.
                 </div>
               </Field>
               {error && <ErrorBox>{error}</ErrorBox>}

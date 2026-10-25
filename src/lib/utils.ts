@@ -174,5 +174,5 @@ export function zonaWaktu(): string {
 
 /** Label peran untuk ditampilkan; guru biasa tidak diberi label. */
 export function labelPeran(t: { role?: string }): string | null {
-  return t.role === "ks" ? "Kepala Sekolah" : t.role === "admin" ? "Operator" : null;
+  return t.role === "ks" ? "Kepala Sekolah" : t.role === "admin" ? "Admin" : null;
 }

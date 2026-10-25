@@ -23,15 +23,15 @@ export function TentangKontak() {
         <div className="text-[0.74rem] text-[var(--text-light)] leading-[1.7]">
           <div className="flex gap-2 mb-1">
             <span className="font-semibold text-[#2563eb]">Visi:</span>
-            <span>Presensi 1 kelas selesai dalam <b>&lt;30 detik</b></span>
+            <span>Presensi guru selesai dalam <b>&lt;30 detik</b></span>
           </div>
-        <div className="flex gap-2 mb-1">
-          <span className="font-semibold text-[#2563eb]">FREE:</span>
-          <span>1 kelas (12 siswa), offline penuh, rekap & export lengkap</span>
-        </div>
+          <div className="flex gap-2 mb-1">
+            <span className="font-semibold text-[#2563eb]">FREE:</span>
+            <span>maks 5 guru, presensi selfie, rekap & export lengkap</span>
+          </div>
           <div className="flex gap-2">
-            <span className="font-semibold text-[#2563eb]">PRO:</span>
-            <span>PLUS Rp27.000 (maks 10 guru) · PRO Rp51.000 (guru tanpa batas + peta lokasi) — per semester</span>
+            <span className="font-semibold text-[#2563eb]">Berbayar:</span>
+            <span>PLUS Rp27.000 (maks 10 guru, logo sekolah) · PRO Rp51.000 (guru tanpa batas, GPS & peta lokasi, Kepala Sekolah verifikasi izin) — per semester</span>
           </div>
         </div>
       </div>
@@ -48,7 +48,7 @@ export function TentangKontak() {
 
         <div className="flex flex-col gap-[10px]">
           <a
-            href="https://wa.me/6289530713597?text=saya%20mau%20konsultasi%20seputar%20aplikasi%20bantu%20guru%20yuk%20%7C%20presensi%20siswa"
+            href="https://wa.me/6289530713597?text=saya%20mau%20konsultasi%20seputar%20aplikasi%20bantu%20guru%20yuk%20%7C%20presensi%20guru"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-[11px] rounded-[10px] bg-[#25D366] text-white font-bold text-[0.82rem] no-underline hover:opacity-90 transition-opacity"
@@ -78,7 +78,7 @@ export function TentangKontak() {
             <ExternalLink size={18} />
             <div className="flex-1 text-left">
               <div className="text-[0.85rem] font-extrabold">Presensi Yuk | Guru</div>
-              <div className="text-[0.65rem] opacity-80">presiswa.bantuguruyuk.web.id</div>
+              <div className="text-[0.65rem] opacity-80">preguru.bantuguruyuk.web.id</div>
             </div>
           </a>
 
