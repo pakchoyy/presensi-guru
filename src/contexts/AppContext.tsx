@@ -29,7 +29,7 @@ export const PAKET_SYNC_KEY = "bgy_paket_sync";
 function readEntryMode(): EntryMode {
   const v = localStorage.getItem(ENTRY_KEY);
   if (v === "admin") return v;
-  // Sesi guru (12 jam) habis → kembali ke layar masuk, jangan tertahan di shell guru tanpa guru.
+  // Tanpa sesi guru (belum masuk / sudah Keluar) → kembali ke layar masuk, jangan tertahan di shell guru tanpa guru.
   if (v === "guru") {
     if (readGuruSessionId() != null) return v;
     localStorage.removeItem(ENTRY_KEY);
@@ -42,7 +42,6 @@ function readGuruSessionId(): number | null {
     const raw = localStorage.getItem(GURU_SESSION_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    if (s?.expires && s.expires < Date.now()) { localStorage.removeItem(GURU_SESSION_KEY); return null; }
     return typeof s?.guruId === "number" ? s.guruId : null;
   } catch { return null; }
 }
@@ -176,7 +175,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loginGuru = useCallback((guruId: number) => {
-    localStorage.setItem(GURU_SESSION_KEY, JSON.stringify({ guruId, expires: Date.now() + 12 * 3600_000 }));
+    localStorage.setItem(GURU_SESSION_KEY, JSON.stringify({ guruId }));
     localStorage.setItem(ENTRY_KEY, "guru");
     setState((prev) => ({ ...prev, entryMode: "guru", guruSessionId: guruId, activePage: PageName.PRESENSI }));
   }, []);
