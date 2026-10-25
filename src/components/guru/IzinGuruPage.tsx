@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CalendarDays, Camera, FileText, Save, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, FileText, Save } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { guruCloud, adminCloud } from "@/services/multi-perangkat.service";
 import { AttendanceStatus } from "@/types/enums";
 import type { TeacherAttendance } from "@/types/entities";
-import { kompresFoto } from "@/lib/foto";
+import { LampiranFoto } from "@/components/shared/LampiranFoto";
 import { addDays, attendanceIdFrom, formatTanggalPanjang, timestamp, todayStr } from "@/lib/utils";
 
 // Jenis selain Sakit dicatat sebagai Izin (I) di rekap; labelnya disimpan di
@@ -51,13 +51,6 @@ export function IzinGuruPage({ onSelesai, guruId }: { onSelesai: () => void; gur
   const [menyimpan, setMenyimpan] = useState(false);
   // Lampiran foto (surat dokter dll). Dilampirkan di hari pertama pengajuan.
   const [foto, setFoto] = useState<string | null>(null);
-
-  const pilihFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
-    try { setFoto(await kompresFoto(f)); } catch { toast("Foto tidak bisa dibaca", "error"); }
-  };
 
   const simpan = async () => {
     if (guruSessionId == null) return;
@@ -140,23 +133,7 @@ export function IzinGuruPage({ onSelesai, guruId }: { onSelesai: () => void; gur
 
       <div className={kartu}>
         <span className={label}>Foto lampiran (opsional)</span>
-        {foto ? (
-          <div className="relative w-fit">
-            <img src={foto} alt="Lampiran izin" className="max-h-[160px] rounded-xl border border-[var(--border)]" />
-            <button
-              onClick={() => setFoto(null)}
-              aria-label="Hapus foto"
-              className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-[#ef4444] text-white flex items-center justify-center border-none"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        ) : (
-          <label className="flex items-center justify-center gap-2 py-3 rounded-xl border-[1.5px] border-dashed border-[var(--brand)] text-[var(--brand)] text-[0.82rem] font-bold cursor-pointer">
-            <Camera size={16} /> Ambil / pilih foto (surat dokter dll)
-            <input type="file" accept="image/*" onChange={pilihFoto} className="hidden" />
-          </label>
-        )}
+        <LampiranFoto value={foto} onChange={setFoto} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 pt-2">

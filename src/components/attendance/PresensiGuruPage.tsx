@@ -345,7 +345,7 @@ function SelfAbsenPanel({
       ? existing.statusHari
       : undefined;
 
-  const ajukanIzin = async (jenis: AttendanceStatus.SAKIT | AttendanceStatus.IZIN, keterangan: string) => {
+  const ajukanIzin = async (jenis: AttendanceStatus.SAKIT | AttendanceStatus.IZIN, keterangan: string, foto: string | null) => {
     const id = attendanceIdFrom(guru.id, tanggal);
     const rec = await teacherAttendanceRepo.getById(id);
     await teacherAttendanceRepo.upsert({
@@ -355,6 +355,7 @@ function SelfAbsenPanel({
       tanggal,
       statusHari: jenis,
       catatan: keterangan || undefined,
+      izinFotoUrl: foto ?? undefined,
       diubahPada: timestamp(),
     } as TeacherAttendance);
     setShowIzin(false);
@@ -371,6 +372,7 @@ function SelfAbsenPanel({
         ...rec,
         statusHari: undefined,
         catatan: undefined,
+        izinFotoUrl: undefined,
         diubahPada: timestamp(),
       } as TeacherAttendance);
     }
@@ -707,6 +709,7 @@ function SelfAbsenPanel({
           tanggalLabel={formatTanggalPanjang(tanggal)}
           jenisAwal={izinAktif}
           keteranganAwal={existing?.catatan}
+          fotoAwal={existing?.izinFotoUrl}
           onSubmit={ajukanIzin}
           onBatalkan={izinAktif ? batalkanIzin : undefined}
           onClose={() => setShowIzin(false)}

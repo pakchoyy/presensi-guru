@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Stethoscope, FileText } from "lucide-react";
 import { AttendanceStatus } from "@/types/enums";
+import { LampiranFoto } from "@/components/shared/LampiranFoto";
 
 type Jenis = AttendanceStatus.SAKIT | AttendanceStatus.IZIN;
 
@@ -12,6 +13,7 @@ export function IzinSheet({
   tanggalLabel,
   jenisAwal,
   keteranganAwal,
+  fotoAwal,
   onSubmit,
   onBatalkan,
   onClose,
@@ -19,12 +21,14 @@ export function IzinSheet({
   tanggalLabel: string;
   jenisAwal?: Jenis;
   keteranganAwal?: string;
-  onSubmit: (jenis: Jenis, keterangan: string) => void;
+  fotoAwal?: string;
+  onSubmit: (jenis: Jenis, keterangan: string, foto: string | null) => void;
   onBatalkan?: () => void;
   onClose: () => void;
 }) {
   const [jenis, setJenis] = useState<Jenis>(jenisAwal ?? AttendanceStatus.SAKIT);
   const [keterangan, setKeterangan] = useState(keteranganAwal ?? "");
+  const [foto, setFoto] = useState<string | null>(fotoAwal ?? null);
 
   return (
     <div
@@ -80,8 +84,13 @@ export function IzinSheet({
           className="w-full px-3 py-2 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.85rem] outline-none focus:border-[var(--brand)] font-[inherit] resize-none"
         />
 
+        <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mt-3 mb-1 uppercase">
+          Lampiran foto (opsional)
+        </label>
+        <LampiranFoto value={foto} onChange={setFoto} />
+
         <button
-          onClick={() => onSubmit(jenis, keterangan.trim())}
+          onClick={() => onSubmit(jenis, keterangan.trim(), foto)}
           className="w-full mt-3 py-3 rounded-2xl text-white font-extrabold text-[0.9rem] active:scale-95"
           style={{ background: "var(--grad)" }}
         >
@@ -98,7 +107,7 @@ export function IzinSheet({
         )}
 
         <div className="text-[0.62rem] text-[var(--text-light)] text-center mt-3">
-          Pengajuan langsung tercatat di rekap. Admin / Kepala Sekolah bisa mengubahnya dari Dashboard.
+          Pengajuan langsung tercatat di rekap. Kepala Sekolah bisa mengubahnya dari Dashboard.
         </div>
       </div>
     </div>
