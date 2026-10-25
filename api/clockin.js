@@ -18,12 +18,10 @@ async function rateLimited(supabase, key, max, windowS) {
 }
 const clientIp = (req) => String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
 
-function todayWIB() {
-  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-}
-function hhmmssWIB() {
-  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return d.toISOString().slice(11, 19);
+// Waktu sekolah: zona dari setelan admin (menit dari UTC), default WIB.
+function waktuSekolah(tzMenit) {
+  const d = new Date(Date.now() + (tzMenit ?? 420) * 60 * 1000).toISOString();
+  return { tanggal: d.slice(0, 10), jam: d.slice(11, 19) };
 }
 function toRad(d) { return (d * Math.PI) / 180; }
 function haversineMeters(lat1, lng1, lat2, lng2) {
@@ -44,46 +42,39 @@ function addMinutes(hhmm, mins) {
 async function findGuruByToken(supabase, token) {
   const { data: g } = await supabase
     .from("cloud_guru_teachers")
-    .select("local_id, user_id, sekolah_id, nama, nip, jabatan, absen_token, status_aktif")
+    .select("local_id, user_id, sekolah_uuid, nama, nip, jabatan, absen_token, status_aktif")
     .eq("absen_token", token)
     .maybeSingle();
   if (!g || g.status_aktif === false) return null;
   return g;
 }
 
-async function getSekolahForUser(supabase, userId, sekolahLocalId) {
-  // sekolah hidup di cloud_schools shared antara Siswa & Guru
-  const { data } = await supabase
-    .from("cloud_schools")
-    .select("nama, lat, lng, radius_meter, jam_masuk_standar, jam_pulang_standar, toleransi_terlambat_menit")
-    .eq("user_id", userId)
-    .eq("local_id", sekolahLocalId)
-    .maybeSingle();
-  return data || null;
-}
-
-// Fitur GPS/radius hanya untuk sekolah PRO/masa coba (dicatat admin di cloud_guru_sekolah.paket).
-// Paket kosong = data lama → tetap GPS. hari_aktif = hari kerja (0=Min … 6=Sab).
-async function getPaketSekolah(supabase, userId) {
-  const { data } = await supabase
+// Setelan & paket sekolah dari cloud_guru_sekolah milik guru ini (paket dihitung server, lihat 00312).
+async function getSekolah(supabase, g) {
+  const q = supabase
     .from("cloud_guru_sekolah")
-    .select("paket, paket_sampai, hari_aktif, libur")
-    .eq("owner_user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  const gps = !data?.paket || (data.paket === "PRO" && (!data.paket_sampai || data.paket_sampai > Date.now()));
-  const hari = String(data?.hari_aktif || "1,2,3,4,5,6").split(",").map(Number);
-  const hariIni = todayWIB();
-  // libur = tanggal libur kalender sekolah (dikirim admin), dipisah koma.
-  const hariKerja = hari.includes(new Date(`${hariIni}T00:00:00Z`).getUTCDay())
-    && !String(data?.libur || "").split(",").includes(hariIni);
-  return { gps, hariKerja };
+    .select("id, nama, lat, lng, radius_meter, jam_masuk, jam_pulang, toleransi_menit, mulai_masuk, batas_pulang, hari_aktif, libur, paket, paket_sampai, tz_menit");
+  const { data } = await (g.sekolah_uuid ? q.eq("id", g.sekolah_uuid) : q.eq("owner_user_id", g.user_id)).limit(1).maybeSingle();
+  if (!data) return null;
+  const { tanggal } = waktuSekolah(data.tz_menit);
+  const hari = String(data.hari_aktif || "1,2,3,4,5,6").split(",").map(Number);
+  return {
+    ...data,
+    // GPS/radius hanya untuk PRO & masa coba.
+    gps: data.paket === "PRO" && (!data.paket_sampai || data.paket_sampai > Date.now()),
+    hariKerja: hari.includes(new Date(`${tanggal}T00:00:00Z`).getUTCDay())
+      && !String(data.libur || "").split(",").includes(tanggal),
+    jamMasuk: data.jam_masuk || "07:00",
+    jamPulang: data.jam_pulang || "15:00",
+    toleransi: data.toleransi_menit ?? 15,
+    radius: data.radius_meter ?? 100,
+  };
 }
 
 async function getAttendanceToday(supabase, userId, guruId, tanggal) {
   const { data } = await supabase
     .from("cloud_guru_attendance")
-    .select("local_id, jam_masuk, jam_pulang, status_masuk, status_pulang, jarak_masuk_meter, jarak_pulang_meter, selfie_masuk_url, selfie_pulang_url")
+    .select("local_id, sekolah_uuid, jam_masuk, jam_pulang, status_masuk, status_pulang, jarak_masuk_meter, jarak_pulang_meter, selfie_masuk_url, selfie_pulang_url")
     .eq("user_id", userId)
     .eq("guru_id", guruId)
     .eq("tanggal", tanggal)
@@ -156,35 +147,37 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const supabase = getSupabase();
-  // Satu sekolah bisa satu IP (WiFi); batas longgar, cukup menahan tebak-tebak token.
-  if (await rateLimited(supabase, `clockin:${clientIp(req)}`, 120, 600)) {
+  // Satu sekolah sering satu IP (WiFi), jadi batas IP longgar; batas ketat per token.
+  if (await rateLimited(supabase, `clockin:${clientIp(req)}`, 600, 600)) {
     return res.status(429).json({ error: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." });
   }
 
   if (req.method === "GET") {
     const token = String(req.query.token || "").trim();
     if (!token) return res.status(400).json({ error: "Token wajib" });
+    if (await rateLimited(supabase, `clockin-t:${token}`, 30, 600)) {
+      return res.status(429).json({ error: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." });
+    }
 
     const g = await findGuruByToken(supabase, token);
-    if (!g) return res.status(404).json({ error: "Link tidak valid — token tidak ditemukan atau akun dihapus" });
+    if (!g) return res.status(404).json({ error: "Link tidak valid. Token tidak ditemukan atau akun dihapus" });
 
-    const sekolah = await getSekolahForUser(supabase, g.user_id, g.sekolah_id);
-    const tanggal = todayWIB();
+    const sekolah = await getSekolah(supabase, g);
+    const { tanggal } = waktuSekolah(sekolah?.tz_menit);
     const att = await getAttendanceToday(supabase, g.user_id, g.local_id, tanggal);
-    const { gps, hariKerja } = await getPaketSekolah(supabase, g.user_id);
 
     return res.status(200).json({
-      gps,
-      hariKerja,
+      gps: sekolah ? sekolah.gps : false,
+      hariKerja: sekolah ? sekolah.hariKerja : false,
       guru: { id: g.local_id, nama: g.nama, nip: g.nip, jabatan: g.jabatan },
       sekolah: sekolah ? {
         nama: sekolah.nama,
         lat: sekolah.lat,
         lng: sekolah.lng,
-        radiusMeter: sekolah.radius_meter ?? 100,
-        jamMasukStandar: sekolah.jam_masuk_standar ?? "07:00",
-        jamPulangStandar: sekolah.jam_pulang_standar ?? "13:00",
-        toleransiTerlambatMenit: sekolah.toleransi_terlambat_menit ?? 15,
+        radiusMeter: sekolah.radius,
+        jamMasukStandar: sekolah.jamMasuk,
+        jamPulangStandar: sekolah.jamPulang,
+        toleransiTerlambatMenit: sekolah.toleransi,
       } : { nama: "Sekolah" },
       tanggal,
       existing: att ? {
@@ -217,42 +210,48 @@ export default async function handler(req, res) {
     if (!token || !["in", "out"].includes(action)) {
       return res.status(400).json({ error: "Parameter tidak lengkap" });
     }
+    if (await rateLimited(supabase, `clockin-t:${token}`, 30, 600)) {
+      return res.status(429).json({ error: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi." });
+    }
 
     const g = await findGuruByToken(supabase, token);
     if (!g) return res.status(404).json({ error: "Token tidak valid" });
-    const { gps, hariKerja } = await getPaketSekolah(supabase, g.user_id);
+    const sekolah = await getSekolah(supabase, g);
+    if (!sekolah) return res.status(400).json({ error: "Sekolah belum terhubung ke cloud" });
+    const { gps, hariKerja, radius, jamMasuk, jamPulang, toleransi } = sekolah;
     if (gps && (!isFinite(lat) || !isFinite(lng))) return res.status(400).json({ error: "Lokasi wajib diisi" });
     if (!hariKerja) return res.status(400).json({ error: "Hari ini libur, presensi tidak dibuka" });
 
-    const sekolah = await getSekolahForUser(supabase, g.user_id, g.sekolah_id);
-    const tanggal = todayWIB();
-    const jam = hhmmssWIB();
-    const radius = sekolah?.radius_meter ?? 100;
-    const jamStandar = (action === "in" ? sekolah?.jam_masuk_standar : sekolah?.jam_pulang_standar) ?? (action === "in" ? "07:00" : "13:00");
-    const toleransi = sekolah?.toleransi_terlambat_menit ?? 15;
+    const { tanggal, jam } = waktuSekolah(sekolah.tz_menit);
+    const hhmm = jam.slice(0, 5);
+    const existing = await getAttendanceToday(supabase, g.user_id, g.local_id, tanggal);
+
+    // Jendela & urutan sama dengan aplikasi (jendelaPresensi): masuk boleh diulang sebelum pulang.
+    if (action === "in") {
+      const mulai = sekolah.mulai_masuk || addMinutes(jamMasuk, -60);
+      if (hhmm < mulai) return res.status(400).json({ error: `Presensi masuk baru dibuka jam ${mulai}` });
+      if (existing?.jam_pulang) return res.status(400).json({ error: "Sudah presensi pulang hari ini" });
+    } else {
+      const batas = sekolah.batas_pulang || addMinutes(jamPulang, 180);
+      if (hhmm > batas) return res.status(400).json({ error: `Presensi pulang sudah ditutup jam ${batas}` });
+      if (!existing?.jam_masuk) return res.status(400).json({ error: "Belum presensi masuk hari ini" });
+    }
 
     let jarakMeter = 0;
-    if (gps && sekolah?.lat != null && sekolah?.lng != null) {
+    if (gps && sekolah.lat != null && sekolah.lng != null) {
       jarakMeter = Math.round(haversineMeters(lat, lng, sekolah.lat, sekolah.lng));
     }
 
     let status;
-    if (gps && sekolah?.lat != null && jarakMeter > radius) status = "FAR";
-    else if (action === "in") {
-      const cutoff = addMinutes(jamStandar, toleransi);
-      status = jam.slice(0, 5) <= cutoff ? "ONTIME" : "LATE";
-    } else {
-      status = "ONTIME";
-    }
+    if (gps && sekolah.lat != null && jarakMeter > radius) status = "FAR";
+    else if (action === "in") status = hhmm <= addMinutes(jamMasuk, toleransi) ? "ONTIME" : "LATE";
+    else status = hhmm < jamPulang ? "LATE" : "ONTIME"; // LATE untuk pulang = pulang cepat (EARLY)
 
-    // Upload selfie bila ada — bucket privat `selfie-guru`, path <sekolah_uuid>/<user_id>/…
-    // supaya terbaca admin (signed URL) dan ikut dihapus hapus-foto-lama setelah 7 hari.
+    // Selfie ke bucket privat `selfie-guru`, path <sekolah_uuid>/<user_id>/… (dibaca admin, dihapus setelah 7 hari).
     let selfieUrl = null;
     const sel = files.selfie;
     if (sel && sel.data && sel.data.length > 0) {
-      const { data: sk } = await supabase.from("cloud_guru_sekolah").select("id").eq("owner_user_id", g.user_id).limit(1).maybeSingle();
-      if (!sk?.id) return res.status(500).json({ error: "Sekolah belum terhubung ke cloud" });
-      const path = `${sk.id}/${g.user_id}/${tanggal}-${action === "in" ? "masuk" : "pulang"}-g${g.local_id}.jpg`;
+      const path = `${sekolah.id}/${g.user_id}/${tanggal}-${action === "in" ? "masuk" : "pulang"}-g${g.local_id}.jpg`;
       const { error: upErr } = await supabase.storage
         .from("selfie-guru")
         .upload(path, sel.data, { contentType: "image/jpeg", upsert: true });
@@ -260,12 +259,11 @@ export default async function handler(req, res) {
       selfieUrl = path;
     }
 
-    // Upsert record
-    const existing = await getAttendanceToday(supabase, g.user_id, g.local_id, tanggal);
     const localId = existing?.local_id ?? Date.now() + Math.floor(Math.random() * 1000);
     const now = Date.now();
     const payload = {
       user_id: g.user_id,
+      sekolah_uuid: sekolah.id,
       local_id: localId,
       guru_id: g.local_id,
       tanggal,
@@ -307,7 +305,7 @@ export default async function handler(req, res) {
       ok: true,
       tanggal,
       jam,
-      status,
+      status: status === "LATE" && action === "out" ? "EARLY" : status,
       jarakMeter,
       selfieUrl,
       action,
