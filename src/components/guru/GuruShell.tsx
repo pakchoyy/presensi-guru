@@ -17,6 +17,7 @@ import { usePengingatAbsen } from "@/hooks/usePengingatAbsen";
 import { todayStr } from "@/lib/utils";
 import { guruCloud } from "@/services/multi-perangkat.service";
 import { showConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { AvatarGuru } from "@/components/shared/AvatarGuru";
 
 type GuruTab = "dashboard" | "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk" | "tentang";
 
@@ -119,14 +120,11 @@ export function GuruShell() {
               <div className="text-[1rem] font-extrabold text-white whitespace-nowrap">
                 <span className="italic">Presensi Yuk</span> <span className="opacity-95">| Guru</span>
               </div>
-              {guru?.nama && (
-                <div className="text-[0.62rem] text-white/80 truncate flex items-center gap-1 mt-[1px]">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-300" />
-                  {guru.nama}
-                </div>
-              )}
             </div>
           </div>
+          <button onClick={() => setTab("profil")} aria-label="Profil" className="mr-2 p-0 border-none bg-transparent rounded-full flex-shrink-0 cursor-pointer" style={{ boxShadow: "0 0 0 2px rgba(255,255,255,.6)" }}>
+            <AvatarGuru id={guru?.id} nama={guru?.nama} size={34} />
+          </button>
           <button
             onClick={toggleDarkMode}
             className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25"

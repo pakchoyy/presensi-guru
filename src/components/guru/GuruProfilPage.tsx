@@ -1,7 +1,9 @@
 import { labelPeran } from "@/lib/utils";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { LogOut, Clock, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell } from "lucide-react";
+import { LogOut, Clock, IdCard, KeyRound, Briefcase, School as SchoolIcon, Hash, UserRound, Eye, EyeOff, Bell, Camera } from "lucide-react";
+import { kompresFoto } from "@/lib/foto";
+import { setFotoProfil, useFotoProfil } from "@/lib/foto-profil";
 import { useToast } from "@/components/shared/Toast";
 import type { KontrolPengingat } from "@/hooks/usePengingatAbsen";
 
@@ -16,6 +18,15 @@ export function GuruProfilPage({
   const { teachers, guruSessionId, school } = useApp();
   const [lihatPin, setLihatPin] = useState(false);
   const guru = teachers.find((t) => t.id === guruSessionId);
+  const foto = useFotoProfil(guru?.id);
+
+  const gantiFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f || !guru) return;
+    try { setFotoProfil(guru.id, await kompresFoto(f, 256, 0.8)); toast("Foto profil diganti (disimpan di HP ini)", "success"); }
+    catch { toast("Foto tidak bisa dibaca", "error"); }
+  };
 
   if (!guru) {
     return <div className="flex-1 p-8 text-center text-[var(--text-light)]">Sesi berakhir. Silakan masuk ulang.</div>;
@@ -32,10 +43,19 @@ export function GuruProfilPage({
       >
         <span className="header-orb" style={{ width: 140, height: 140, top: -40, right: -30 }} />
         <div className="relative">
-          {/* Avatar ikon pegawai */}
-          <div className="w-24 h-24 mx-auto rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
-            <UserRound size={58} strokeWidth={1.6} className="text-[var(--brand)] translate-y-1" />
+          {/* Avatar: foto profil lokal, ketuk kamera untuk mengganti */}
+          <div className="relative w-24 h-24 mx-auto">
+            <div className="w-24 h-24 rounded-full bg-white shadow-lg flex items-center justify-center overflow-hidden">
+              {foto ? <img src={foto} alt="Foto profil" className="w-full h-full object-cover" /> : <UserRound size={58} strokeWidth={1.6} className="text-[var(--brand)] translate-y-1" />}
+            </div>
+            <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-[var(--brand)] border-2 border-white text-white flex items-center justify-center cursor-pointer active:scale-95" aria-label="Ganti foto profil">
+              <Camera size={16} />
+              <input type="file" accept="image/*" onChange={gantiFoto} className="hidden" />
+            </label>
           </div>
+          {foto && (
+            <button onClick={() => setFotoProfil(guru.id, null)} className="mt-2 text-[0.68rem] underline opacity-90 bg-transparent border-none text-white cursor-pointer">Hapus foto</button>
+          )}
           <div className="text-[1.15rem] font-extrabold mt-3">{guru.nama}</div>
           <div className="text-[0.78rem] opacity-90">{labelPeran(guru) || guru.jabatan || "Guru"}</div>
         </div>

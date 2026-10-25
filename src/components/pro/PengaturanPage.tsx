@@ -17,6 +17,9 @@ import { jendelaPresensi } from "@/services/teacher-attendance.service";
 import { supabase } from "@/lib/supabase";
 import { OtpVerify } from "@/components/auth/OtpVerify";
 import { PetaPro } from "@/components/attendance/PetaPro";
+import { AvatarGuru } from "@/components/shared/AvatarGuru";
+import { kompresFoto } from "@/lib/foto";
+import { setFotoProfil } from "@/lib/foto-profil";
 import {
   Settings,
   ArrowUpCircle,
@@ -42,6 +45,7 @@ import {
   Smartphone,
   X,
   MapPin,
+  Camera,
   Lock,
   Target,
   Save,
@@ -602,12 +606,24 @@ export function PengaturanPage() {
         </div>
 
         <div className="flex items-center gap-3 mb-2">
-          <div
-            className="w-10 h-10 rounded-full text-white flex items-center justify-center font-bold text-[0.9rem]"
-            style={{ background: "linear-gradient(135deg,#3b82f6,#2563eb,#1d4ed8)" }}
-          >
-            {teacher?.nama?.charAt(0)?.toUpperCase() || "G"}
-          </div>
+          <label className="relative cursor-pointer flex-shrink-0" aria-label="Ganti foto profil">
+            <AvatarGuru id={teacher?.id} nama={teacher?.nama} size={40} />
+            <span className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full bg-[#2563eb] border-2 border-[var(--card-bg)] text-white flex items-center justify-center">
+              <Camera size={9} />
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f || !teacher) return;
+                try { setFotoProfil(teacher.id, await kompresFoto(f, 256, 0.8)); toast("Foto profil diganti (disimpan di HP ini)"); }
+                catch { toast("Foto tidak bisa dibaca"); }
+              }}
+            />
+          </label>
           <div>
             <div className="text-[0.85rem] font-bold text-[var(--text)]">{teacher?.nama}</div>
             <div className="text-[0.7rem] text-[var(--text-light)]">{teacher?.email}</div>

@@ -6,6 +6,7 @@ import { DropdownMenu } from "@/components/layout/DropdownMenu";
 import { SyncIndicator } from "@/components/layout/SyncIndicator";
 import { LicenseExpiryBadge } from "@/components/layout/LicenseExpiryBadge";
 import { Moon, Sun, Menu } from "lucide-react";
+import { AvatarGuru } from "@/components/shared/AvatarGuru";
 
 export function Header() {
   const { darkMode, toggleDarkMode, setupSelesai, teacher } = useApp();
@@ -53,6 +54,7 @@ export function Header() {
         <div className="flex items-center gap-[5px] flex-shrink-0 relative">
           <SyncIndicator />
           <LicenseExpiryBadge />
+          {setupSelesai && teacher && <AvatarGuru id={teacher.id} nama={teacher.nama} size={34} className="hidden sm:inline-flex" />}
           <button
             onClick={toggleDarkMode}
             className="h-[34px] w-[34px] rounded-[10px] border-[1.5px] border-white/30 bg-white/15 text-white flex items-center justify-center flex-shrink-0 active:bg-white/25 cursor-pointer"

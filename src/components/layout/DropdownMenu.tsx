@@ -4,6 +4,7 @@ import { licenseService } from "@/services/license.service";
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
+import { AvatarGuru } from "@/components/shared/AvatarGuru";
 import { PageName, Tier } from "@/types/enums";
 import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Repeat, Gift } from "lucide-react";
 
@@ -50,6 +51,18 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
         className="absolute top-[calc(100%+8px)] right-0 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl z-[400] min-w-[200px] overflow-hidden"
         style={{ boxShadow: "var(--shadow-lg)" }}
       >
+        {teacher && (
+          <button
+            onClick={() => { setActivePage(PageName.PENGATURAN); onClose(); }}
+            className="w-full flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-transparent border-x-0 border-t-0 cursor-pointer text-left"
+          >
+            <AvatarGuru id={teacher.id} nama={teacher.nama} size={34} />
+            <span className="min-w-0">
+              <span className="block text-[0.83rem] font-bold text-[var(--text)] truncate">{teacher.nama}</span>
+              <span className="block text-[0.65rem] text-[var(--text-light)]">Admin · ubah foto di Pengaturan</span>
+            </span>
+          </button>
+        )}
         <button
           onClick={() => { setActivePage(PageName.PETUNJUK); onClose(); }}
           className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors border-none bg-transparent cursor-pointer text-left"
@@ -139,8 +152,21 @@ export function DropdownMenu({ isOpen, onClose }: Props) {
   );
 }
 
-/** Tampilkan prompt install PWA; kalau browser tidak menyediakannya, beri petunjuk manual. */
+const KUNCI_TERPASANG = "bgy_guru_terpasang";
+
+/** Sudah dibuka sebagai aplikasi terpasang, atau pernah menerima event appinstalled di HP ini. */
+export function sudahTerpasang(): boolean {
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+  try {
+    if (standalone) localStorage.setItem(KUNCI_TERPASANG, "1");
+    return standalone || localStorage.getItem(KUNCI_TERPASANG) === "1";
+  } catch { return standalone; }
+}
+window.addEventListener("appinstalled", () => { try { localStorage.setItem(KUNCI_TERPASANG, "1"); } catch { /* ignore */ } });
+
+/** Tampilkan prompt install PWA; kalau sudah terpasang beri tahu; kalau browser tidak menyediakannya, beri petunjuk manual. */
 export function pasangAplikasi(toast: (pesan: string) => void) {
+  if (sudahTerpasang()) { toast("Aplikasi sudah terpasang di HP ini"); return; }
   const promptEv = (window as any).__bgy_deferredPrompt as BeforeInstallPromptEvent | undefined;
   if (promptEv) {
     promptEv.prompt();
