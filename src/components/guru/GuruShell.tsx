@@ -7,6 +7,7 @@ import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
 import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard, Bug } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
 import { DashboardHarianPage } from "@/components/attendance/DashboardHarianPage";
+import { RekapPage } from "@/components/reports/RekapPage";
 import { db } from "@/repositories/dexie/db";
 import { PetunjukPage } from "@/components/guide/PetunjukPage";
 import { TentangKontak } from "@/components/about/TentangKontak";
@@ -199,7 +200,8 @@ export function GuruShell() {
         )}
         {tab === "petunjuk" && <PetunjukPage />}
         {tab === "tentang" && <TentangKontak />}
-        {tab === "rekap" && <LogPresensiPage embedded />}
+        {/* Kepala Sekolah melihat rekap semua guru (lihat saja); guru biasa hanya dirinya. */}
+        {tab === "rekap" && (ks ? <RekapPage /> : <LogPresensiPage embedded />)}
         {tab === "profil" && <GuruProfilPage onLogout={keluar} reminder={reminder} />}
       </div>
 
