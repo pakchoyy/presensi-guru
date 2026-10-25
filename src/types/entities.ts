@@ -80,6 +80,8 @@ export interface TeacherAttendance {
   catatan?: string;
   /** Izin yang diajukan guru sendiri; kosong = dicatat admin (dianggap disetujui). */
   statusIzin?: "proses" | "disetujui" | "ditolak";
+  /** Lampiran foto izin (data URL lokal atau "sb:path" di Storage). */
+  izinFotoUrl?: string;
   diubahPada: number;
 }
 

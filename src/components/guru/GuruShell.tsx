@@ -173,7 +173,7 @@ export function GuruShell() {
         {tab === "presensi" && (
           <PresensiGuruPage embedded onLogout={keluar} onRiwayat={() => setTab("rekap")} />
         )}
-        {tab === "dashboard" && <DashboardHarianPage />}
+        {tab === "dashboard" && <DashboardHarianPage bolehUbah />}
         {tab === "izin" && <IzinGuruPage onSelesai={() => { setLogJenis("izin"); setTab("log"); }} />}
         {tab === "log" && (
           <>

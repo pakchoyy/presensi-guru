@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, LogIn, LogOut, MapPin, UserRound } from "lucide-react";
+import { CalendarDays, ClipboardList, LogIn, LogOut, MapPin, UserRound } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import type { TeacherAttendance } from "@/types/entities";
 import { formatTanggalPanjang } from "@/lib/utils";
 import { guruCloud } from "@/services/multi-perangkat.service";
+
+const ymdLokal = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 interface BarisLog {
   kunci: string;
@@ -41,20 +44,28 @@ export function LogAbsenPage() {
   const { guruSessionId, school } = useApp();
   const [records, setRecords] = useState<TeacherAttendance[]>([]);
   const [loading, setLoading] = useState(true);
+  // Log dibatasi 30 hari terakhir; rentang tanggal bisa dipersempit untuk mencari cepat.
+  const hariIni = ymdLokal(new Date());
+  const batasAwal = ymdLokal(new Date(Date.now() - 30 * 24 * 3600 * 1000));
+  const [dari, setDari] = useState(batasAwal);
+  const [sampai, setSampai] = useState(hariIni);
 
   useEffect(() => {
     if (guruSessionId == null) return;
     setLoading(true);
-    // 60 hari terakhir sudah lebih dari cukup untuk "log" harian.
-    const akhir = new Date();
-    const mulai = new Date(akhir.getTime() - 60 * 24 * 3600 * 1000);
-    const ymd = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     teacherAttendanceRepo
-      .getRange(guruSessionId, ymd(mulai), ymd(akhir))
+      .getRange(guruSessionId, dari, sampai)
       .then(setRecords)
       .finally(() => setLoading(false));
-  }, [guruSessionId]);
+  }, [guruSessionId, dari, sampai]);
+
+  const atur = (d: string, s: string) => {
+    const dd = d < batasAwal ? batasAwal : d;
+    const ss = s > hariIni ? hariIni : s;
+    setDari(dd);
+    setSampai(ss < dd ? dd : ss);
+  };
+  const hariMundur = (n: number) => ymdLokal(new Date(Date.now() - n * 24 * 3600 * 1000));
 
   const baris = useMemo(() => {
     const out: BarisLog[] = [];
@@ -107,7 +118,37 @@ export function LogAbsenPage() {
           <ClipboardList size={16} /> Log Presensi
         </div>
         <div className="text-[0.63rem] text-[var(--text-light)] mt-1">
-          Aktivitas presensi datang &amp; pulang Anda, 60 hari terakhir.
+          Aktivitas presensi datang &amp; pulang Anda, 30 hari terakhir.
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {([["Dari", dari, (v: string) => atur(v, sampai)], ["Sampai", sampai, (v: string) => atur(dari, v)]] as const).map(([l, v, set]) => (
+            <label key={l} className="flex flex-col gap-1 text-[0.62rem] font-bold text-[var(--text-light)]">
+              <span className="flex items-center gap-1"><CalendarDays size={11} /> {l}</span>
+              <input
+                type="date"
+                value={v}
+                min={batasAwal}
+                max={hariIni}
+                onChange={(e) => e.target.value && set(e.target.value)}
+                className="px-2 py-[7px] rounded-lg border-[1.5px] border-[var(--border)] bg-[var(--input-bg)] text-[var(--text)] text-[0.8rem] font-[inherit] outline-none"
+              />
+            </label>
+          ))}
+        </div>
+        <div className="flex gap-2 mt-2">
+          {([["Hari ini", 0], ["7 hari", 7], ["30 hari", 30]] as const).map(([l, n]) => (
+            <button
+              key={l}
+              onClick={() => atur(hariMundur(n), hariIni)}
+              className={`px-3 py-[5px] rounded-full text-[0.68rem] font-bold border-[1.5px] cursor-pointer ${
+                dari === hariMundur(n) && sampai === hariIni
+                  ? "bg-[var(--brand)] text-white border-transparent"
+                  : "bg-[var(--card-bg)] text-[var(--text)] border-[var(--border)]"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
         </div>
       </div>
 

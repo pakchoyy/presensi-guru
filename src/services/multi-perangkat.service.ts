@@ -78,6 +78,7 @@ export interface IzinSekolah {
   statusHari?: TeacherAttendance["statusHari"];
   statusIzin: "proses" | "disetujui" | "ditolak";
   catatan?: string;
+  fotoUrl?: string;
 }
 
 interface BarisAbsen {
@@ -90,6 +91,7 @@ interface BarisAbsen {
   jam_pulang: string | null;
   selfie_masuk_url: string | null;
   selfie_pulang_url: string | null;
+  izin_foto_url?: string | null;
   verifikasi_masuk: boolean | null;
   verifikasi_pulang: boolean | null;
   lokasi_masuk_lat: number | null;
@@ -133,7 +135,7 @@ function keBarisAbsen(
   rec: TeacherAttendance,
   userId: string,
   sekolahUuid: string,
-  selfie: { masuk: string | null; pulang: string | null },
+  selfie: { masuk: string | null; pulang: string | null; izin?: string | null },
 ): BarisAbsen {
   return {
     user_id: userId,
@@ -145,6 +147,7 @@ function keBarisAbsen(
     jam_pulang: n(rec.jamPulang),
     selfie_masuk_url: selfie.masuk,
     selfie_pulang_url: selfie.pulang,
+    izin_foto_url: selfie.izin ?? null,
     verifikasi_masuk: n(rec.verifikasiWajahMasuk),
     verifikasi_pulang: n(rec.verifikasiWajahPulang),
     lokasi_masuk_lat: n(rec.lokasiMasukLat),
@@ -174,6 +177,7 @@ function dariBarisAbsen(row: BarisAbsen, guruId: number): TeacherAttendance {
     jamPulang: u(row.jam_pulang),
     selfieMasukUrl: selfie(row.selfie_masuk_url),
     selfiePulangUrl: selfie(row.selfie_pulang_url),
+    izinFotoUrl: selfie(row.izin_foto_url ?? null),
     verifikasiWajahMasuk: u(row.verifikasi_masuk),
     verifikasiWajahPulang: u(row.verifikasi_pulang),
     lokasiMasukLat: u(row.lokasi_masuk_lat),
@@ -200,6 +204,7 @@ async function gabungKeLokal(dariCloud: TeacherAttendance): Promise<boolean> {
     ...dariCloud,
     selfieMasukUrl: pakaiLokal(lokal?.selfieMasukUrl, dariCloud.selfieMasukUrl),
     selfiePulangUrl: pakaiLokal(lokal?.selfiePulangUrl, dariCloud.selfiePulangUrl),
+    izinFotoUrl: pakaiLokal(lokal?.izinFotoUrl, dariCloud.izinFotoUrl),
   });
   return true;
 }
@@ -416,7 +421,7 @@ export const guruCloud = {
     const path = (v?: string) => (v?.startsWith(PREFIX_STORAGE) ? v.slice(PREFIX_STORAGE.length) : null);
     const { error } = await supabaseGuru
       .from("cloud_guru_attendance")
-      .upsert(keBarisAbsen(rec, g.user_id, info.sekolahUuid, { masuk: path(rec.selfieMasukUrl), pulang: path(rec.selfiePulangUrl) }), {
+      .upsert(keBarisAbsen(rec, g.user_id, info.sekolahUuid, { masuk: path(rec.selfieMasukUrl), pulang: path(rec.selfiePulangUrl), izin: path(rec.izinFotoUrl) }), {
         onConflict: "user_id,tanggal",
       });
     return error ? "tertunda" : "terkirim";
@@ -444,22 +449,24 @@ export const guruCloud = {
     info: InfoPerangkatGuru,
     url: string | undefined,
     tanggal: string,
-    jenis: "masuk" | "pulang",
+    jenis: "masuk" | "pulang" | "izin",
   ): Promise<string | null> {
     if (!url) return null;
     if (url.startsWith(PREFIX_STORAGE)) return url.slice(PREFIX_STORAGE.length);
     if (!url.startsWith("data:")) return null;
 
+    // Path tetap per hari (foto ulang menimpa); tanda foto membedakan foto baru dari yang sudah terunggah.
     const path = `${info.sekolahUuid}/${info.uid}/${tanggal}-${jenis}.jpg`;
+    const tanda = `${path}#${url.length}:${url.slice(-24)}`;
     const sudah = bacaJson<string[]>(KUNCI_TERUNGGAH, []);
-    if (sudah.includes(path)) return path;
+    if (sudah.includes(tanda)) return path;
 
     const blob = await dataUrlKeBlob(url);
     const { error } = await supabaseGuru.storage
       .from(BUCKET)
       .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
     if (error) throw error;
-    tulisJson(KUNCI_TERUNGGAH, [...sudah.slice(-200), path]);
+    tulisJson(KUNCI_TERUNGGAH, [...sudah.slice(-200), tanda]);
     return path;
   },
 
@@ -480,10 +487,11 @@ export const guruCloud = {
 
       const masuk = await this.unggahSelfie(info, rec.selfieMasukUrl, rec.tanggal, "masuk");
       const pulang = await this.unggahSelfie(info, rec.selfiePulangUrl, rec.tanggal, "pulang");
+      const izin = await this.unggahSelfie(info, rec.izinFotoUrl, rec.tanggal, "izin");
 
       const { error } = await supabaseGuru
         .from("cloud_guru_attendance")
-        .upsert(keBarisAbsen(rec, info.uid, info.sekolahUuid, { masuk, pulang }), {
+        .upsert(keBarisAbsen(rec, info.uid, info.sekolahUuid, { masuk, pulang, izin }), {
           onConflict: "user_id,tanggal",
         });
       if (error) throw error;
@@ -666,7 +674,7 @@ export const adminCloud = {
 
     try {
       // Selfie dari perangkat bersama masih data URL → unggah atas nama admin.
-      const unggah = async (v: string | undefined, jenis: "masuk" | "pulang") => {
+      const unggah = async (v: string | undefined, jenis: "masuk" | "pulang" | "izin") => {
         if (!v) return null;
         if (v.startsWith(PREFIX_STORAGE)) return v.slice(PREFIX_STORAGE.length);
         if (!v.startsWith("data:")) return null;
@@ -679,10 +687,11 @@ export const adminCloud = {
       };
       const masuk = await unggah(rec.selfieMasukUrl, "masuk");
       const pulang = await unggah(rec.selfiePulangUrl, "pulang");
+      const izin = await unggah(rec.izinFotoUrl, "izin");
 
       const { error } = await supabase
         .from("cloud_guru_attendance")
-        .upsert(keBarisAbsen(rec, akun.userId, sekolah.id, { masuk, pulang }), {
+        .upsert(keBarisAbsen(rec, akun.userId, sekolah.id, { masuk, pulang, izin }), {
           onConflict: "user_id,tanggal",
         });
       if (error) throw error;

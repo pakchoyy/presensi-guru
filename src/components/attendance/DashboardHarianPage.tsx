@@ -62,7 +62,8 @@ function bucketFor(att?: TeacherAttendance): Bucket {
   return "hadir";
 }
 
-export function DashboardHarianPage() {
+/** bolehUbah: hanya Kepala Sekolah; Admin hanya melihat. */
+export function DashboardHarianPage({ bolehUbah = false }: { bolehUbah?: boolean } = {}) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [tanggal, setTanggal] = useState<string>(ymd(new Date()));
@@ -204,7 +205,7 @@ export function DashboardHarianPage() {
   return (
     <div className="flex-1 px-[14px] pt-[14px] pb-[calc(90px+var(--ticker-h,0px))] lg:pb-4">
       <AnnouncementCard />
-      <PersetujuanIzin onBerubah={() => load()} />
+      <PersetujuanIzin bolehUbah={bolehUbah} onBerubah={() => load()} />
       {/* Date pager */}
       <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-[10px] mb-3 flex items-center gap-2" style={{ boxShadow: "var(--shadow)" }}>
         <button
@@ -297,8 +298,8 @@ export function DashboardHarianPage() {
           return (
             <div
               key={guru.id}
-              onClick={() => setEditGuru(guru)}
-              className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3 relative overflow-hidden cursor-pointer hover:border-[var(--brand)] transition-colors"
+              onClick={bolehUbah ? () => setEditGuru(guru) : undefined}
+              className={`bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-3 flex items-center gap-3 relative overflow-hidden transition-colors ${bolehUbah ? "cursor-pointer hover:border-[var(--brand)]" : ""}`}
               style={{ boxShadow: "var(--shadow)" }}
             >
               <span className="absolute left-0 top-0 bottom-0 w-[4px]" style={{ background: c.dot }} />
@@ -335,7 +336,7 @@ export function DashboardHarianPage() {
         })}
       </div>
 
-      {editGuru && (
+      {bolehUbah && editGuru && (
         <StatusSheet
           nama={editGuru.nama}
           tanggalLabel={formatTanggalPanjang(tanggal)}

@@ -3,16 +3,16 @@ import { Check, ChevronDown, FileText, Plus, X } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
-import { adminCloud, type IzinSekolah } from "@/services/multi-perangkat.service";
+import { adminCloud, guruCloud, type IzinSekolah } from "@/services/multi-perangkat.service";
 import { bacaJenis, IzinGuruPage } from "@/components/guru/IzinGuruPage";
 import type { TeacherAttendance } from "@/types/entities";
 import { addDays, formatTanggalPanjang, timestamp, todayStr } from "@/lib/utils";
 
 /**
- * Verifikasi izin di Dashboard (Admin & Kepala Sekolah): yang menunggu +
- * riwayat keputusan (31 hari terakhir), plus catat izin langsung.
+ * Verifikasi izin di Dashboard: yang menunggu + riwayat keputusan (31 hari terakhir).
+ * Hanya Kepala Sekolah (`bolehUbah`) yang bisa menyetujui/menolak & mencatat izin; Admin hanya melihat.
  */
-export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
+export function PersetujuanIzin({ onBerubah, bolehUbah = false }: { onBerubah?: () => void; bolehUbah?: boolean }) {
   const { teachers } = useApp();
   const { toast } = useToast();
   const [semua, setSemua] = useState<IzinSekolah[]>([]);
@@ -35,6 +35,7 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
         statusHari: r.statusHari,
         statusIzin: r.statusIzin!,
         catatan: r.catatan,
+        fotoUrl: r.izinFotoUrl,
       }));
     setSemua(daftar);
     // Ada yang menunggu → langsung terbuka supaya tidak terlewat.
@@ -76,7 +77,7 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
         <span className="flex-1 min-w-0">
           <span className="block font-bold text-[0.88rem] text-[var(--text)]">Verifikasi Izin</span>
           <span className="block text-[0.66rem] text-[var(--text-light)]">
-            {menunggu.length ? `${menunggu.length} pengajuan menunggu keputusan` : "Tidak ada pengajuan menunggu"}
+            {menunggu.length ? `${menunggu.length} pengajuan menunggu ${bolehUbah ? "keputusan" : "Kepala Sekolah"}` : "Tidak ada pengajuan menunggu"}
           </span>
         </span>
         {menunggu.length > 0 && (
@@ -102,12 +103,12 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
               </button>
             ))}
           </div>
-          <button
+          {bolehUbah && <button
               onClick={() => setCatatUntuk(0)}
               className="w-full mb-2 py-[8px] rounded-xl border-[1.5px] border-dashed border-[var(--brand)] text-[var(--brand)] bg-transparent text-[0.78rem] font-bold flex items-center justify-center gap-1 active:scale-95"
             >
               <Plus size={14} /> Catat izin (termasuk untuk diri sendiri)
-            </button>
+            </button>}
           {tampil.length === 0 && (
             <div className="py-4 text-center text-[0.75rem] text-[var(--text-light)]">
               {lihat === "menunggu" ? "Semua pengajuan sudah diputuskan." : "Belum ada izin yang diputuskan."}
@@ -123,7 +124,12 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
                     <div className="text-[0.66rem] text-[var(--text-light)]">{formatTanggalPanjang(r.tanggal)}</div>
                     {keterangan && <div className="text-[0.68rem] text-[var(--text)] break-words">{keterangan}</div>}
                   </div>
-                  {r.statusIzin === "proses" ? (
+                  {r.fotoUrl && <FotoIzin nilai={r.fotoUrl} />}
+                  {r.statusIzin === "proses" && !bolehUbah ? (
+                    <span className="px-3 py-1 rounded-full text-[0.66rem] font-bold text-white flex-shrink-0" style={{ background: "#f59e0b" }}>
+                      Menunggu
+                    </span>
+                  ) : r.statusIzin === "proses" ? (
                     <>
                       <button
                         onClick={() => putuskan(r, "ditolak")}
@@ -190,5 +196,29 @@ export function PersetujuanIzin({ onBerubah }: { onBerubah?: () => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Lampiran foto izin: thumbnail, ketuk untuk memperbesar. Nilai bisa data URL lokal atau path Storage ("sb:..."). */
+function FotoIzin({ nilai }: { nilai: string }) {
+  const [src, setSrc] = useState<string | null>(nilai.startsWith("sb:") ? null : nilai);
+  const [besar, setBesar] = useState(false);
+  useEffect(() => {
+    let batal = false;
+    if (nilai.startsWith("sb:")) guruCloud.urlSelfie(nilai).then((u) => { if (!batal) setSrc(u); }).catch(() => {});
+    return () => { batal = true; };
+  }, [nilai]);
+  if (!src) return null;
+  return (
+    <>
+      <button onClick={() => setBesar(true)} aria-label="Lihat lampiran foto" className="w-11 h-11 rounded-lg overflow-hidden border border-[var(--border)] flex-shrink-0 p-0 bg-transparent">
+        <img src={src} alt="" className="w-full h-full object-cover" />
+      </button>
+      {besar && (
+        <div className="fixed inset-0 z-[950] bg-black/85 flex items-center justify-center p-4" onClick={() => setBesar(false)}>
+          <img src={src} alt="Lampiran izin" className="max-w-full max-h-full rounded-xl" />
+        </div>
+      )}
+    </>
   );
 }
