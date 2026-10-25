@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { MapPin, Navigation, LocateFixed, School as SchoolIcon, UserRound, ExternalLink } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MapPin, Navigation, LocateFixed, UserRound, ExternalLink } from "lucide-react";
+import { metersPerPixel, offsetPx, pilihZoom } from "@/lib/peta-overlay";
+
+const TINGGI = 220;
 
 /**
- * Peta lokasi presensi: Google Maps embed (tanpa API key) + tombol "Buka di Maps".
- * Lingkaran radius tidak bisa digambar di embed, jadi radius & jarak ditulis di bawah peta.
+ * Peta lokasi presensi: Google Maps embed (tanpa API key) berpusat di sekolah, tidak bisa digeser,
+ * dengan lingkaran radius & ikon guru digambar di atasnya. Interaksi lewat tombol "Buka di Maps".
  */
 export function PetaLokasi({
   namaSekolah,
@@ -24,11 +27,21 @@ export function PetaLokasi({
   loading?: boolean;
   onRefresh?: () => void;
 }) {
-  // "sekolah" = titik sekolah; "saya" = titik posisi guru.
-  const [fokus, setFokus] = useState<"sekolah" | "saya">("sekolah");
   const radius = radiusMeter ?? 100;
-  const titik = fokus === "saya" && posisi ? posisi : { lat, lng };
-  const q = `${titik.lat},${titik.lng}`;
+  const kotak = useRef<HTMLDivElement>(null);
+  const [lebar, setLebar] = useState(0);
+  useEffect(() => {
+    const el = kotak.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setLebar(el.clientWidth));
+    ro.observe(el);
+    setLebar(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const z = lebar ? pilihZoom(lat, lng, radius, lebar, TINGGI, posisi) : 17;
+  const rPx = radius / metersPerPixel(lat, z);
+  const o = posisi ? offsetPx(lat, lng, posisi.lat, posisi.lng, z) : null;
+  const q = `${lat},${lng}`;
   const diDalam = jarakMeter != null ? jarakMeter <= radius : null;
 
   return (
@@ -56,15 +69,48 @@ export function PetaLokasi({
         )}
       </div>
 
-      <div className="relative isolate">
+      <div ref={kotak} className="relative isolate overflow-hidden" style={{ height: TINGGI }}>
         <iframe
-          key={q}
-          title={fokus === "saya" ? "Peta posisi Anda" : `Peta lokasi ${namaSekolah}`}
-          src={`https://maps.google.com/maps?q=${q}&z=17&output=embed`}
+          key={`${q}-${z}`}
+          title={`Peta lokasi ${namaSekolah}`}
+          src={`https://maps.google.com/maps?q=${q}&z=${z}&output=embed`}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          className="block h-[220px] w-full border-0 bg-[var(--input-bg)]"
+          tabIndex={-1}
+          className="block w-full border-0 bg-[var(--input-bg)] pointer-events-none"
+          style={{ height: TINGGI }}
         />
+        {lebar > 0 && (
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div
+              className="absolute rounded-full"
+              style={{
+                left: lebar / 2 - rPx,
+                top: TINGGI / 2 - rPx,
+                width: rPx * 2,
+                height: rPx * 2,
+                border: "2px solid #2563eb",
+                background: "rgba(59,130,246,0.18)",
+              }}
+            />
+            {o && (
+              <div
+                className="absolute flex items-center justify-center rounded-full text-white"
+                style={{
+                  left: lebar / 2 + o.x - 15,
+                  top: TINGGI / 2 + o.y - 15,
+                  width: 30,
+                  height: 30,
+                  background: "#eab308",
+                  border: "2.5px solid #fff",
+                  boxShadow: "0 2px 6px rgba(0,0,0,.35)",
+                }}
+              >
+                <UserRound size={16} strokeWidth={2.4} />
+              </div>
+            )}
+          </div>
+        )}
         <a
           href={`https://www.google.com/maps/search/?api=1&query=${q}`}
           target="_blank"
@@ -73,12 +119,6 @@ export function PetaLokasi({
         >
           Buka di Maps <ExternalLink size={12} />
         </a>
-        {posisi && (
-          <div className="absolute right-2 top-2 z-10 flex rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-bg)] shadow">
-            <FokusBtn aktif={fokus === "sekolah"} onClick={() => setFokus("sekolah")} icon={<SchoolIcon size={12} />} label="Sekolah" />
-            <FokusBtn aktif={fokus === "saya"} onClick={() => setFokus("saya")} icon={<UserRound size={12} />} label="Saya" />
-          </div>
-        )}
       </div>
 
       <div className="flex items-center gap-2 px-3 py-[10px] border-t border-[var(--border)]">
@@ -103,28 +143,5 @@ export function PetaLokasi({
         )}
       </div>
     </div>
-  );
-}
-
-function FokusBtn({
-  aktif,
-  onClick,
-  icon,
-  label,
-}: {
-  aktif: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-2 py-[5px] text-[0.6rem] font-bold flex items-center gap-1 border-none ${
-        aktif ? "bg-[var(--brand)] text-white" : "bg-transparent text-[var(--text-light)]"
-      }`}
-    >
-      {icon} {label}
-    </button>
   );
 }
