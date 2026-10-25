@@ -710,7 +710,7 @@ export function PengaturanPage() {
                   type="text"
                   value={kode}
                   onChange={(e) => setKode(e.target.value)}
-                  placeholder="BGY-PG-PLUS-… / BGY-PG-PRO-…"
+                  placeholder="BGY-PG-…"
                   className="flex-1 px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
                 />
                 {kode && (
@@ -785,7 +785,8 @@ export function PengaturanPage() {
                 className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit]"
               />
             </div>
-            <div className="mb-3">
+            <div className="grid grid-cols-[3fr_2fr] gap-2 mb-3">
+            <div className="min-w-0">
               <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">
                 <Key size={11} className="inline mr-1" /> Kode Lisensi
               </label>
@@ -797,8 +798,8 @@ export function PengaturanPage() {
                 className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
               />
             </div>
-            <div className="mb-3">
-              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase">Kode Referral (opsional)</label>
+            <div className="min-w-0">
+              <label className="block text-[0.65rem] font-bold text-[var(--text-light)] mb-1 uppercase truncate">Referral (opsional)</label>
               <input
                 type="text"
                 value={refCode}
@@ -807,6 +808,7 @@ export function PengaturanPage() {
                 maxLength={9}
                 className="w-full px-[10px] py-[9px] border-[1.5px] border-[var(--border)] rounded-[8px] text-[0.82rem] text-[var(--text)] bg-[var(--input-bg)] outline-none focus:border-[#2563eb] font-[inherit] uppercase"
               />
+            </div>
             </div>
             <button
               onClick={handleActivate}
@@ -820,10 +822,11 @@ export function PengaturanPage() {
           </div>
           
           {/* Login Device Lain */}
-          <div className="border-t border-[var(--border)] pt-4 mt-4">
-            <div className="text-[0.72rem] font-bold text-[var(--text)] mb-2 flex items-center gap-[4px]">
-              <Upload size={13} /> Sudah PRO di Device Lain?
-            </div>
+          <details className="border-t border-[var(--border)] pt-4 mt-4">
+            <summary className="text-[0.72rem] font-bold text-[var(--text)] flex items-center gap-[4px] cursor-pointer">
+              <Upload size={13} /> Sudah aktivasi di HP lain? Ketuk untuk menghubungkan
+            </summary>
+            <div className="mt-2" />
             <div className="text-[0.68rem] text-[var(--text-light)] mb-3">
               Hubungkan device ini dengan email yang sudah terdaftar PRO untuk sinkronisasi data.
             </div>
@@ -847,7 +850,7 @@ export function PengaturanPage() {
               <Upload size={15} />
               {connecting ? "Menghubungkan..." : "Hubungkan Device"}
             </button>
-          </div>
+          </details>
         </div>
       )}
       <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Sekolah</div>
