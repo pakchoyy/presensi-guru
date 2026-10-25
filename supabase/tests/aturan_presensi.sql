@@ -28,9 +28,9 @@ END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000b2","role":"authenticated"}', true);
 INSERT INTO cloud_guru_attendance (user_id, sekolah_uuid, local_id, guru_id, tanggal, jam_masuk, status_masuk,
-  lokasi_masuk_lat, lokasi_masuk_lng, jarak_masuk_meter, verifikasi_masuk, diubah_pada)
+  lokasi_masuk_lat, lokasi_masuk_lng, jarak_masuk_meter, verifikasi_masuk, diubah_pada, last_synced_at)
 VALUES ('00000000-0000-4000-8000-0000000000b2', '00000000-0000-4000-8000-0000000000d4', 1, 2,
-  ((now() AT TIME ZONE 'UTC') + interval '7 hours')::date, '06:55', 'ONTIME', 0, 0, 0, true, 1);
+  ((now() AT TIME ZONE 'UTC') + interval '7 hours')::date, '06:55', 'ONTIME', 0, 0, 0, true, 1, 0);
 DO $$ DECLARE r record; BEGIN
   SELECT * INTO r FROM cloud_guru_attendance WHERE user_id = '00000000-0000-4000-8000-0000000000b2';
   IF r.jam_masuk = '06:55' THEN RAISE EXCEPTION 'GAGAL: jam masuk dari HP diterima'; END IF;
@@ -60,9 +60,9 @@ END $$;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000c3","role":"authenticated"}', true);
 INSERT INTO cloud_guru_attendance (user_id, sekolah_uuid, local_id, guru_id, tanggal, jam_masuk, status_masuk, status_hari,
-  selfie_masuk_url, lokasi_masuk_lat, lokasi_masuk_lng, jarak_masuk_meter, verifikasi_masuk, diubah_pada)
+  selfie_masuk_url, lokasi_masuk_lat, lokasi_masuk_lng, jarak_masuk_meter, verifikasi_masuk, diubah_pada, last_synced_at)
 VALUES ('00000000-0000-4000-8000-0000000000b2', '00000000-0000-4000-8000-0000000000d4', 9, 2, '2026-01-05', '07:00',
-  'ONTIME', 'H', 'palsu.jpg', -7.5, 112.5, 0, true, 1);
+  'ONTIME', 'H', 'palsu.jpg', -7.5, 112.5, 0, true, 1, 0);
 DO $$ DECLARE r record; BEGIN
   SELECT * INTO r FROM cloud_guru_attendance WHERE user_id = '00000000-0000-4000-8000-0000000000b2' AND tanggal = '2026-01-05';
   IF r.selfie_masuk_url IS NOT NULL OR r.lokasi_masuk_lat IS NOT NULL OR r.verifikasi_masuk IS NOT NULL THEN
