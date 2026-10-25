@@ -135,7 +135,18 @@ export function PengaturanPage() {
   const [loginEmail, setLoginEmail] = useState("");
   const [otpEmail, setOtpEmail] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  // Dibuka dari tombol Keluar di menu ☰ (akun berbayar): langsung tampilkan dialog konfirmasi.
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(() => {
+    const buka = sessionStorage.getItem("bgy_buka_keluar") === "1";
+    sessionStorage.removeItem("bgy_buka_keluar");
+    return buka;
+  });
+  useEffect(() => {
+    // Pengaturan sudah terbuka saat Keluar di menu ditekan.
+    const buka = () => { sessionStorage.removeItem("bgy_buka_keluar"); setShowLogoutConfirm(true); };
+    window.addEventListener("bgy-buka-keluar", buka);
+    return () => window.removeEventListener("bgy-buka-keluar", buka);
+  }, []);
   const [showEmergencyTools, setShowEmergencyTools] = useState(false);
 
   const [showSyncPrompt, setShowSyncPrompt] = useState(false);

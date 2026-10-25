@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/shared/Toast";
 import { AvatarGuru } from "@/components/shared/AvatarGuru";
 import { PageName, Tier } from "@/types/enums";
-import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Bug, Gift } from "lucide-react";
+import { BookOpen, Info, Download, ArrowUpCircle, Cloud, Calendar, Bug, Gift, LogOut } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -20,7 +20,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function DropdownMenu({ isOpen, onClose, onLaporBug }: Props) {
-  const { setActivePage, setupSelesai, teacher } = useApp();
+  const { setActivePage, setupSelesai, teacher, setEntryMode } = useApp();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [lic, setLic] = useState<{ berakhir: string; daysRemaining: number } | null>(null);
@@ -148,6 +148,20 @@ export function DropdownMenu({ isOpen, onClose, onLaporBug }: Props) {
             <ArrowUpCircle size={17} /> Upgrade paket
           </button>
         )}
+        {/* Keluar: sama dengan tombol Keluar di Pengaturan (akun berbayar lewat dialog konfirmasi). */}
+        <button
+          onClick={() => {
+            onClose();
+            if (isPaid(teacher?.tier)) {
+              sessionStorage.setItem("bgy_buka_keluar", "1");
+              setActivePage(PageName.PENGATURAN);
+              window.dispatchEvent(new Event("bgy-buka-keluar"));
+            } else setEntryMode("choose");
+          }}
+          className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.85rem] font-semibold text-[#dc2626] bg-[#dc2626]/[0.06] border-none border-t border-[var(--border)] cursor-pointer text-left"
+        >
+          <LogOut size={16} /> Keluar
+        </button>
       </div>
     </>
   );
