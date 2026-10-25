@@ -4,7 +4,7 @@ import { PresensiGuruPage } from "@/components/attendance/PresensiGuruPage";
 import { LogPresensiPage } from "@/components/attendance/LogPresensiPage";
 import { LogAbsenPage } from "@/components/attendance/LogAbsenPage";
 import { GuruProfilPage } from "@/components/guru/GuruProfilPage";
-import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard, Bug } from "lucide-react";
+import { ClipboardCheck, ClipboardList, BarChart3, User, Moon, Sun, FileText, Menu, BookOpen, Download, Info, LayoutDashboard, Bug, LogOut } from "lucide-react";
 import { IzinGuruPage, LogIzinPage } from "@/components/guru/IzinGuruPage";
 import { DashboardHarianPage } from "@/components/attendance/DashboardHarianPage";
 import { RekapPage } from "@/components/reports/RekapPage";
@@ -24,7 +24,7 @@ import { AvatarGuru } from "@/components/shared/AvatarGuru";
 type GuruTab = "dashboard" | "izin" | "presensi" | "log" | "rekap" | "profil" | "petunjuk" | "tentang";
 
 export function GuruShell() {
-  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool } = useApp();
+  const { darkMode, toggleDarkMode, logoutGuru, teachers, guruSessionId, school, refreshSchool, refreshTeachers } = useApp();
   const [tab, setTab] = useState<GuruTab>("presensi");
   const [logJenis, setLogJenis] = useState<"presensi" | "izin">("presensi");
   const [menuBuka, setMenuBuka] = useState(false);
@@ -105,6 +105,24 @@ export function GuruShell() {
     sudahPulang: absenHariIni.pulang,
   });
 
+  // Guru tidak ada di data HP ini (data dihapus / sesi lama): muat ulang sekali, lalu tawarkan masuk ulang.
+  const [cobaMuat, setCobaMuat] = useState(false);
+  useEffect(() => {
+    if (!guru && !cobaMuat) refreshTeachers().finally(() => setCobaMuat(true));
+  }, [guru, cobaMuat, refreshTeachers]);
+  if (!guru) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-[var(--text-light)] m-0">{cobaMuat ? "Sesi berakhir. Silakan masuk ulang." : "Memuat..."}</p>
+        {cobaMuat && (
+          <button onClick={logoutGuru} className="px-5 py-3 rounded-xl text-white font-bold border-none" style={{ background: "var(--grad)" }}>
+            Masuk ulang
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header guru */}
@@ -164,6 +182,12 @@ export function GuruShell() {
                     {m.ikon} {m.teks}
                   </button>
                 ))}
+                <button
+                  onClick={() => { setMenuBuka(false); keluar(); }}
+                  className="w-full flex items-center gap-3 px-4 py-[11px] text-[0.83rem] font-semibold text-[#dc2626] bg-[#dc2626]/[0.06] hover:bg-[#dc2626]/10 border-none border-t border-[var(--border)] text-left"
+                >
+                  <LogOut size={16} /> Keluar
+                </button>
               </div>
             </>
           )}

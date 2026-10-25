@@ -28,7 +28,12 @@ export const PAKET_SYNC_KEY = "bgy_paket_sync";
 
 function readEntryMode(): EntryMode {
   const v = localStorage.getItem(ENTRY_KEY);
-  if (v === "admin" || v === "guru") return v;
+  if (v === "admin") return v;
+  // Sesi guru (12 jam) habis → kembali ke layar masuk, jangan tertahan di shell guru tanpa guru.
+  if (v === "guru") {
+    if (readGuruSessionId() != null) return v;
+    localStorage.removeItem(ENTRY_KEY);
+  }
   return "choose";
 }
 
