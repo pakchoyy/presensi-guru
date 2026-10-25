@@ -123,7 +123,8 @@ export function PetaLokasi({
         )}
       </div>
 
-      <div className="relative">
+      {/* isolate: z-index Leaflet (400–1000) tetap di dalam peta, tidak menutupi menu/sheet. */}
+      <div className="relative isolate">
         <div ref={boxRef} className="h-[190px] w-full bg-[var(--input-bg)] z-0" aria-label="Peta lokasi sekolah" />
         {posisi && (
           <div className="absolute right-2 top-2 z-[400] flex rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--card-bg)] shadow">
