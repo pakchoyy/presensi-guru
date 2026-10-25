@@ -108,7 +108,7 @@ function PageContent() {
 }
 
 function AppContent() {
-  const { setupSelesai, loading, entryMode, setActivePage, teacher } = useApp();
+  const { setupSelesai, loading, entryMode, setActivePage, teacher, tier } = useApp();
 
   useAutoSync();
 
@@ -143,7 +143,7 @@ function AppContent() {
       </div>
       {setupSelesai && (
         <div className="w-full">
-          {teacher?.tier !== Tier.PRO && <div className="hidden lg:block"><Marquee /></div>}
+          {tier !== Tier.PRO && <div className="hidden lg:block"><Marquee /></div>}
           <Footer />
         </div>
       )}

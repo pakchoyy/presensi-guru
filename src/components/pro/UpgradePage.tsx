@@ -16,12 +16,13 @@ import { PageName, Tier } from "@/types/enums";
 
 const COMPARE_ROWS: [string, string, string, string][] = [
   ["Jumlah guru", "5", "10", "∞"],
-  ["Peta lokasi absen", "—", "—", "✓"],
   ["HP admin (cloud)", "—", "1", "3"],
-  ["Absen GPS + selfie", "✓", "✓", "✓"],
+  ["Absen selfie wajah", "✓", "✓", "✓"],
+  ["Absen GPS, radius & peta lokasi", "—", "—", "✓"],
   ["Rekap & pengingat", "✓", "✓", "✓"],
+  ["Atur kalender libur", "—", "✓", "✓"],
+  ["Logo sekolah di laporan", "—", "✓", "✓"],
   ["Kepala Sekolah verifikasi izin", "—", "—", "✓"],
-  ["Logo sekolah di laporan", "—", "—", "✓"],
   ["Program Affiliate", "—", "—", "✓"],
   ["Bebas iklan", "—", "—", "✓"],
 ];
@@ -188,7 +189,7 @@ export function UpgradePage() {
         name="FREE"
         tagline="Gratis selamanya — 30 hari pertama coba PRO"
         price={null}
-        bullets={["Maks 5 guru", "Absen GPS + selfie", "Rekap & pengingat"]}
+        bullets={["Maks 5 guru", "Absen selfie wajah", "Rekap & pengingat"]}
         accentColor="#64748b"
         isCurrent={tier === Tier.FREE}
         muted={tier !== Tier.FREE}
@@ -199,7 +200,7 @@ export function UpgradePage() {
         tagline="Buat sekolah kecil"
         price={PLUS_PRICE}
         perMonth="cuma ±Rp4.500/bulan"
-        bullets={["Maks 10 guru", "1 HP admin (data aman di cloud)", "Absen GPS + selfie", "Rekap & pengingat"]}
+        bullets={["Maks 10 guru", "1 HP admin (data aman di cloud)", "Absen selfie wajah", "Logo sekolah di laporan", "Atur kalender libur", "Rekap & pengingat"]}
         accentColor="#2563eb"
         isCurrent={tier === Tier.PLUS}
         muted={false}
@@ -212,7 +213,7 @@ export function UpgradePage() {
         tagline="Semua di PLUS, plus:"
         price={PRO_PRICE}
         perMonth="cuma ±Rp8.500/bulan"
-        bullets={["Guru tanpa batas", "3 HP admin", "Peta lokasi absen", "Kepala Sekolah verifikasi izin", "Logo sekolah di laporan", "Program Affiliate", "Bebas iklan"]}
+        bullets={["Guru tanpa batas", "3 HP admin", "Absen GPS + selfie + peta lokasi", "Kepala Sekolah verifikasi izin", "Program Affiliate", "Bebas iklan"]}
         accentColor="#f59e0b"
         isCurrent={false}
         muted={false}
@@ -226,7 +227,7 @@ export function UpgradePage() {
           Cuma ±Rp8.500 sebulan untuk semua guru tanpa batas.
         </div>
         <p className="text-[0.74rem] text-[var(--text-light)] leading-relaxed">
-          Absen guru tercatat rapi dengan GPS + selfie, izin disetujui Kepala Sekolah dari HP, dan data aman di cloud
+          Absen guru tercatat rapi dengan GPS + selfie + peta lokasi, izin disetujui Kepala Sekolah dari HP, dan data aman di cloud
           (tidak hilang kalau HP rusak). Bayar sekali per semester.
         </p>
       </div>

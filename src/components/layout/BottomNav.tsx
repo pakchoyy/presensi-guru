@@ -26,8 +26,8 @@ const NAV_ITEMS: NavItemData[] = [
 ];
 
 export function BottomNav() {
-  const { activePage, setActivePage, setupSelesai, teacher } = useApp();
-  const adFree = teacher?.tier === Tier.PRO;
+  const { activePage, setActivePage, setupSelesai, teacher, tier } = useApp();
+  const adFree = tier === Tier.PRO;
   const navRef = useRef<HTMLElement>(null);
   const centerRef = useRef<HTMLSpanElement>(null);
   const [band, setBand] = useState({ bottom: 64, fill: 20 });
