@@ -288,6 +288,8 @@ export function PengaturanPage() {
     if (teacher?.id) {
       await teacherRepo.update(teacher.id, { ...teacher, hariAktifMode: mode, hariAktifCustom: days });
       await refreshTeacher();
+      // HP guru & server ikut hari aktif baru.
+      if (school) adminCloud.daftarkanSekolah(school, { ...teacher, hariAktifMode: mode, hariAktifCustom: days }).catch(() => {});
     }
     if (isPRO && teacher?.email) {
       await supabase.from("teacher_settings").upsert(

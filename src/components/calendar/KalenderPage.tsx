@@ -7,6 +7,7 @@ import { academicYearRepo } from "@/repositories/dexie/academic-year.repo";
 import type { AcademicCalendarEntry } from "@/types/entities";
 import { CalendarEntryType, CalendarSource, Tier } from "@/types/enums";
 import { isDayActive } from "@/lib/utils";
+import { adminCloud, guruCloud } from "@/services/multi-perangkat.service";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Lock, Star, Eye, PenLine } from "lucide-react";
 
 const MONTHS = [
@@ -15,7 +16,9 @@ const MONTHS = [
 ];
 
 export function KalenderPage() {
-  const { tier } = useApp();
+  const { tier, school, teacher } = useApp();
+  // Kirim daftar libur ke cloud supaya HP guru & server ikut tutup presensi.
+  const kirimLibur = () => { if (school && !guruCloud.aktif()) adminCloud.daftarkanSekolah(school, teacher).catch(() => {}); };
   const { toast } = useToast();
   const isPRO = isPaid(tier); // paket efektif: masa coba PRO ikut bisa edit
 
@@ -92,6 +95,7 @@ export function KalenderPage() {
     setEditTarget(null);
     setNewLiburName("");
     await loadEntries();
+    kirimLibur();
   };
 
   const handleDelete = async (entry: AcademicCalendarEntry) => {
@@ -108,6 +112,7 @@ export function KalenderPage() {
     toast("Entry dihapus");
     setEditTarget(null);
     await loadEntries();
+    kirimLibur();
   };
 
   const handleDayClick = (day: number, dayEntries: AcademicCalendarEntry[]) => {
