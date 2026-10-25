@@ -322,16 +322,16 @@ export function PengaturanPage() {
       if (result.cloudEmail) {
         setTimeout(async () => {
           try {
-            toast("⏳ Mengupload data ke cloud...");
+            toast("⏳ Mengunggah data ke cloud...");
             const uploaded = await syncService.initialUpload(result.cloudEmail);
             if (uploaded > 0) {
-              toast(`✅ ${uploaded} data berhasil di-upload ke cloud`);
+              toast(`✅ ${uploaded} data berhasil diunggah ke cloud`);
             } else {
-              toast("☁️ Cloud sync aktif (tidak ada data untuk di-upload)");
+              toast("☁️ Sinkron cloud aktif. Belum ada data untuk diunggah.");
             }
           } catch (error) {
             console.error("Initial upload failed:", error);
-            toast("⚠️ Upload gagal, gunakan Sync Now nanti");
+            toast("⚠️ Unggah gagal. Coba Sinkron sekarang nanti.");
           }
           
           setTimeout(() => {
@@ -397,9 +397,9 @@ export function PengaturanPage() {
   const handleForceUpload = async () => {
     if (!cloudUser?.email) return;
     const ok = await showConfirmDialog({
-      title: "Upload Data ke Cloud?",
+      title: "Unggah Data ke Cloud?",
       message: "Semua data di cloud akan DITIMPA dengan data lokal device ini. Data di device lain akan diganti.",
-      confirmText: "Ya, Upload",
+      confirmText: "Ya, Unggah",
       cancelText: "Batal",
       danger: true,
     });
@@ -413,12 +413,12 @@ export function PengaturanPage() {
       window.dispatchEvent(new Event("data-changed"));
       toast(
         uploaded > 0
-          ? `✅ ${uploaded} data diupload ke cloud`
-          : "⚠️ Tidak ada data untuk di-upload (semua sudah pernah di-upload?)",
+          ? `✅ ${uploaded} data diunggah ke cloud`
+          : "⚠️ Tidak ada data baru untuk diunggah.",
         uploaded > 0 ? "success" : "info"
       );
     } catch (error) {
-      toast("❌ Gagal upload data ke cloud", "error");
+      toast("❌ Gagal mengunggah data ke cloud", "error");
     } finally {
       setUploading(false);
     }
@@ -740,7 +740,7 @@ export function PengaturanPage() {
           <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 mb-3 border border-blue-200 dark:border-blue-800 flex items-start gap-2">
             <Info size={14} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-[1px]" />
             <div className="text-[0.7rem] text-blue-900 dark:text-blue-100">
-              <b>Fitur PRO Aktif:</b> Guru tanpa batas, verifikasi izin Kepala Sekolah, logo laporan, cloud sync otomatis, 3 HP admin, Program Affiliate.
+              <b>Fitur PRO Aktif:</b> Guru tanpa batas, verifikasi izin Kepala Sekolah, logo laporan, sinkron cloud otomatis, 3 HP admin, Program Affiliate.
             </div>
           </div>
 
@@ -1277,7 +1277,7 @@ export function PengaturanPage() {
             <div className="flex items-center gap-2">
               <Smartphone size={15} className="text-[#2563eb]" />
               <span className="text-[0.8rem] font-bold text-[var(--text)]">
-                Cloud Sync — {devices.length} Device
+                Sinkron cloud · {devices.length} HP
               </span>
             </div>
           </div>

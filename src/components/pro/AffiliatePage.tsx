@@ -63,9 +63,9 @@ export function AffiliatePage() {
   const steps = [
     "Berlangganan PRO, lalu buka halaman ini dan verifikasi email.",
     "Salin kode affiliate kamu atau bagikan lewat WhatsApp.",
-    "Sekolah/guru baru membeli PLUS/PRO dan memasukkan kodemu saat aktivasi (atau membuka link ajakanmu).",
+    "Sekolah atau guru baru membeli PLUS/PRO dan memasukkan kodemu saat aktivasi, membuka link ajakanmu, atau mengisinya di Pengaturan paling lambat 7 hari setelah aktivasi.",
     `Kamu langsung dapat komisi + bonus masa aktif PRO. Pembeli PLUS: ${rp(g.plus.commission)} + ${g.plus.days} hari · Pembeli PRO: ${rp(g.pro.commission)} + ${g.pro.days} hari.`,
-    `Saldo minimal ${rp(info.minWithdraw)} bisa ditarik — tekan Tarik Dana, admin transfer lewat WhatsApp.`,
+    `Saldo minimal ${rp(info.minWithdraw)} bisa ditarik. Tekan Tarik Dana, lalu admin memproses transfer lewat WhatsApp.`,
   ];
 
   return (

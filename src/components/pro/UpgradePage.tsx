@@ -16,15 +16,15 @@ import { PageName, Tier } from "@/types/enums";
 
 const COMPARE_ROWS: [string, string, string, string][] = [
   ["Jumlah guru", "5", "10", "∞"],
-  ["HP admin (cloud)", "—", "1", "3"],
+  ["HP admin (cloud)", "✕", "1", "3"],
   ["Absen selfie wajah", "✓", "✓", "✓"],
-  ["Absen GPS, radius & peta lokasi", "—", "—", "✓"],
+  ["Absen GPS, radius & peta lokasi", "✕", "✕", "✓"],
   ["Rekap & pengingat", "✓", "✓", "✓"],
-  ["Atur kalender libur", "—", "✓", "✓"],
-  ["Logo sekolah di laporan", "—", "✓", "✓"],
-  ["Kepala Sekolah verifikasi izin", "—", "—", "✓"],
-  ["Program Affiliate", "—", "—", "✓"],
-  ["Bebas iklan", "—", "—", "✓"],
+  ["Atur kalender libur", "✕", "✓", "✓"],
+  ["Logo sekolah di laporan", "✕", "✓", "✓"],
+  ["Kepala Sekolah verifikasi izin", "✕", "✕", "✓"],
+  ["Program Affiliate", "✕", "✕", "✓"],
+  ["Bebas iklan", "✕", "✕", "✓"],
 ];
 
 export function UpgradePage() {
@@ -187,7 +187,7 @@ export function UpgradePage() {
 
       <TierCard
         name="FREE"
-        tagline="Gratis selamanya — 30 hari pertama coba PRO"
+        tagline="Gratis selamanya. 30 hari pertama bisa pakai semua fitur PRO."
         price={null}
         bullets={["Maks 5 guru", "Absen selfie wajah", "Rekap & pengingat"]}
         accentColor="#64748b"
@@ -234,7 +234,7 @@ export function UpgradePage() {
 
       <div className="flex items-start gap-2 bg-[var(--input-bg)] rounded-xl p-3 mb-3 text-[0.7rem] text-[var(--text-light)] leading-relaxed">
         <ShieldCheck size={15} className="text-[#2563eb] flex-shrink-0 mt-[1px]" />
-        <div>Pembayaran satu kali per semester, tidak auto-renew.</div>
+        <div>Bayar sekali per semester. Tidak diperpanjang otomatis.</div>
       </div>
 
       <button
