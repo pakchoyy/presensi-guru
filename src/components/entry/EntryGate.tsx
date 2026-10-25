@@ -3,7 +3,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
 import type { Teacher } from "@/types/entities";
 import { guruCloud } from "@/services/multi-perangkat.service";
-import { ClipboardCheck, ShieldCheck, Stamp, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { ClipboardCheck, ShieldCheck, LogIn, Hash, KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   const needle = kode.trim();
@@ -17,7 +17,7 @@ function matchGuru(teachers: Teacher[], kode: string): Teacher | undefined {
   );
 }
 
-type Step = "choose" | "guru" | "ks";
+type Step = "choose" | "guru";
 
 export function EntryGate() {
   const { teachers, setEntryMode, loginGuru, refreshSchool, refreshTeachers } = useApp();
@@ -67,28 +67,14 @@ export function EntryGate() {
                 <ClipboardCheck size={24} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-gray-800">Guru</div>
-                <div className="text-[0.72rem] text-gray-500">Presensi masuk/pulang & lihat riwayat sendiri</div>
+                <div className="font-extrabold text-gray-800">Guru / Kepala Sekolah</div>
+                <div className="text-[0.72rem] text-gray-500">Presensi masuk/pulang, riwayat sendiri; kepala sekolah juga setujui izin</div>
               </div>
             </button>
-
-            <button
-              onClick={() => setStep("ks")}
-              className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-amber-100 hover:border-amber-400 bg-amber-50/50 transition-colors text-left active:scale-[.99]"
-            >
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white flex-shrink-0 bg-gradient-to-br from-amber-500 to-amber-600">
-                <Stamp size={24} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-gray-800">Kepala Sekolah</div>
-                <div className="text-[0.72rem] text-gray-500">Presensi, pantau kehadiran guru & setujui izin</div>
-              </div>
-            </button>
-
           </div>
         ) : (
           <GuruLogin
-            judul={step === "ks" ? "Kepala Sekolah" : "Guru"}
+            judul="Guru / Kepala Sekolah"
             teachers={teachers}
             onBack={() => setStep("choose")}
             onSuccess={(g) => { loginGuru(g.id); toast(`Selamat datang, ${g.nama}`, "success"); }}
