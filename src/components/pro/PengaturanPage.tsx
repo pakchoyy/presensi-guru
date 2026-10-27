@@ -58,6 +58,7 @@ import { academicYearRepo } from "@/repositories/dexie/academic-year.repo";
 import type { AcademicYear } from "@/types/entities";
 import { Semester } from "@/types/enums";
 import { LogoUpload } from "@/components/shared/LogoUpload";
+import { TtdSetting } from "@/components/pro/TtdSetting";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCloudAuth } from "@/contexts/CloudAuthContext";
 
@@ -1078,6 +1079,7 @@ export function PengaturanPage() {
       </div>
       {/* Logo Sekolah (PLUS/PRO/masa coba; FREE melihat kartu terkunci) */}
       <LogoUpload editable={true} />
+      <TtdSetting />
       <div className="text-[0.66rem] font-extrabold tracking-[0.08em] uppercase text-[var(--text-light)] mt-5 mb-2 px-1">Cara Absen</div>
       {/* Lokasi & Jam Sekolah (geofencing presensi guru) */}
       <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] border-l-4 border-l-[#0ea5a0] p-[14px] mb-3">

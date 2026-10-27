@@ -23,6 +23,8 @@ export interface School {
   paketSampai?: number;
   /** Tanggal libur kalender dari admin (YYYY-MM-DD dipisah koma); dipakai HP guru. */
   libur?: string;
+  /** Blok tanda tangan di laporan rekap (diatur admin). Kosong = isi otomatis dari Kepala Sekolah. */
+  ttd?: { aktif?: boolean; tempat?: string; tanggal?: string; jabatan?: string; nama?: string; nip?: string };
   dibuatPada: number;
   diubahPada: number;
 }

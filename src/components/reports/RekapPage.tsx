@@ -6,7 +6,7 @@ import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { db } from "@/repositories/dexie/db";
-import { exportRekapGuruPDF, exportRekapGuruXLSX, exportRekapKolektifPDF, exportRekapKolektifXLSX, periodeLabel, type BarisKolektif } from "@/services/export.service";
+import { exportRekapGuruPDF, exportRekapGuruXLSX, exportRekapKolektifPDF, exportRekapKolektifXLSX, periodeLabel, ttdBlok, type BarisKolektif } from "@/services/export.service";
 import { ringkasKode } from "@/lib/rekap-kolektif";
 import { isHariEfektif, todayStr } from "@/lib/utils";
 import { adminCloud } from "@/services/multi-perangkat.service";
@@ -188,8 +188,9 @@ export function RekapPage() {
     if (mode === "semua") {
       setExporting(true);
       try {
-        if (jenis === "pdf") await exportRekapKolektifPDF(school, periodeLabel(bulan, tahun), barisSemua);
-        else await exportRekapKolektifXLSX(school, periodeLabel(bulan, tahun), barisSemua);
+        const ttd = ttdBlok(school, guruList);
+        if (jenis === "pdf") await exportRekapKolektifPDF(school, periodeLabel(bulan, tahun), barisSemua, ttd);
+        else await exportRekapKolektifXLSX(school, periodeLabel(bulan, tahun), barisSemua, ttd);
         toast(`✅ ${jenis.toUpperCase()} berhasil di-download`);
       } catch (e) {
         console.error(e);
@@ -211,6 +212,7 @@ export function RekapPage() {
         records,
         periode: periodeLabel(bulan, tahun),
         liburSet,
+        ttd: ttdBlok(school, guruList),
       };
       if (jenis === "pdf") await exportRekapGuruPDF(ctx);
       else await exportRekapGuruXLSX(ctx);

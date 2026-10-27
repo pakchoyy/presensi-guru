@@ -3,6 +3,8 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import type { School, Teacher, TeacherAttendance } from "@/types/entities";
 import { isHariEfektif, todayStr } from "@/lib/utils";
+import type { TtdBlok } from "@/lib/ttd";
+export { ttdBlok, tanggalIndo, type TtdBlok } from "@/lib/ttd";
 
 export interface RekapGuruCtx {
   school: School | null;
@@ -13,6 +15,7 @@ export interface RekapGuruCtx {
   records: TeacherAttendance[];
   periode: string;           // e.g. "Oktober 2026"
   liburSet?: Set<string>;    // tanggal libur (YYYY-MM-DD) dari kalender akademik
+  ttd?: TtdBlok | null;      // blok tanda tangan di bawah laporan
 }
 
 const MONTHS = [
@@ -151,6 +154,25 @@ function kopSekolah(doc: jsPDF, school: School | null, judul: string) {
   doc.line(margin, 35, pageW - margin, 35);
 }
 
+/** Cetak blok tanda tangan rata kanan mulai y; pindah halaman bila tidak muat. */
+function cetakTtd(doc: jsPDF, ttd: TtdBlok | null | undefined, y: number) {
+  if (!ttd) return;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const tinggi = 44;
+  if (y + tinggi > pageH - 10) { doc.addPage(); y = 20; }
+  const x = pageW - 14 - 75;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  ttd.baris.forEach((b, i) => doc.text(b, x, y + i * 5.5));
+  doc.text(ttd.nama || "(.................................)", x, y + 32);
+  if (ttd.nip) doc.text(`NIP. ${ttd.nip}`, x, y + 37.5);
+}
+
+/** Baris Excel blok tanda tangan (teks saja). */
+const ttdXlsx = (ttd: TtdBlok | null | undefined, kolom: number): (string | number)[][] =>
+  ttd ? [[], ...[...ttd.baris, "", "", "", ttd.nama, ttd.nip ? `NIP. ${ttd.nip}` : ""].map((v) => [...Array(kolom).fill(""), v])] : [];
+
 function buildKop(doc: jsPDF, ctx: RekapGuruCtx) {
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -218,6 +240,7 @@ export async function exportRekapGuruPDF(ctx: RekapGuruCtx): Promise<void> {
     `Alpha            : ${summary.alpha}`,
   ];
   lines.forEach((ln, i) => doc.text(ln, 14, sumY + 6 + i * 5));
+  cetakTtd(doc, ctx.ttd, sumY + 6 + lines.length * 5 + 6);
 
   const filename = `Rekap_Guru_${ctx.guru.nama.replace(/\s+/g, "_")}_${ctx.periode.replace(/\s+/g, "_")}.pdf`;
   doc.save(filename);
@@ -252,7 +275,7 @@ export async function exportRekapGuruXLSX(ctx: RekapGuruCtx): Promise<void> {
     ["Alpha", summary.alpha],
   ];
 
-  const all = [...info, header, ...body, ...footer];
+  const all = [...info, header, ...body, ...footer, ...ttdXlsx(ctx.ttd, 5)];
   const ws = XLSX.utils.aoa_to_sheet(all);
   ws["!cols"] = [{ wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 30 }];
 
@@ -297,7 +320,7 @@ function barisKolektif(rows: BarisKolektif[]): (string | number)[][] {
 
 const namaFile = (periode: string, ext: string) => `Rekap_Semua_Guru_${periode.replace(/\s+/g, "_")}.${ext}`;
 
-export async function exportRekapKolektifPDF(school: School | null, periode: string, rows: BarisKolektif[]): Promise<void> {
+export async function exportRekapKolektifPDF(school: School | null, periode: string, rows: BarisKolektif[], ttd?: TtdBlok | null): Promise<void> {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   kopSekolah(doc, school, `REKAP KEHADIRAN GURU ${periode.toUpperCase()}`);
   autoTable(doc, {
@@ -312,16 +335,18 @@ export async function exportRekapKolektifPDF(school: School | null, periode: str
     alternateRowStyles: { fillColor: [248, 250, 252] },
     didParseCell: (d) => { if (d.section === "body" && d.row.index === rows.length) d.cell.styles.fontStyle = "bold"; },
   });
+  cetakTtd(doc, ttd, ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 40) + 10);
   doc.save(namaFile(periode, "pdf"));
 }
 
-export async function exportRekapKolektifXLSX(school: School | null, periode: string, rows: BarisKolektif[]): Promise<void> {
+export async function exportRekapKolektifXLSX(school: School | null, periode: string, rows: BarisKolektif[], ttd?: TtdBlok | null): Promise<void> {
   const ws = XLSX.utils.aoa_to_sheet([
     [`Sekolah : ${school?.nama || "-"}`],
     [`Rekap Kehadiran Guru ${periode}`],
     [],
     HEAD_KOLEKTIF,
     ...barisKolektif(rows),
+    ...ttdXlsx(ttd, 6),
   ]);
   ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
   const wb = XLSX.utils.book_new();
