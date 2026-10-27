@@ -115,7 +115,18 @@ export function RekapPage() {
       .then(setSemuaRecords);
   }, [mode, bulan, tahun, versiCloud]);
 
-  const barisSemua = useMemo<BarisKolektif[]>(() => {
+  // Guru yang tidak ikut rekap kolektif (mis. akun Admin milik Kepala Sekolah yang sama), diingat per perangkat.
+  const [kecuali, setKecuali] = useState<Set<number>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("bgy_rekap_kecuali") || "[]")); } catch { return new Set(); }
+  });
+  const toggleKecuali = (id: number) => {
+    const next = new Set(kecuali);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setKecuali(next);
+    try { localStorage.setItem("bgy_rekap_kecuali", JSON.stringify([...next])); } catch { /* abaikan */ }
+  };
+
+  const barisSemuaAll = useMemo<(BarisKolektif & { id: number })[]>(() => {
     if (mode !== "semua") return [];
     const today = todayStr();
     const byKey = new Map(semuaRecords.map((r) => [`${r.guruId}|${r.tanggal}`, r]));
@@ -129,9 +140,13 @@ export function RekapPage() {
           if (date > today || !isHariEfektif(date, g, liburSet)) continue;
           kodes.push(ketPresensi(date, byKey.get(`${g.id}|${date}`)).kode);
         }
-        return { nama: g.nama, ...ringkasKode(kodes) };
+        return { id: g.id, nama: g.nama, ...ringkasKode(kodes) };
       });
   }, [mode, semuaRecords, guruList, bulan, tahun, liburSet]);
+  const barisSemua = useMemo<BarisKolektif[]>(
+    () => barisSemuaAll.filter((r) => !kecuali.has(r.id)).map(({ id: _id, ...r }) => r),
+    [barisSemuaAll, kecuali]
+  );
 
   const selectedGuru = useMemo(
     () => guruList.find((g) => g.id === selectedGuruId) || null,
@@ -300,15 +315,17 @@ export function RekapPage() {
             <table className="w-full min-w-[520px] text-[0.72rem]">
               <thead>
                 <tr className="text-left text-[var(--text-light)] border-b border-[var(--border)]">
-                  {["No", "Nama", "Hari", "Hadir", "Terlambat", "Sakit", "Izin", "Alpa", "%"].map((h) => (
+                  {["Ikut", "Nama", "Hari", "Hadir", "Terlambat", "Sakit", "Izin", "Alpa", "%"].map((h) => (
                     <th key={h} className={`py-1 pr-2 ${h === "Nama" ? "" : "text-center"}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {barisSemua.map((r, i) => (
-                  <tr key={i} className="border-b border-[var(--border)]/50">
-                    <td className="py-1 pr-2 text-center">{i + 1}</td>
+                {barisSemuaAll.map((r) => (
+                  <tr key={r.id} className={`border-b border-[var(--border)]/50 ${kecuali.has(r.id) ? "opacity-40" : ""}`}>
+                    <td className="py-1 pr-2 text-center">
+                      <input type="checkbox" checked={!kecuali.has(r.id)} onChange={() => toggleKecuali(r.id)} aria-label={`Ikutkan ${r.nama} di rekap`} className="w-4 h-4 cursor-pointer" />
+                    </td>
                     <td className="py-1 pr-2 font-bold text-[var(--text)] whitespace-nowrap">{r.nama}</td>
                     <td className="py-1 pr-2 text-center">{r.hari}</td>
                     <td className="py-1 pr-2 text-center text-[#16a34a]">{r.hadir}</td>
@@ -322,7 +339,7 @@ export function RekapPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-[0.66rem] text-[var(--text-light)] mt-2 mb-0">Hari = hari efektif yang sudah berjalan. Hadir termasuk pulang cepat & luar area.</p>
+          <p className="text-[0.66rem] text-[var(--text-light)] mt-2 mb-0">Hari = hari efektif yang sudah berjalan. Hadir termasuk pulang cepat & luar area. Hilangkan centang "Ikut" untuk guru yang tidak dicetak (mis. akun Admin milik Kepala Sekolah yang sama).</p>
         </div>
       )}
 
