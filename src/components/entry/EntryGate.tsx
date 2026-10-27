@@ -1,3 +1,4 @@
+import { tapAdminDoor } from "@/lib/admin-door";
 import { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
@@ -36,7 +37,7 @@ export function EntryGate() {
         {/* Logo */}
         <div className="text-center mb-6">
           <img src="/icons/pg-192-v1.png" alt="Presensi Yuk | Guru" className="w-24 h-24 mx-auto rounded-3xl shadow-xl" />
-          <h1 className="text-2xl font-extrabold text-white mt-4">
+          <h1 className="text-2xl font-extrabold text-white mt-4" onClick={tapAdminDoor} style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}>
             <span className="italic">Presensi Yuk</span>
           </h1>
           <p className="text-[0.8rem] text-white/85 font-semibold tracking-[3px] uppercase">Guru</p>

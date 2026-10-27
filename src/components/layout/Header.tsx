@@ -1,3 +1,4 @@
+import { tapAdminDoor } from "@/lib/admin-door";
 import { useState } from "react";
 import { isOnTrial, trialDaysRemaining } from "@/lib/features";
 import { useApp } from "@/contexts/AppContext";
@@ -35,7 +36,7 @@ export function Header() {
         <div className="flex items-center gap-[6px] sm:gap-[8px] flex-1 min-w-0">
           {/* Logo sama dengan tampilan guru */}
           <img src="/icons/pg-mark-160-v1.png" alt="Presensi Yuk | Guru" className="flex-shrink-0 w-[36px] h-[36px] sm:w-[42px] sm:h-[42px] rounded-xl shadow-md" />
-          <div className="min-w-0 leading-tight">
+          <div className="min-w-0 leading-tight cursor-default" style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }} onClick={tapAdminDoor}>
             <div className="text-[0.92rem] sm:text-[1rem] font-extrabold text-white whitespace-nowrap overflow-hidden text-ellipsis">
               <span className="italic">Presensi Yuk</span>{" "}
               <span className="font-bold opacity-95">| Guru</span>
