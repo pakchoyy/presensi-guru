@@ -6,8 +6,9 @@ import { useToast } from "@/components/shared/Toast";
 import { teacherRepo } from "@/repositories/dexie/teacher.repo";
 import { teacherAttendanceRepo } from "@/repositories/dexie/teacher-attendance.repo";
 import { db } from "@/repositories/dexie/db";
-import { exportRekapGuruPDF, exportRekapGuruXLSX, periodeLabel } from "@/services/export.service";
-import { isHariEfektif } from "@/lib/utils";
+import { exportRekapGuruPDF, exportRekapGuruXLSX, exportRekapKolektifPDF, exportRekapKolektifXLSX, periodeLabel, type BarisKolektif } from "@/services/export.service";
+import { ringkasKode } from "@/lib/rekap-kolektif";
+import { isHariEfektif, todayStr } from "@/lib/utils";
 import { adminCloud } from "@/services/multi-perangkat.service";
 import { CalendarEntryType } from "@/types/enums";
 import type { Teacher, TeacherAttendance } from "@/types/entities";
@@ -57,6 +58,8 @@ export function RekapPage() {
   const [liburSet, setLiburSet] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [mode, setMode] = useState<"guru" | "semua">("guru");
+  const [semuaRecords, setSemuaRecords] = useState<TeacherAttendance[]>([]);
 
   // Muat tanggal libur dari kalender akademik sekali (dipakai filter hari efektif).
   useEffect(() => {
@@ -103,6 +106,33 @@ export function RekapPage() {
       .finally(() => setLoading(false));
   }, [selectedGuruId, bulan, tahun, versiCloud]);
 
+  // Rekap semua guru: satu baca untuk sebulan, lalu diringkas per guru.
+  useEffect(() => {
+    if (mode !== "semua") return;
+    const mm = String(bulan).padStart(2, "0");
+    teacherAttendanceRepo
+      .getAllRange(`${tahun}-${mm}-01`, `${tahun}-${mm}-${String(daysInMonth(tahun, bulan)).padStart(2, "0")}`)
+      .then(setSemuaRecords);
+  }, [mode, bulan, tahun, versiCloud]);
+
+  const barisSemua = useMemo<BarisKolektif[]>(() => {
+    if (mode !== "semua") return [];
+    const today = todayStr();
+    const byKey = new Map(semuaRecords.map((r) => [`${r.guruId}|${r.tanggal}`, r]));
+    const dMax = daysInMonth(tahun, bulan);
+    return [...guruList]
+      .sort((a, b) => a.nama.localeCompare(b.nama, "id"))
+      .map((g) => {
+        const kodes: string[] = [];
+        for (let d = 1; d <= dMax; d++) {
+          const date = `${tahun}-${String(bulan).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+          if (date > today || !isHariEfektif(date, g, liburSet)) continue;
+          kodes.push(ketPresensi(date, byKey.get(`${g.id}|${date}`)).kode);
+        }
+        return { nama: g.nama, ...ringkasKode(kodes) };
+      });
+  }, [mode, semuaRecords, guruList, bulan, tahun, liburSet]);
+
   const selectedGuru = useMemo(
     () => guruList.find((g) => g.id === selectedGuruId) || null,
     [guruList, selectedGuruId]
@@ -140,6 +170,20 @@ export function RekapPage() {
   }, [records, bulan, tahun, selectedGuru, liburSet]);
 
   const handleExport = async (jenis: "pdf" | "xlsx") => {
+    if (mode === "semua") {
+      setExporting(true);
+      try {
+        if (jenis === "pdf") await exportRekapKolektifPDF(school, periodeLabel(bulan, tahun), barisSemua);
+        else await exportRekapKolektifXLSX(school, periodeLabel(bulan, tahun), barisSemua);
+        toast(`✅ ${jenis.toUpperCase()} berhasil di-download`);
+      } catch (e) {
+        console.error(e);
+        toast("❌ Gagal export");
+      } finally {
+        setExporting(false);
+      }
+      return;
+    }
     if (!selectedGuru) { toast("Pilih guru dulu"); return; }
     setExporting(true);
     try {
@@ -172,6 +216,21 @@ export function RekapPage() {
           <BarChart3 size={15} /> Rekap Presensi Guru
         </div>
 
+        <div className="grid grid-cols-2 gap-1 p-1 mb-3 rounded-[10px] bg-[var(--input-bg)]" role="tablist" aria-label="Jenis rekap">
+          {([["guru", "Per guru"], ["semua", "Semua guru"]] as const).map(([k, label]) => (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={mode === k}
+              onClick={() => setMode(k)}
+              className={`py-[8px] rounded-[8px] text-[0.78rem] font-bold border-none cursor-pointer ${mode === k ? "bg-[#2563eb] text-white" : "bg-transparent text-[var(--text-light)]"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "guru" && (<>
         <label className="block text-[0.68rem] font-bold text-[var(--text-light)] mb-1 uppercase">
           <UserCheck size={11} className="inline mr-1" /> Guru
         </label>
@@ -187,6 +246,7 @@ export function RekapPage() {
             </option>
           ))}
         </select>
+        </>)}
 
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
@@ -215,14 +275,14 @@ export function RekapPage() {
         <div className="flex gap-2">
           <button
             onClick={() => handleExport("pdf")}
-            disabled={exporting || !selectedGuru}
+            disabled={exporting || (mode === "guru" ? !selectedGuru : barisSemua.length === 0)}
             className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] bg-[#2563eb] text-white font-bold text-[0.8rem] disabled:opacity-50 active:scale-95 transition-transform"
           >
             <FileText size={14} /> Export PDF
           </button>
           <button
             onClick={() => handleExport("xlsx")}
-            disabled={exporting || !selectedGuru}
+            disabled={exporting || (mode === "guru" ? !selectedGuru : barisSemua.length === 0)}
             className="flex-1 flex items-center justify-center gap-[6px] py-[10px] rounded-[10px] border-[1.5px] border-[#16a34a] text-[#16a34a] font-bold text-[0.8rem] bg-transparent disabled:opacity-50 active:scale-95 transition-transform"
           >
             <FileSpreadsheet size={14} /> Export Excel
@@ -230,8 +290,44 @@ export function RekapPage() {
         </div>
       </div>
 
+      {/* Rekap semua guru */}
+      {mode === "semua" && guruList.length > 0 && (
+        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
+          <div className="text-[0.75rem] font-bold text-[var(--text-light)] mb-2">
+            Rekap Kehadiran Guru {periodeLabel(bulan, tahun)}
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-[0.72rem]">
+              <thead>
+                <tr className="text-left text-[var(--text-light)] border-b border-[var(--border)]">
+                  {["No", "Nama", "Hari", "Hadir", "Terlambat", "Sakit", "Izin", "Alpa", "%"].map((h) => (
+                    <th key={h} className={`py-1 pr-2 ${h === "Nama" ? "" : "text-center"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {barisSemua.map((r, i) => (
+                  <tr key={i} className="border-b border-[var(--border)]/50">
+                    <td className="py-1 pr-2 text-center">{i + 1}</td>
+                    <td className="py-1 pr-2 font-bold text-[var(--text)] whitespace-nowrap">{r.nama}</td>
+                    <td className="py-1 pr-2 text-center">{r.hari}</td>
+                    <td className="py-1 pr-2 text-center text-[#16a34a]">{r.hadir}</td>
+                    <td className="py-1 pr-2 text-center text-[#f59e0b]">{r.terlambat}</td>
+                    <td className="py-1 pr-2 text-center text-[#ea580c]">{r.sakit}</td>
+                    <td className="py-1 pr-2 text-center text-[#2563eb]">{r.izin}</td>
+                    <td className="py-1 pr-2 text-center text-[#991b1b]">{r.alpa}</td>
+                    <td className="py-1 pr-2 text-center font-bold">{r.persen}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[0.66rem] text-[var(--text-light)] mt-2 mb-0">Hari = hari efektif yang sudah berjalan. Hadir termasuk pulang cepat & luar area.</p>
+        </div>
+      )}
+
       {/* Stats */}
-      {selectedGuru && (
+      {mode === "guru" && selectedGuru && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px] mb-3">
           <div className="text-[0.75rem] font-bold text-[var(--text-light)] mb-2">
             Ringkasan {periodeLabel(bulan, tahun)}
@@ -250,7 +346,7 @@ export function RekapPage() {
       )}
 
       {/* Preview tabel */}
-      {selectedGuru && (
+      {mode === "guru" && selectedGuru && (
         <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-[14px]">
           <div className="text-[0.75rem] font-bold text-[var(--text-light)] mb-2">
             Preview — {loading ? "memuat..." : `${records.length} record`}

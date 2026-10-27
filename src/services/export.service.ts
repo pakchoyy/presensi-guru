@@ -125,13 +125,14 @@ function buildRowsAndSummary(ctx: RekapGuruCtx): { rows: Row[]; summary: Summary
   return { rows, summary };
 }
 
-function buildKop(doc: jsPDF, ctx: RekapGuruCtx) {
+/** Kop: logo + nama sekolah + judul + garis. Dipakai rekap per guru & rekap semua guru. */
+function kopSekolah(doc: jsPDF, school: School | null, judul: string) {
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 14;
 
-  if (ctx.school?.logoUrl) {
+  if (school?.logoUrl) {
     try {
-      const logo = ctx.school.logoUrl;
+      const logo = school.logoUrl;
       if (logo.startsWith("data:image")) {
         doc.addImage(logo, "PNG", margin, 14, 18, 18);
       }
@@ -140,14 +141,20 @@ function buildKop(doc: jsPDF, ctx: RekapGuruCtx) {
 
   doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(ctx.school?.nama || "Sekolah", pageW / 2, 22, { align: "center" });
+  doc.text(school?.nama || "Sekolah", pageW / 2, 22, { align: "center" });
 
   doc.setFontSize(11);
-  doc.text("LAPORAN REKAP PRESENSI GURU", pageW / 2, 30, { align: "center" });
+  doc.text(judul, pageW / 2, 30, { align: "center" });
 
   doc.setDrawColor(30, 64, 175);
   doc.setLineWidth(0.5);
   doc.line(margin, 35, pageW - margin, 35);
+}
+
+function buildKop(doc: jsPDF, ctx: RekapGuruCtx) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  kopSekolah(doc, ctx.school, "LAPORAN REKAP PRESENSI GURU");
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -259,6 +266,71 @@ export async function exportRekapGuruXLSX(ctx: RekapGuruCtx): Promise<void> {
   const a = document.createElement("a");
   a.href = url;
   a.download = `Rekap_Guru_${ctx.guru.nama.replace(/\s+/g, "_")}_${ctx.periode.replace(/\s+/g, "_")}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Rekap semua guru (kolektif) ──
+export interface BarisKolektif {
+  nama: string;
+  hari: number;
+  hadir: number;
+  terlambat: number;
+  sakit: number;
+  izin: number;
+  alpa: number;
+  persen: number;
+}
+
+const HEAD_KOLEKTIF = ["No", "Nama", "Hari Efektif", "Hadir", "Terlambat", "Sakit", "Izin", "Alpa", "% Kehadiran"];
+
+function barisKolektif(rows: BarisKolektif[]): (string | number)[][] {
+  const body = rows.map((r, i) => [i + 1, r.nama, r.hari, r.hadir, r.terlambat, r.sakit, r.izin, r.alpa, `${r.persen}%`]);
+  const t = rows.reduce(
+    (a, r) => ({ hari: a.hari + r.hari, hadir: a.hadir + r.hadir, terlambat: a.terlambat + r.terlambat, sakit: a.sakit + r.sakit, izin: a.izin + r.izin, alpa: a.alpa + r.alpa }),
+    { hari: 0, hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 }
+  );
+  const persen = t.hari ? Math.round(((t.hadir + t.terlambat) / t.hari) * 100) : 0;
+  body.push(["", "TOTAL", t.hari, t.hadir, t.terlambat, t.sakit, t.izin, t.alpa, `${persen}%`]);
+  return body;
+}
+
+const namaFile = (periode: string, ext: string) => `Rekap_Semua_Guru_${periode.replace(/\s+/g, "_")}.${ext}`;
+
+export async function exportRekapKolektifPDF(school: School | null, periode: string, rows: BarisKolektif[]): Promise<void> {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  kopSekolah(doc, school, `REKAP KEHADIRAN GURU ${periode.toUpperCase()}`);
+  autoTable(doc, {
+    startY: 40,
+    head: [HEAD_KOLEKTIF],
+    body: barisKolektif(rows),
+    theme: "grid",
+    headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
+    styles: { halign: "center" },
+    columnStyles: { 0: { cellWidth: 12 }, 1: { halign: "left" } },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    didParseCell: (d) => { if (d.section === "body" && d.row.index === rows.length) d.cell.styles.fontStyle = "bold"; },
+  });
+  doc.save(namaFile(periode, "pdf"));
+}
+
+export async function exportRekapKolektifXLSX(school: School | null, periode: string, rows: BarisKolektif[]): Promise<void> {
+  const ws = XLSX.utils.aoa_to_sheet([
+    [`Sekolah : ${school?.nama || "-"}`],
+    [`Rekap Kehadiran Guru ${periode}`],
+    [],
+    HEAD_KOLEKTIF,
+    ...barisKolektif(rows),
+  ]);
+  ws["!cols"] = [{ wch: 5 }, { wch: 28 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rekap Semua Guru");
+  const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = namaFile(periode, "xlsx");
   a.click();
   URL.revokeObjectURL(url);
 }
