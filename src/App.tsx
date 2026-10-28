@@ -4,6 +4,7 @@ import { CloudAuthProvider } from "@/contexts/CloudAuthContext";
 import { ToastProvider } from "@/components/shared/Toast";
 import { ConfirmDialogProvider } from "@/components/shared/ConfirmDialog";
 import { Header } from "@/components/layout/Header";
+import { CloudNudge } from "@/components/layout/CloudNudge";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
@@ -137,6 +138,7 @@ function AppContent() {
   return (
     <>
       <Header />
+      {setupSelesai && <CloudNudge />}
       <div className="flex flex-1">
         <Sidebar />
         <PageRouter />

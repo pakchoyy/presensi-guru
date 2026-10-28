@@ -9,14 +9,18 @@ interface Props {
   title?: string;
   onConnected: (result: Connected, email: string) => void | Promise<void>;
   onClose: () => void;
+  /** Mulai dari isian email (sudah terisi) supaya pengguna bisa mengganti sebelum kode dikirim. */
+  editEmail?: boolean;
+  /** Tombol teks untuk menunda, mis. "Nanti saja". */
+  laterLabel?: string;
 }
 
 const RESEND_SECONDS = 60;
 
 /** Verifikasi email dengan kode OTP, lalu daftarkan perangkat ke cloud (batas perangkat dicek di server). */
-export function OtpVerify({ email: initialEmail, title = "Masuk dengan email", onConnected, onClose }: Props) {
+export function OtpVerify({ email: initialEmail, title = "Masuk dengan email", onConnected, onClose, editEmail, laterLabel }: Props) {
   const [email, setEmail] = useState(initialEmail.trim().toLowerCase());
-  const [step, setStep] = useState<"email" | "code" | "devices">(initialEmail ? "code" : "email");
+  const [step, setStep] = useState<"email" | "code" | "devices">(initialEmail && !editEmail ? "code" : "email");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -68,7 +72,7 @@ export function OtpVerify({ email: initialEmail, title = "Masuk dengan email", o
 
   // Saat dibuka: kalau email ini sudah terverifikasi di perangkat ini, langsung hubungkan; kalau belum, kirim kode.
   useEffect(() => {
-    if (!initialEmail) return;
+    if (!initialEmail || editEmail) return;
     (async () => {
       const verified = await cloudLoginService.verifiedEmail();
       if (verified === email) connect();
@@ -176,6 +180,11 @@ export function OtpVerify({ email: initialEmail, title = "Masuk dengan email", o
         )}
 
         {error && <div className="mt-3 text-[0.75rem] text-[#dc2626] bg-[#dc2626]/10 rounded-[8px] px-3 py-2">{error}</div>}
+        {laterLabel && (
+          <button onClick={onClose} disabled={busy} className="w-full mt-3 bg-transparent border-none text-[0.78rem] font-semibold text-[var(--text-light)] cursor-pointer py-2">
+            {laterLabel}
+          </button>
+        )}
       </div>
     </div>
   );

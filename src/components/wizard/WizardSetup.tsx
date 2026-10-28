@@ -1,3 +1,4 @@
+import { CLOUD_PROMPT_KEY } from "@/components/layout/CloudNudge";
 import { useState, useEffect } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/components/shared/Toast";
@@ -73,6 +74,8 @@ export function WizardSetup() {
     };
     try {
       await setupService.executeSetup(data);
+      // Setelah wizard: tawarkan simpan ke cloud sekali (dialog dibuka oleh CloudNudge).
+      try { localStorage.setItem(CLOUD_PROMPT_KEY, "1"); } catch { /* abaikan */ }
       await refreshSchool();
       await refreshTeachers();
       toast("Setup selesai!", "success");
